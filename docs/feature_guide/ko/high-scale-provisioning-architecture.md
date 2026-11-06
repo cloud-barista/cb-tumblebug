@@ -6,6 +6,11 @@
 
 단순한 기능 나열 대신, 10,000대 이상 규모로 확장할 때 직면한 **10대 근본 병목**을 **4개 아키텍처 영역**으로 분류하여 설명한다. 각 병목에 대해 문제의 원인과 핵심 해결 메커니즘을 시각화된 Mermaid 다이어그램 및 실측 성능 개선 테이블과 함께 제시한다.
 
+<img width="1284" height="751" alt="image" src="https://github.com/user-attachments/assets/739387bd-2883-4b87-a377-b69525568df0" />
+
+<img width="1289" height="786" alt="image" src="https://github.com/user-attachments/assets/12977ca0-3cab-44fd-ad63-d5a38956c327" />
+
+
 ---
 
 ## 1. 핵심 요약: 10,000+ VM 확장을 가로막은 10대 병목과 해결 체계
@@ -1576,3 +1581,7 @@ flowchart LR
 | **Stage 6** | 일괄 종료 (`?option=terminate`) | 10,414 Running VMs | **270.83 s** 만에 **10,414 / 10,414 (100.0%) Terminated** (Undefined 역전 0건) | 756 MiB / 514 MiB |
 | **Stage 7** | 인프라 삭제 (`DELETE /infra/{id}`) | 10,414개 종료 노드 레코드 | **117.18 s** (etcd 10,418개 키 **6.8 s** 병렬 삭제 + 비동기 SP IID 정리) | 714 MiB / 460 MiB |
 | **Stage 8** | 공유 리소스 일괄 정리 (`DELETE /sharedResources`) | 438개 공유 리소스 (146개 리전) | **149.85 s** 만에 **단일 패스로 438 / 438 (100.0%) 완전 삭제** | 520 MiB / 460 MiB |
+
+(현시점의 제약) 원격 커맨드는 수행이 어려움
+
+<img width="2559" height="1551" alt="image" src="https://github.com/user-attachments/assets/7c44c63a-420e-430e-9c58-7d39192f7740" />
