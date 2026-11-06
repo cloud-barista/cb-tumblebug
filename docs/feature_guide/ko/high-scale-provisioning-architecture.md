@@ -1474,6 +1474,9 @@ flowchart LR
 ### 11.2 온디맨드 토글형 제로 오버헤드 관측성 스택
 대규모 시험 직전에만 별도 모니터링 네임스페이스에 메트릭 수집기(30초 스크랩, 24시간 임시 스토리지)와 로그 수집 스택(Loki + Promtail)을 원클릭으로 활성화하고, 시험 후 즉시 제거하여 평상시 클러스터 리소스 소모를 0으로 유지함.
 
+<img width="2554" height="1549" alt="image" src="https://github.com/user-attachments/assets/2f080d44-6fe2-4b82-9d2a-7fd21eab5036" />
+
+
 ---
 
 ### 11.3 카디널리티 폭발 없는 3계층 통합 JSON 로그 스키마 및 Loki 파서 보호
