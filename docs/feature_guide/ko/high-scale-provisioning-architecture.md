@@ -1196,7 +1196,8 @@ flowchart LR
 2. **SQLite 파일 잠금 경합**: 로컬 파일 기반 SQLite가 1,000+ 동시 IID 쓰기 시 `database is locked` 오류와 디스크 병목을 유발함.
 3. **VM당 3-5배 중복 CSP 호출 및 불필요한 고정 대기**: 생성 전 리전 전체 VM 목록을 조회해 이름 중복을 검사하거나 Windows 이미지 여부를 확인하는 무의미한 사전 조회, 매 요청마다 다시 수행하는 클라우드 재인증, 고정 5-10초 폴링 대기, NCP의 Running 이후 3분 루트 디스크 대기 등이 처리 속도를 저하시킴.
 
-![9.1 문제 진단](images/fig33.svg)
+<img width="1010" height="485" alt="image" src="https://github.com/user-attachments/assets/c15f5560-c63a-4fe7-902a-73ac2e926193" />
+
 
 <details>
 <summary>Mermaid 원본 코드 보기</summary>
