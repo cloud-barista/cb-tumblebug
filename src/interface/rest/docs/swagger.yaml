@@ -2402,6 +2402,278 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /notifier:
+    get:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Get the registered notifier
+      description: "Returns the notification channel (ntfy) CB-Tumblebug subscribes\
+        \ to. Tokens are masked unless showSecrets=true, which returns the full read/write\
+        \ tokens so others can subscribe (read token) or publish (write token)."
+      operationId: GetNotifier
+      parameters:
+      - name: showSecrets
+        in: query
+        description: Return unmasked tokens
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.NotifierInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Register an existing ntfy server as the notifier
+      description: Registers an ntfy server and topic. CB-Tumblebug starts subscribing
+        immediately; the write token is handed to VMs that report back.
+      operationId: PutNotifier
+      requestBody:
+        description: ntfy server to register
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.NotifierRegisterReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.NotifierInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: notifierReq
+    delete:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Unregister the notifier
+      description: "Stops subscribing and removes the registration. With deleteInfra=true,\
+        \ the Infra created by POST /notifier/ntfy is terminated and deleted as well."
+      operationId: DeleteNotifier
+      parameters:
+      - name: deleteInfra
+        in: query
+        description: Also delete the managed ntfy Infra
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /notifier/messages:
+    get:
+      tags:
+      - "[Admin] System Configuration"
+      summary: List recently received notifier messages
+      operationId: GetNotifierMessages
+      parameters:
+      - name: limit
+        in: query
+        description: "Maximum number of messages, newest first"
+        schema:
+          type: integer
+          default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/model.NotifierMessage'
+  /notifier/ntfy:
+    post:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Provision an ntfy server from a template and register it
+      description: "Creates an Infra from the template (default infra-ntfy) in the\
+        \ given namespace (default: system), installs ntfy with TLS and token auth,\
+        \ registers it as the notifier, and runs a round-trip test. Takes a few minutes."
+      operationId: PostNotifierNtfy
+      requestBody:
+        description: Provisioning options
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.NotifierSetReq'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.NotifierInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: setReq
+  /notifier/publish:
+    post:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Publish a message to the notifier topic
+      description: Publishes a JSON message with the given kind. data must be a JSON
+        object; its fields are merged into the message.
+      operationId: PostNotifierPublish
+      requestBody:
+        description: Message to publish
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.NotifierPublishReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: publishReq
+  /notifier/reader:
+    get:
+      tags:
+      - "[Admin] System Configuration"
+      summary: List read-only accounts on the managed ntfy server
+      operationId: GetNotifierReaders
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Create a read-only account on the managed ntfy server
+      description: "Creates an ntfy user that can only read the notifier topic, for\
+        \ subscribing from the ntfy app, web UI or curl. The password is generated\
+        \ when omitted and returned only in this response."
+      operationId: PostNotifierReader
+      requestBody:
+        description: Reader account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.NotifierReaderReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.NotifierReaderInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: readerReq
+  /notifier/reader/{name}:
+    delete:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Delete a read-only account from the managed ntfy server
+      operationId: DeleteNotifierReader
+      parameters:
+      - name: name
+        in: path
+        description: Reader account name
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /notifier/test:
+    post:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Run a publish/subscribe round-trip test on the notifier
+      operationId: PostNotifierTest
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.NotifierTestResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns:
     get:
       tags:
@@ -26858,6 +27130,193 @@ components:
           type: string
         vNetId:
           type: string
+    model.NotifierInfo:
+      type: object
+      properties:
+        caCert:
+          type: string
+          description: CaCert is the PEM certificate VMs and CB-Tumblebug trust for
+            a self-signed server.
+        lastMessageId:
+          type: string
+        managedDnsDomain:
+          type: string
+          description: Route53 record created for the managed Infra (empty when a
+            self-signed certificate is used).
+          example: example.com
+        managedDnsRecord:
+          type: string
+          example: ntfy.example.com
+        managedInfraId:
+          type: string
+          example: ntfy
+        managedNsId:
+          type: string
+          example: system
+        managedSecurityGroupIds:
+          type: array
+          items:
+            type: string
+        managedSshKeyId:
+          type: string
+        managedVNetId:
+          type: string
+          description: Resources created for the managed Infra; removed together with
+            it on DELETE ?deleteInfra=true.
+        readToken:
+          type: string
+          example: tk_yyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+        readers:
+          type: array
+          description: Readers are read-only ntfy user accounts created through POST
+            /notifier/reader.
+          items:
+            type: string
+        registeredAt:
+          type: string
+        source:
+          type: string
+          example: managed
+          enum:
+          - external
+          - managed
+        status:
+          type: string
+          example: Active
+          enum:
+          - Active
+          - Error
+        statusMessage:
+          type: string
+        topic:
+          type: string
+          example: tb-a1b2c3d4
+        type:
+          type: string
+          example: ntfy
+        url:
+          type: string
+          example: https://3.35.10.20
+        writeToken:
+          type: string
+          example: tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    model.NotifierMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        infraId:
+          type: string
+        kind:
+          type: string
+        message:
+          type: string
+        nodeGroupId:
+          type: string
+        nodeId:
+          type: string
+        nsId:
+          type: string
+        time:
+          type: string
+    model.NotifierPublishReq:
+      required:
+      - kind
+      type: object
+      properties:
+        data:
+          type: object
+          properties: {}
+        kind:
+          type: string
+          example: custom
+    model.NotifierReaderInfo:
+      type: object
+      properties:
+        caCert:
+          type: string
+        name:
+          type: string
+          example: shson
+        note:
+          type: string
+        password:
+          type: string
+        serverUrl:
+          type: string
+          example: https://ntfy.example.com
+        topic:
+          type: string
+          example: tb-a1b2c3d4
+    model.NotifierReaderReq:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          example: shson
+        password:
+          type: string
+          example: generated when empty
+    model.NotifierRegisterReq:
+      required:
+      - topic
+      - url
+      type: object
+      properties:
+        caCert:
+          type: string
+        readToken:
+          type: string
+          example: tk_yyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+        topic:
+          type: string
+          example: tb-a1b2c3d4
+        url:
+          type: string
+          example: https://ntfy.example.com
+        writeToken:
+          type: string
+          example: tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    model.NotifierSetReq:
+      type: object
+      properties:
+        description:
+          type: string
+          example: ntfy server for CB-Tumblebug notifications
+        domainName:
+          type: string
+          example: example.com
+        name:
+          type: string
+          example: ntfy
+          default: ntfy
+        nsId:
+          type: string
+          example: system
+          default: system
+        recordName:
+          type: string
+          description: |-
+            RecordName is the host part under DomainName. Empty picks a free "ntfy-<random>" name so that
+            repeated creations never reuse a name (Let's Encrypt limits certificates per exact name).
+          example: ntfy-a1b
+        templateId:
+          type: string
+          example: infra-ntfy
+          default: infra-ntfy
+    model.NotifierTestResult:
+      type: object
+      properties:
+        elapsedMs:
+          type: integer
+        message:
+          type: string
+        messageId:
+          type: string
+        success:
+          type: boolean
     model.NsInfo:
       type: object
       properties:

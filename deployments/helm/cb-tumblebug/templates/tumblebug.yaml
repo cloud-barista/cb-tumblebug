@@ -101,6 +101,14 @@ spec:
             {{- with .Values.tumblebug.selfEndpoint }}
             - { name: TB_SELF_ENDPOINT, value: {{ . | quote }} }
             {{- end }}
+            {{- with .Values.tumblebug.notifier }}
+            {{- if .url }}
+            - { name: TB_NOTIFIER_NTFY_URL, value: {{ .url | quote }} }
+            - { name: TB_NOTIFIER_NTFY_TOPIC, value: {{ .topic | quote }} }
+            - { name: TB_NOTIFIER_NTFY_WRITE_TOKEN, value: {{ .writeToken | quote }} }
+            - { name: TB_NOTIFIER_NTFY_READ_TOKEN, value: {{ .readToken | quote }} }
+            {{- end }}
+            {{- end }}
             - { name: TB_LOGWRITER, value: {{ .Values.tumblebug.logWriter | quote }} }
             - { name: TB_LOGFORMAT, value: {{ .Values.tumblebug.logFormat | quote }} }
             - { name: TB_LOGLEVEL, value: {{ .Values.tumblebug.logLevel | quote }} }

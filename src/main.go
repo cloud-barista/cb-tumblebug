@@ -37,6 +37,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/notifier"
 
 	restServer "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server"
 
@@ -65,6 +66,15 @@ func init() {
 	model.AutocontrolDurationMs = common.NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
 	model.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "default")
 	model.DefaultCredentialHolder = common.NVL(os.Getenv("TB_DEFAULT_CREDENTIALHOLDER"), "admin")
+
+	// Notifier (optional): registers an existing ntfy server at startup when no notifier is stored
+	model.NotifierEnvConfig = model.NotifierEnv{
+		Url:        os.Getenv("TB_NOTIFIER_NTFY_URL"),
+		Topic:      os.Getenv("TB_NOTIFIER_NTFY_TOPIC"),
+		WriteToken: os.Getenv("TB_NOTIFIER_NTFY_WRITE_TOKEN"),
+		ReadToken:  os.Getenv("TB_NOTIFIER_NTFY_READ_TOKEN"),
+		CaCertFile: os.Getenv("TB_NOTIFIER_NTFY_CA_CERT_FILE"),
+	}
 
 	// Etcd
 	model.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
@@ -869,6 +879,9 @@ func main() {
 	defer agentCancel()
 	go infra.GlobalAgent.StartupScan()
 	go infra.GlobalAgent.Start(agentCtx)
+
+	// Start notifier subscription if a notifier is registered (stored or from TB_NOTIFIER_* env)
+	go notifier.Init()
 
 	// Reload cloud_conf.yaml on change; keep the last good config on reload errors
 	go func() {

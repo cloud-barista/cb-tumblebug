@@ -19,6 +19,7 @@
 | **[`make init` 초기화 워크플로우](make-init-workflow.md)** | OpenBao 자격증명 등록과 Tumblebug 에셋 적재로 구성된 2단계 초기화 프로세스를 컴포넌트 간 시퀀스 다이어그램과 함께 상세히 설명. |
 | **[네임스페이스 및 리소스 식별 체계](namespace-and-resource-identity.md)** | 논리적 격리 모델(Namespace)과 3중 리소스 식별 체계(사용자 지정 ID vs. 시스템 UID vs. CSP 네이티브 ID) 심층 분석. |
 | **[네트워크 상태 관리](network-status-management.md)** | VNet, Subnet, VPN 등 멀티클라우드 네트워크 리소스의 상태 모델(Kubernetes 스타일 Conditions) 및 생명주기 관리 설명. |
+| **[알림 채널 (Notifier, ntfy)](notifier-ntfy.md)** | ntfy 기반 알림 채널 가이드: 관리형 서버 프로비저닝(자체서명 또는 Route53 + Let's Encrypt), 기존 서버 등록, 쓰기/읽기 토큰, 사람용 구독 계정, 메시지 발행과 수신. |
 | **[OpenStack 계열 CSP 지원](openstack-type-csp-support.md)** | 1:N 클라우드 플랫폼 매핑(`cloudinfo.yaml` + `credentials.yaml`)을 통해 OpenStack 기반 CSP를 추가하고 운영하는 방법 안내. |
 | **[RDBMS 관리](rdbms-management.md)** | 멀티클라우드 관리형 데이터베이스(RDBMS) 프로비저닝, 보안 그룹 제어, Bastion 연동 및 생명주기 관리 가이드. |
 | **[원격 명령 실행 및 파일 전송](remote-command-and-file-transfer.md)** | Bastion 호스트 및 최초 접속 시 SSH 호스트 키 자동 등록, 검증을 통해 인프라 노드에 원격 명령을 실행하고 파일을 전송하는 방법 설명. |
