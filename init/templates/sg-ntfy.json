@@ -1,0 +1,28 @@
+{
+  "nsId": "system",
+  "resourceType": "securityGroup",
+  "name": "sg-ntfy",
+  "description": "SecurityGroup template for an ntfy notification server: HTTPS (TCP 443) from anywhere so VMs in any CSP can publish, HTTP (TCP 80) for Let's Encrypt validation, plus SSH (TCP 22) for management.",
+  "securityGroupReq": {
+    "firewallRules": [
+      {
+        "ports": "443",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "80",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "22",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      }
+    ]
+  }
+}

@@ -19,6 +19,7 @@ This directory contains detailed documentation for specific features of CB-Tumbl
 | **[`make init` Workflow](make-init-workflow.md)** | Detailed walkthrough of the two-phase initialization process: OpenBao credential registration and Tumblebug asset loading, with interaction diagrams for each component. |
 | **[Namespace & Identity](namespace-and-resource-identity.md)** | Deep dive into the logical isolation model (Namespace) and the resource identification system (User ID vs System UID vs CSP ID). |
 | **[Network Status Management](network-status-management.md)** | Guide for multi-cloud network resource status modeling (Kubernetes-style Conditions) and lifecycle verification for VNet, Subnet, and VPN. |
+| **[Notifier (ntfy)](notifier-ntfy.md)** | Guide to the ntfy-based notification channel: provisioning a managed server (self-signed or Route53 + Let's Encrypt), registering an existing one, write/read tokens, subscriber accounts for people, publishing and receiving messages. |
 | **[OpenStack-Type CSP Support](openstack-type-csp-support.md)** | Guide for adding OpenStack-based CSPs with 1:N Cloud Platform mapping (cloudinfo.yaml + credentials.yaml). |
 | **[RDBMS Management](rdbms-management.md)** | Guide for provisioning, configuring, and managing multi-cloud managed relational database (RDBMS) instances and Bastion access. |
 | **[Remote Command & File Transfer](remote-command-and-file-transfer.md)** | Guide for executing remote commands and transferring files to Infra Nodes via Bastion Host with TOFU (Trust On First Use) SSH host key verification. |

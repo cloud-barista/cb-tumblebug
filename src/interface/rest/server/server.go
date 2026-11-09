@@ -202,6 +202,18 @@ func RunServer() {
 	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
 	e.POST("/tumblebug/testStreamResponse", rest_common.RestTestStreamResponse)
 
+	// Notifier (ntfy) management
+	e.GET("/tumblebug/notifier", rest_common.RestGetNotifier)
+	e.PUT("/tumblebug/notifier", rest_common.RestPutNotifier)
+	e.DELETE("/tumblebug/notifier", rest_common.RestDeleteNotifier)
+	e.POST("/tumblebug/notifier/ntfy", rest_common.RestPostNotifierNtfy)
+	e.POST("/tumblebug/notifier/test", rest_common.RestPostNotifierTest)
+	e.POST("/tumblebug/notifier/publish", rest_common.RestPostNotifierPublish)
+	e.GET("/tumblebug/notifier/messages", rest_common.RestGetNotifierMessages)
+	e.POST("/tumblebug/notifier/reader", rest_common.RestPostNotifierReader)
+	e.GET("/tumblebug/notifier/reader", rest_common.RestGetNotifierReaders)
+	e.DELETE("/tumblebug/notifier/reader/:name", rest_common.RestDeleteNotifierReader)
+
 	allowedOrigins := os.Getenv("TB_ALLOW_ORIGINS")
 	if allowedOrigins == "" {
 		log.Fatal().Msg("TB_ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +

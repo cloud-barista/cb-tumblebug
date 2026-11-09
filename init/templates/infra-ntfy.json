@@ -1,0 +1,19 @@
+{
+  "resourceType": "infra",
+  "name": "infra-ntfy",
+  "description": "Single small VM for a self-hosted ntfy notification server. Used by POST /tumblebug/notifier/ntfy, which installs and configures ntfy (TLS, token auth) after provisioning and registers it as the CB-Tumblebug notifier.",
+  "infraDynamicReq": {
+    "installMonAgent": "no",
+    "sgTemplateId": "sg-ntfy",
+    "nodeGroups": [
+      {
+        "name": "ntfy",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-2+t3.micro",
+        "imageId": "ami-0fde5763b4c293a0b",
+        "rootDiskType": "gp3",
+        "rootDiskSize": 20
+      }
+    ]
+  }
+}
