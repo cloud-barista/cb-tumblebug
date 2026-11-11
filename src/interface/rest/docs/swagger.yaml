@@ -5163,6 +5163,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/initScript:
+    get:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Get init script results of all Nodes in an Infra
+      description: |-
+        Counts and per-Node results of the first-boot init script, as reported by the Nodes through the
+        notifier. A Node is `pending` until its first report, `initializing` while steps run (the current step is in
+        `step`), then `ok` or `fail`; `notApplicable` when its NodeGroup has no init script or reporting is off.
+        Results are read from a per-Node record, so the call stays cheap for large Infras.
+      operationId: GetInfraInitScript
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: option
+        in: query
+        description: summary returns the counts only
+        schema:
+          type: string
+          enum:
+          - default
+          - summary
+      - name: status
+        in: query
+        description: Only list Nodes with this status
+        schema:
+          type: string
+          enum:
+          - initializing
+          - ok
+          - fail
+          - pending
+          - notApplicable
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Init script results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraInitScriptStatus'
+        "404":
+          description: Infra not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/infra/{infraId}/mcSwNlb:
     post:
       tags:
@@ -17162,6 +17231,285 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/initScript:
+    get:
+      tags:
+      - "[MC-Infra] Infra Template Management"
+      summary: List all init script Templates
+      description: List init script Templates in a namespace. Shared templates live
+        in the `system` namespace.
+      operationId: GetAllInitScriptTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: system
+      - name: filterKeyword
+        in: query
+        description: Keyword to filter templates by name or description
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InitScriptTemplateListResponse'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[MC-Infra] Infra Template Management"
+      summary: Create an init script Template
+      description: |-
+        Create a reusable init script Template. An init script runs on a Node at first boot
+        (delivered as cloud-init user data) and is referenced from `initScript.templateId` or
+        `initScript.scripts[].templateId` of an Infra or NodeGroup request.
+
+        Templates in the `system` namespace are shared with every namespace; a template with the
+        same id in the request namespace takes precedence. The script is run by bash with the
+        `TB_*` node identity variables and the template/request `env` exported.
+      operationId: PostInitScriptTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: init script Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.InitScriptTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InitScriptTemplateInfo'
+        "400":
+          description: Invalid request format or template name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Template already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[MC-Infra] Infra Template Management"
+      summary: Delete all init script Templates
+      operationId: DeleteAllInitScriptTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: All templates deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/initScript/{templateId}:
+    get:
+      tags:
+      - "[MC-Infra] Infra Template Management"
+      summary: Get an init script Template
+      description: Get an init script Template from the given namespace (no fallback
+        to `system`).
+      operationId: GetInitScriptTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: system
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+          default: initscript-hello
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InitScriptTemplateInfo'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[MC-Infra] Infra Template Management"
+      summary: Update an init script Template
+      description: |-
+        Replace the script, env and description of an init script Template. Infras created earlier keep
+        the content they were created with; the change applies to Infras and NodeGroups created afterwards.
+      operationId: PutInitScriptTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: init script Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.InitScriptTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Updated template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InitScriptTemplateInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[MC-Infra] Infra Template Management"
+      summary: Delete an init script Template
+      operationId: DeleteInitScriptTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/template/k8sCluster:
     get:
       tags:
@@ -21233,6 +21581,11 @@ components:
           type: string
           description: ImageId is field for id of a image in common namespace
           example: ami-01f71f215b23ba262
+        initScript:
+          type: object
+          description: InitScript overrides the Infra-level init script for this NodeGroup
+          allOf:
+          - $ref: '#/components/schemas/model.InitScriptReq'
         label:
           type: object
           additionalProperties:
@@ -22404,6 +22757,11 @@ components:
           type: string
           description: ImageId is field for id of a image in common namespace
           example: ami-01f71f215b23ba262
+        initScript:
+          type: object
+          description: InitScript overrides the Infra-level init script for this NodeGroup
+          allOf:
+          - $ref: '#/components/schemas/model.InitScriptReq'
         label:
           type: object
           additionalProperties:
@@ -22496,6 +22854,8 @@ components:
         imageId:
           type: string
           description: ImageType        string   `json:"imageType"`
+        initScript:
+          $ref: '#/components/schemas/model.InitScriptReq'
         label:
           type: object
           additionalProperties:
@@ -24230,6 +24590,12 @@ components:
         description:
           type: string
           example: Made in CB-TB
+        initScript:
+          type: object
+          description: InitScript is the default init script for all NodeGroups (overridable
+            per NodeGroup)
+          allOf:
+          - $ref: '#/components/schemas/model.InitScriptReq'
         installMonAgent:
           type: string
           description: "InstallMonAgent Option for CB-Dragonfly agent installation\
@@ -24574,6 +24940,43 @@ components:
           type: string
         uid:
           type: string
+    model.InfraInitScriptStatus:
+      type: object
+      properties:
+        fail:
+          type: integer
+          example: 1
+        infraId:
+          type: string
+          example: infra01
+        initializing:
+          type: integer
+          example: 0
+        nodes:
+          type: array
+          description: "Nodes lists every Node unless option=summary; status is initializing,\
+            \ ok, fail, pending or notApplicable"
+          items:
+            $ref: '#/components/schemas/model.NodeInitScriptStatus'
+        notApplicable:
+          type: integer
+          example: 0
+        ok:
+          type: integer
+          example: 97
+        pending:
+          type: integer
+          description: "Pending are applicable Nodes that have not reported yet (still\
+            \ booting, no notifier, or report lost)"
+          example: 2
+        reported:
+          type: integer
+          example: 98
+        total:
+          type: integer
+          description: Total is the number of Nodes; NotApplicable are Nodes whose
+            NodeGroup has no init script or reporting off
+          example: 100
     model.InfraNodeAccessInfo:
       type: object
       properties:
@@ -24769,6 +25172,156 @@ components:
           type: string
         targetStatus:
           type: string
+    model.InitScriptReq:
+      type: object
+      properties:
+        env:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            ROLE: worker
+        fromTemplateId:
+          type: string
+          description: FromTemplateId records the template the steps were copied from
+            (set by CB-Tumblebug)
+          example: initscript-nginx
+        implicit:
+          type: boolean
+          description: |-
+            Implicit is set by CB-Tumblebug when the request had no initScript; a rendering failure then
+            falls back to the CB-Spider default user data instead of failing the Node
+        mode:
+          type: string
+          example: default
+          default: default
+          enum:
+          - default
+          - custom
+          - none
+        notify:
+          type: boolean
+          description: "Notify false stops the Node from reporting its result to the\
+            \ notifier (default: report when one is registered)"
+          example: true
+        script:
+          type: string
+          example: |-
+            #!/bin/bash
+            apt-get install -y -qq jq
+        scripts:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.InitScriptStep'
+        templateId:
+          type: string
+          example: initscript-nginx
+        userName:
+          type: string
+          example: cb-user
+          default: cb-user
+    model.InitScriptStep:
+      type: object
+      properties:
+        name:
+          type: string
+          example: install-agent
+        script:
+          type: string
+          example: |-
+            #!/bin/bash
+            apt-get install -y -qq jq
+    model.InitScriptStepResult:
+      type: object
+      properties:
+        durationSec:
+          type: integer
+          example: 3
+        exitCode:
+          type: integer
+          example: 0
+        name:
+          type: string
+          example: initscript-hello
+        status:
+          type: string
+          example: ok
+          enum:
+          - pending
+          - running
+          - ok
+          - fail
+    model.InitScriptTemplateInfo:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          example: 2024-01-01T00:00:00Z
+        description:
+          type: string
+          example: Writes a first-boot marker
+        env:
+          type: object
+          additionalProperties:
+            type: string
+          description: Env is the default variables for every script; the request
+            env overrides them
+          example:
+            ROLE: demo
+        id:
+          type: string
+          example: initscript-hello
+        name:
+          type: string
+          example: initscript-hello
+        resourceType:
+          type: string
+          example: initScript
+        scripts:
+          type: array
+          description: "Scripts run in order on the Node, each by bash with TB_* and\
+            \ env exported; the first failure stops the run"
+          items:
+            $ref: '#/components/schemas/model.InitScriptStep'
+        source:
+          type: string
+          example: user
+        updatedAt:
+          type: string
+          example: 2024-01-01T00:00:00Z
+    model.InitScriptTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.InitScriptTemplateInfo'
+    model.InitScriptTemplateReq:
+      required:
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+          example: Writes a first-boot marker
+        env:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            ROLE: demo
+        name:
+          type: string
+          example: initscript-hello
+        script:
+          type: string
+          example: |-
+            #!/bin/bash
+            echo hello > /tmp/hello
+        scripts:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.InitScriptStep'
     model.InspectResource:
       type: object
       properties:
@@ -26626,6 +27179,21 @@ components:
           $ref: '#/components/schemas/model.ImageSummary'
         imageId:
           type: string
+        initScript:
+          $ref: '#/components/schemas/model.InitScriptReq'
+        initScriptMessage:
+          type: string
+        initScriptStatus:
+          type: string
+          description: |-
+            InitScriptStatus and InitScriptMessage are read from the Node's stored init script result (not persisted here);
+            pending means the Node has an init script with reporting on but has not reported yet
+          example: ok
+          enum:
+          - pending
+          - initializing
+          - ok
+          - fail
         label:
           type: object
           additionalProperties:
@@ -26780,6 +27348,21 @@ components:
           type: string
           description: InfraId is the Infra this Node belongs to
           example: infra01
+        initScript:
+          $ref: '#/components/schemas/model.InitScriptReq'
+        initScriptMessage:
+          type: string
+        initScriptStatus:
+          type: string
+          description: |-
+            InitScriptStatus and InitScriptMessage are read from the Node's stored init script result (not persisted here);
+            pending means the Node has an init script with reporting on but has not reported yet
+          example: ok
+          enum:
+          - pending
+          - initializing
+          - ok
+          - fail
         label:
           type: object
           additionalProperties:
@@ -26867,6 +27450,49 @@ components:
           example: wef12awefadf1221edcf
         vNetId:
           type: string
+    model.NodeInitScriptStatus:
+      type: object
+      properties:
+        durationSec:
+          type: integer
+          example: 12
+        event:
+          type: string
+          example: done
+          enum:
+          - step
+          - done
+        exitCode:
+          type: integer
+          example: 0
+        hostname:
+          type: string
+          example: ip-10-0-1-23
+        message:
+          type: string
+        nodeGroupId:
+          type: string
+          example: g1
+        nodeId:
+          type: string
+          example: g1-1
+        reportedAt:
+          type: string
+          example: 2026-01-01T00:00:00Z
+        status:
+          type: string
+          example: ok
+          enum:
+          - initializing
+          - ok
+          - fail
+        step:
+          type: string
+          example: initscript-nginx
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.InitScriptStepResult'
     model.NodeSnapshotResult:
       type: object
       properties:
@@ -27074,6 +27700,27 @@ components:
           $ref: '#/components/schemas/model.ImageSummary'
         imageId:
           type: string
+        initScriptMessage:
+          type: string
+          example: "initializing: nginx (2/3)"
+        initScriptStatus:
+          type: string
+          description: Init script progress (see NodeInfo); InitScriptSteps lists
+            the step names only while initializing or failed
+          example: initializing
+          enum:
+          - pending
+          - initializing
+          - ok
+          - fail
+        initScriptSteps:
+          type: array
+          example:
+          - hello
+          - nginx
+          - after
+          items:
+            type: string
         label:
           type: object
           additionalProperties:

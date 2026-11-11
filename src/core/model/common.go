@@ -309,6 +309,7 @@ const (
 	StrNode                  string = "node"
 	StrSpiderVM              string = "vm" // CB-Spider uses "vm" as the resource type for VMs
 	StrInfra                 string = "infra"
+	StrInitScript            string = "initScript"
 	StrNodeGroup             string = "nodeGroup"
 	StrNodeDetails           string = "nodeDetails"
 	StrK8s                   string = "k8s"

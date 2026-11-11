@@ -144,8 +144,17 @@ func TestRegisterPublishRoundTrip(t *testing.T) {
 	if recent := RecentMessages(10); len(recent) < 2 || recent[0].Kind != "initScript" {
 		t.Fatalf("unexpected recent messages: %+v", recent)
 	}
-	if stored, _ := load(); stored == nil || stored.LastMessageId != id {
-		t.Fatalf("lastMessageId not persisted: %+v", stored)
+	// LastMessageId is persisted by saveLoop on its own schedule
+	saveBy := time.Now().Add(5 * time.Second)
+	for {
+		stored, _ := load()
+		if stored != nil && stored.LastMessageId == id {
+			break
+		}
+		if time.Now().After(saveBy) {
+			t.Fatalf("lastMessageId not persisted: %+v", stored)
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	if err := Unregister(); err != nil {

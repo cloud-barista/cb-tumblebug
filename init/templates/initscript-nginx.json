@@ -1,0 +1,13 @@
+{
+  "resourceType": "initScript",
+  "name": "initscript-nginx",
+  "description": "Install nginx (apt or dnf/yum) and serve a page identifying the node; needs inbound 80 (e.g. sgTemplateId sg-usecase-web)",
+  "scripts": [
+    {
+      "script": "#!/bin/bash\n# Installs nginx and serves a page that identifies this node. SITE_TITLE comes from env.\nset -e\nif command -v apt-get >/dev/null 2>&1; then\n  export DEBIAN_FRONTEND=noninteractive\n  apt-get update -qq >/dev/null\n  apt-get install -y -qq nginx >/dev/null\n  WEB_ROOT=/var/www/html\nelif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then\n  (dnf install -y -q nginx || yum install -y -q nginx) >/dev/null\n  WEB_ROOT=/usr/share/nginx/html\nelse\n  echo \"unsupported package manager\"; exit 2\nfi\nrm -f \"$WEB_ROOT\"/index.nginx-debian.html \"$WEB_ROOT\"/index.html\ncat > \"$WEB_ROOT/index.html\" <<EOF\n<!doctype html>\n<html><head><meta charset=\"utf-8\"><title>${SITE_TITLE:-Cloud-Barista}</title>\n<style>body{font-family:system-ui,sans-serif;margin:3em;color:#0f172a}code{background:#f1f5f9;padding:2px 6px;border-radius:4px}</style></head>\n<body><h1>${SITE_TITLE:-Cloud-Barista}</h1>\n<p>Served by <code>${TB_NODE_ID}</code> (<code>${TB_NODEGROUP_ID}</code> of infra <code>${TB_INFRA_ID}</code>)</p>\n<p>${TB_CSP} / ${TB_REGION} &middot; host $(hostname) &middot; booted $(date -u +%FT%TZ)</p>\n<p>Provisioned by CB-Tumblebug initScript.</p></body></html>\nEOF\nsystemctl enable --now nginx >/dev/null 2>&1 || service nginx start\nsystemctl restart nginx >/dev/null 2>&1 || service nginx restart\ncurl -sf http://127.0.0.1/ | grep -q \"$TB_NODE_ID\"\necho \"nginx ready on $(hostname)\"\n"
+    }
+  ],
+  "env": {
+    "SITE_TITLE": "Cloud-Barista"
+  }
+}

@@ -446,6 +446,14 @@ func RunServer() {
 	g.DELETE("/:nsId/template/infra/:templateId", rest_infra.RestDeleteInfraDynamicTemplate)
 	g.DELETE("/:nsId/template/infra", rest_infra.RestDeleteAllInfraDynamicTemplate)
 
+	// Init script templates (first-boot scripts referenced from initScript of Infra/NodeGroup requests)
+	g.POST("/:nsId/template/initScript", rest_infra.RestPostInitScriptTemplate)
+	g.GET("/:nsId/template/initScript", rest_infra.RestGetAllInitScriptTemplate)
+	g.GET("/:nsId/template/initScript/:templateId", rest_infra.RestGetInitScriptTemplate)
+	g.PUT("/:nsId/template/initScript/:templateId", rest_infra.RestPutInitScriptTemplate)
+	g.DELETE("/:nsId/template/initScript/:templateId", rest_infra.RestDeleteInitScriptTemplate)
+	g.DELETE("/:nsId/template/initScript", rest_infra.RestDeleteAllInitScriptTemplate)
+
 	// Provisioning History and Analytics Routes
 	e.GET("/tumblebug/provisioning/log/:specId", rest_infra.RestGetProvisioningLog)
 	e.DELETE("/tumblebug/provisioning/log/:specId", rest_infra.RestDeleteProvisioningLog)
@@ -453,6 +461,7 @@ func RunServer() {
 	e.GET("/tumblebug/provisioning/risk/detailed", rest_infra.RestAnalyzeProvisioningRiskDetailed)
 	e.POST("/tumblebug/provisioning/event", rest_infra.RestRecordProvisioningEvent)
 
+	g.GET("/:nsId/infra/:infraId/initScript", rest_infra.RestGetInfraInitScript)
 	g.GET("/:nsId/infra/:infraId/associatedResources", rest_infra.RestGetInfraAssociatedResources)
 	g.PUT("/:nsId/infra/:infraId/associatedSecurityGroups", rest_infra.RestPutInfraAssociatedSecurityGroups)
 

@@ -68,7 +68,7 @@ flowchart LR
 | Component | Role |
 |-----------|------|
 | `src/core/notifier` | Registration store (etcd `/system/notifier`), subscriber goroutine with reconnect and `since=` resume, publish, round-trip test, recent-message buffer, `RegisterHandler(kind, fn)` for consumers |
-| `src/core/notifier/scripts/install-ntfy.sh` | Install script embedded with `//go:embed`; installs the ntfy `.deb` from GitHub releases, configures tokens and TLS |
+| `src/core/embedded/scripts/install-ntfy.sh` | Install script embedded with `//go:embed`; installs the ntfy `.deb` from GitHub releases, configures tokens and TLS |
 | `init/templates/infra-ntfy.json`, `sg-ntfy.json` | One-VM template (AWS t3.micro by default) and security group (443, 80, 22) |
 | `POST /tumblebug/notifier/ntfy` | Orchestrates: provision from template → optional Route53 record → run install script over SSH → register → round-trip test |
 

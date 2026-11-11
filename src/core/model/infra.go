@@ -15,7 +15,10 @@ limitations under the License.
 package model
 
 import (
+	"fmt"
 	"reflect"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -241,6 +244,157 @@ type InfraInfo struct {
 // PostCommandReq is a post-deployment command phase: an InfraCmdReq plus optional
 // targeting (at most one of nodeGroupId/nodeId/labelSelector) and phase policy.
 // Targeting mirrors the query parameters of the remote-command API.
+// InitScriptReq controls the init script (cloud-init user data) a Node runs on first boot.
+// TemplateId selects an init script template (looked up in the request namespace, then in system) whose
+// scripts run first, in order; Script and Scripts are inline steps appended after them. The first failure
+// stops the run. Templates are copied into the NodeGroup at creation so later Nodes get the same content.
+type InitScriptReq struct {
+	Mode       string            `json:"mode,omitempty" example:"default" enums:"default,custom,none" default:"default"`
+	UserName   string            `json:"userName,omitempty" example:"cb-user" default:"cb-user"`
+	TemplateId string            `json:"templateId,omitempty" example:"initscript-nginx"`
+	Script     string            `json:"script,omitempty" example:"#!/bin/bash\napt-get install -y -qq jq"`
+	Scripts    []InitScriptStep  `json:"scripts,omitempty"`
+	Env        map[string]string `json:"env,omitempty" example:"ROLE:worker"`
+	// Notify false stops the Node from reporting its result to the notifier (default: report when one is registered)
+	Notify *bool `json:"notify,omitempty" example:"true"`
+	// Implicit is set by CB-Tumblebug when the request had no initScript; a rendering failure then
+	// falls back to the CB-Spider default user data instead of failing the Node
+	Implicit bool `json:"implicit,omitempty"`
+	// FromTemplateId records the template the steps were copied from (set by CB-Tumblebug)
+	FromTemplateId string `json:"fromTemplateId,omitempty" example:"initscript-nginx"`
+}
+
+// InitScriptStep is one script of an init script sequence. Name defaults to the template id (single-step
+// template), "<template id>-<n>" or "step-<n>".
+type InitScriptStep struct {
+	Name   string `json:"name,omitempty" example:"install-agent"`
+	Script string `json:"script" example:"#!/bin/bash\napt-get install -y -qq jq"`
+}
+
+// InitScriptResult is the latest snapshot a Node reported about its init script, stored per Node.
+// The Node sends one as each step starts (event step, status initializing) and one at the end (event done).
+type InitScriptResult struct {
+	Event       string                 `json:"event,omitempty" example:"done" enums:"step,done"`
+	Status      string                 `json:"status" example:"ok" enums:"initializing,ok,fail"`
+	Step        string                 `json:"step,omitempty" example:"initscript-nginx"`
+	ExitCode    int                    `json:"exitCode" example:"0"`
+	DurationSec int                    `json:"durationSec" example:"12"`
+	Hostname    string                 `json:"hostname,omitempty" example:"ip-10-0-1-23"`
+	Steps       []InitScriptStepResult `json:"steps,omitempty"`
+	Message     string                 `json:"message,omitempty"`
+	ReportedAt  string                 `json:"reportedAt,omitempty" example:"2026-01-01T00:00:00Z"`
+}
+
+// InitScriptStepResult is the result of one step of an init script.
+type InitScriptStepResult struct {
+	Name        string `json:"name" example:"initscript-hello"`
+	Status      string `json:"status" example:"ok" enums:"pending,running,ok,fail"`
+	ExitCode    int    `json:"exitCode" example:"0"`
+	DurationSec int    `json:"durationSec" example:"3"`
+}
+
+// FailedStep returns the name of the first failed step, or "".
+func (r InitScriptResult) FailedStep() string {
+	for _, s := range r.Steps {
+		if s.Status == "fail" {
+			return s.Name
+		}
+	}
+	return ""
+}
+
+// Summary renders the one-line message shown on the Node: empty for ok, the current step while initializing,
+// "<step> exit <code>: <tail>" for fail.
+func (r InitScriptResult) Summary() string {
+	if r.Status == "ok" {
+		return ""
+	}
+	if r.Status == InitScriptStatusInitializing {
+		for i, s := range r.Steps {
+			if s.Status == "running" {
+				return fmt.Sprintf("initializing: %s (%d/%d)", s.Name, i+1, len(r.Steps))
+			}
+		}
+		return "initializing"
+	}
+	prefix := ""
+	if step := r.FailedStep(); step != "" {
+		prefix = step + " "
+	}
+	return fmt.Sprintf("%sexit %d: %s", prefix, r.ExitCode, r.Message)
+}
+
+// InfraInitScriptStatus summarises init script results across an Infra.
+type InfraInitScriptStatus struct {
+	InfraId string `json:"infraId" example:"infra01"`
+	// Total is the number of Nodes; NotApplicable are Nodes whose NodeGroup has no init script or reporting off
+	Total         int `json:"total" example:"100"`
+	NotApplicable int `json:"notApplicable" example:"0"`
+	Reported      int `json:"reported" example:"98"`
+	Initializing  int `json:"initializing" example:"0"`
+	Ok            int `json:"ok" example:"97"`
+	Fail          int `json:"fail" example:"1"`
+	// Pending are applicable Nodes that have not reported yet (still booting, no notifier, or report lost)
+	Pending int `json:"pending" example:"2"`
+	// Nodes lists every Node unless option=summary; status is initializing, ok, fail, pending or notApplicable
+	Nodes []NodeInitScriptStatus `json:"nodes,omitempty"`
+}
+
+// NodeInitScriptStatus is the init script result of one Node.
+type NodeInitScriptStatus struct {
+	NodeId      string `json:"nodeId" example:"g1-1"`
+	NodeGroupId string `json:"nodeGroupId" example:"g1"`
+	InitScriptResult
+}
+
+// Init script status values beyond the reported ok/fail: pending until the Node reports, initializing while
+// steps run, notApplicable
+// when the NodeGroup has no init script (mode none) or reporting is off (notify false).
+const (
+	InitScriptStatusPending       = "pending"
+	InitScriptStatusInitializing  = "initializing"
+	InitScriptStatusNotApplicable = "notApplicable"
+)
+
+// InitScriptMaxBytes is the rendered user data limit (AWS; the most restrictive among supported CSPs).
+const InitScriptMaxBytes = 16 * 1024
+
+var initScriptNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
+
+// IsInitScriptName reports whether s is usable as a step name (it is echoed into the report JSON).
+func IsInitScriptName(s string) bool { return initScriptNamePattern.MatchString(s) }
+
+// IsSafeShellValue reports whether v can be exported as a single-quoted shell value.
+func IsSafeShellValue(v string) bool { return !strings.ContainsAny(v, "'\n\r") }
+
+// ValidateInitScriptEnv checks that env can be exported as shell variables without clashing with TB_*.
+func ValidateInitScriptEnv(env map[string]string) error {
+	for k, v := range env {
+		if !isEnvName(k) {
+			return fmt.Errorf("initScript.env key %q is not a valid environment variable name", k)
+		}
+		if !IsSafeShellValue(v) {
+			return fmt.Errorf("initScript.env value for %q must not contain quotes or newlines", k)
+		}
+	}
+	return nil
+}
+
+func isEnvName(k string) bool {
+	if k == "" || strings.HasPrefix(k, "TB_") {
+		return false
+	}
+	for i, c := range k {
+		switch {
+		case c == '_', c >= 'A' && c <= 'Z', c >= 'a' && c <= 'z':
+		case c >= '0' && c <= '9' && i > 0:
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 type PostCommandReq struct {
 	InfraCmdReq
 
@@ -368,14 +522,15 @@ type CreateNodeGroupReq struct {
 	// (round-robin by VM index). SubnetId above is the primary/fallback (first subnet).
 	// Populated by dynamic provisioning when DistributeSubnets is requested; empty means
 	// all VMs use the single SubnetId (default behavior).
-	SubnetIds        []string `json:"subnetIds,omitempty"`
-	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
-	SshKeyId         string   `json:"sshKeyId" validate:"required"`
-	NodeUserName     string   `json:"nodeUserName,omitempty"`
-	NodeUserPassword string   `json:"nodeUserPassword,omitempty"`
-	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize     int      `json:"rootDiskSize,omitempty" example:"50"`                  // Root disk size in GB. 0 = use CSP default.
-	DataDiskIds      []string `json:"dataDiskIds"`
+	SubnetIds        []string       `json:"subnetIds,omitempty"`
+	SecurityGroupIds []string       `json:"securityGroupIds" validate:"required"`
+	SshKeyId         string         `json:"sshKeyId" validate:"required"`
+	NodeUserName     string         `json:"nodeUserName,omitempty"`
+	NodeUserPassword string         `json:"nodeUserPassword,omitempty"`
+	InitScript       *InitScriptReq `json:"initScript,omitempty"`
+	RootDiskType     string         `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize     int            `json:"rootDiskSize,omitempty" example:"50"`                  // Root disk size in GB. 0 = use CSP default.
+	DataDiskIds      []string       `json:"dataDiskIds"`
 }
 
 // CreateNodeGroupReq is struct to get requirements to create a new server instance
@@ -457,6 +612,9 @@ type InfraDynamicReq struct {
 	// or by polling GET /ns/{nsId}/infra/{infraId}.
 	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
 
+	// InitScript is the default init script for all NodeGroups (overridable per NodeGroup)
+	InitScript *InitScriptReq `json:"initScript,omitempty"`
+
 	// SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
 
@@ -516,6 +674,8 @@ type CreateNodeGroupDynamicReq struct {
 	// SgTemplateId overrides the Infra-level SgTemplateId for this NodeGroup.
 	// If empty, inherits the SgTemplateId from the parent InfraDynamicReq.
 	SgTemplateId string `json:"sgTemplateId,omitempty" example:""`
+	// InitScript overrides the Infra-level init script for this NodeGroup
+	InitScript *InitScriptReq `json:"initScript,omitempty"`
 
 	// DistributeSubnets, when true, spreads this NodeGroup's VMs across the VNet's subnets
 	// (round-robin), which spreads them across availability zones for multi-zone VNets.
@@ -749,7 +909,8 @@ type SpiderVMReqInfo struct {
 	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
 	RootDiskSize string // "default", "50", "1000" (GB)
 	ImageType    SpiderImageType
-	WindowsType  *bool `json:"WindowsType,omitempty"`
+	WindowsType  *bool  `json:"WindowsType,omitempty"`
+	UserData     string `json:"UserData,omitempty"`
 }
 
 // Ref: cb-spider/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
@@ -815,16 +976,17 @@ type NodeGroupInfo struct {
 	Image        ImageSummary `json:"image,omitempty"`
 
 	// Common Networking & Access
-	VNetId           string   `json:"vNetId,omitempty"`
-	CspVNetId        string   `json:"cspVNetId,omitempty"`
-	SubnetId         string   `json:"subnetId,omitempty"`
-	CspSubnetId      string   `json:"cspSubnetId,omitempty"`
-	NetworkInterface string   `json:"networkInterface,omitempty"`
-	SecurityGroupIds []string `json:"securityGroupIds,omitempty"`
-	SshKeyId         string   `json:"sshKeyId,omitempty"`
-	CspSshKeyId      string   `json:"cspSshKeyId,omitempty"`
-	SSHPort          int      `json:"sshPort,omitempty"`
-	NodeUserName     string   `json:"nodeUserName,omitempty"`
+	VNetId           string         `json:"vNetId,omitempty"`
+	CspVNetId        string         `json:"cspVNetId,omitempty"`
+	SubnetId         string         `json:"subnetId,omitempty"`
+	CspSubnetId      string         `json:"cspSubnetId,omitempty"`
+	NetworkInterface string         `json:"networkInterface,omitempty"`
+	SecurityGroupIds []string       `json:"securityGroupIds,omitempty"`
+	SshKeyId         string         `json:"sshKeyId,omitempty"`
+	CspSshKeyId      string         `json:"cspSshKeyId,omitempty"`
+	SSHPort          int            `json:"sshPort,omitempty"`
+	NodeUserName     string         `json:"nodeUserName,omitempty"`
+	InitScript       *InitScriptReq `json:"initScript,omitempty"`
 
 	// RootDiskType/RootDiskSize keep what was requested when the NodeGroup was created.
 	// Nodes hold the CSP-reported values instead, which are not always valid as a request
@@ -973,6 +1135,9 @@ func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 	}
 	if len(node.SecurityGroupIds) == 0 && len(ng.SecurityGroupIds) > 0 {
 		node.SecurityGroupIds = append([]string{}, ng.SecurityGroupIds...)
+	}
+	if node.InitScript == nil {
+		node.InitScript = ng.InitScript
 	}
 	if node.SshKeyId == "" {
 		node.SshKeyId = ng.SshKeyId
@@ -1293,25 +1458,30 @@ type NodeInfo struct {
 	RootDiskSize   int        `json:"rootDiskSize"`
 	RootDeviceName string     `json:"rootDeviceName"`
 
-	ConnectionName   string       `json:"connectionName"`
-	ConnectionConfig ConnConfig   `json:"connectionConfig"`
-	SpecId           string       `json:"specId"`
-	CspSpecName      string       `json:"cspSpecName"`
-	Spec             SpecSummary  `json:"spec"`
-	ImageId          string       `json:"imageId"`
-	CspImageName     string       `json:"cspImageName"`
-	Image            ImageSummary `json:"image"`
-	VNetId           string       `json:"vNetId"`
-	CspVNetId        string       `json:"cspVNetId"`
-	SubnetId         string       `json:"subnetId"`
-	CspSubnetId      string       `json:"cspSubnetId"`
-	NetworkInterface string       `json:"networkInterface"`
-	SecurityGroupIds []string     `json:"securityGroupIds"`
-	DataDiskIds      []string     `json:"dataDiskIds"`
-	SshKeyId         string       `json:"sshKeyId"`
-	CspSshKeyId      string       `json:"cspSshKeyId"`
-	NodeUserName     string       `json:"nodeUserName,omitempty"`
-	NodeUserPassword string       `json:"nodeUserPassword,omitempty"`
+	ConnectionName   string         `json:"connectionName"`
+	ConnectionConfig ConnConfig     `json:"connectionConfig"`
+	SpecId           string         `json:"specId"`
+	CspSpecName      string         `json:"cspSpecName"`
+	Spec             SpecSummary    `json:"spec"`
+	ImageId          string         `json:"imageId"`
+	CspImageName     string         `json:"cspImageName"`
+	Image            ImageSummary   `json:"image"`
+	VNetId           string         `json:"vNetId"`
+	CspVNetId        string         `json:"cspVNetId"`
+	SubnetId         string         `json:"subnetId"`
+	CspSubnetId      string         `json:"cspSubnetId"`
+	NetworkInterface string         `json:"networkInterface"`
+	SecurityGroupIds []string       `json:"securityGroupIds"`
+	DataDiskIds      []string       `json:"dataDiskIds"`
+	SshKeyId         string         `json:"sshKeyId"`
+	CspSshKeyId      string         `json:"cspSshKeyId"`
+	NodeUserName     string         `json:"nodeUserName,omitempty"`
+	NodeUserPassword string         `json:"nodeUserPassword,omitempty"`
+	InitScript       *InitScriptReq `json:"initScript,omitempty"`
+	// InitScriptStatus and InitScriptMessage are read from the Node's stored init script result (not persisted here);
+	// pending means the Node has an init script with reporting on but has not reported yet
+	InitScriptStatus  string `json:"initScriptStatus,omitempty" example:"ok" enums:"pending,initializing,ok,fail"`
+	InitScriptMessage string `json:"initScriptMessage,omitempty"`
 
 	// SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification
 	SshHostKeyInfo *SshHostKeyInfo `json:"sshHostKeyInfo,omitempty"`
@@ -1370,6 +1540,11 @@ type NodeSummary struct {
 	DataDiskIds      []string          `json:"dataDiskIds"`
 	SshKeyId         string            `json:"sshKeyId"`
 	CspSshKeyId      string            `json:"cspSshKeyId"`
+
+	// Init script progress (see NodeInfo); InitScriptSteps lists the step names only while initializing or failed
+	InitScriptStatus  string   `json:"initScriptStatus,omitempty" example:"initializing" enums:"pending,initializing,ok,fail"`
+	InitScriptMessage string   `json:"initScriptMessage,omitempty" example:"initializing: nginx (2/3)"`
+	InitScriptSteps   []string `json:"initScriptSteps,omitempty" example:"hello,nginx,after"`
 }
 
 // InfraInfoSummary is the Infra projection returned by the list view

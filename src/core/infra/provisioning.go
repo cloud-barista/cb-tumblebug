@@ -337,6 +337,7 @@ func newNodeGroupInfo(ctx context.Context, nsId string, nodeRequest *model.Creat
 		SecurityGroupIds: nodeRequest.SecurityGroupIds,
 		SshKeyId:         nodeRequest.SshKeyId,
 		NodeUserName:     nodeRequest.NodeUserName,
+		InitScript:       nodeRequest.InitScript,
 		RootDiskType:     nodeRequest.RootDiskType,
 		RootDiskSize:     nodeRequest.RootDiskSize,
 		Label:            nodeRequest.Label,
@@ -604,6 +605,7 @@ func ScaleOutInfraNodeGroupFrom(ctx context.Context, nsId string, infraId string
 	nodeGroupReqTemplate.SshKeyId = nodeObj.SshKeyId
 	nodeGroupReqTemplate.NodeUserName = nodeObj.NodeUserName
 	nodeGroupReqTemplate.NodeUserPassword = nodeObj.NodeUserPassword
+	nodeGroupReqTemplate.InitScript = nodeObj.InitScript // hydrated from the NodeGroup blueprint
 	// Root disk config comes from the NodeGroup record (what was requested). The Node
 	// holds the CSP-reported type, which some CSPs reject when sent back as a request.
 	if nodeGroupInfo, err := GetNodeGroup(nsId, infraId, nodeGroupId); err == nil {
@@ -650,6 +652,10 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 		temp := &model.InfraInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, nil, err
+	}
+
+	if newNodeGroup {
+		nodeRequest.InitScript = defaultInitScript(nodeRequest.InitScript)
 	}
 
 	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
@@ -782,6 +788,7 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 		nodeInfoData.Description = nodeRequest.Description
 		nodeInfoData.NodeUserName = nodeRequest.NodeUserName
 		nodeInfoData.NodeUserPassword = nodeRequest.NodeUserPassword
+		nodeInfoData.InitScript = nodeRequest.InitScript
 		nodeInfoData.RootDiskType = nodeRequest.RootDiskType
 		nodeInfoData.RootDiskSize = nodeRequest.RootDiskSize
 

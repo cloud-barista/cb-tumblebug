@@ -66,7 +66,7 @@ flowchart LR
 | 구성 요소 | 역할 |
 |-----------|------|
 | `src/core/notifier` | 등록 저장(etcd `/system/notifier`), 재접속과 `since=` 이어받기를 갖춘 구독 goroutine, 발행, 왕복 테스트, 최근 메시지 버퍼, 소비자용 `RegisterHandler(kind, fn)` |
-| `src/core/notifier/scripts/install-ntfy.sh` | `//go:embed`로 바이너리에 포함되는 설치 스크립트. GitHub 릴리스의 ntfy `.deb`를 설치하고 토큰과 TLS를 설정 |
+| `src/core/embedded/scripts/install-ntfy.sh` | `//go:embed`로 바이너리에 포함되는 설치 스크립트. GitHub 릴리스의 ntfy `.deb`를 설치하고 토큰과 TLS를 설정 |
 | `init/templates/infra-ntfy.json`, `sg-ntfy.json` | VM 1대 템플릿(기본 AWS t3.micro)과 보안 그룹(443, 80, 22) |
 | `POST /tumblebug/notifier/ntfy` | 템플릿으로 프로비저닝 → (선택) Route53 레코드 → SSH로 설치 스크립트 실행 → 등록 → 왕복 테스트 |
 

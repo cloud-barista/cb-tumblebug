@@ -802,6 +802,7 @@ func ReviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, req *mode
 	// Use the common VM review function with empty deployOption.
 	// No infra-level SgTemplateId context here; the request's own SgTemplateId (if any) applies.
 	nodeReview, _, _, _, _ := reviewSingleNodeGroupDynamicReq(ctx, nsId, "", "", *req, "")
+	applyInitScriptReview(nsId, "infra", req, nil, &nodeReview)
 
 	log.Debug().Msgf("Single VM review completed: %s - %s", nodeReview.Status, nodeReview.Message)
 	return &nodeReview, nil
@@ -993,6 +994,14 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 		if req.NodeGroups[result.index].ImageId != "" {
 			imageMap[req.NodeGroups[result.index].ImageId] = true
+		}
+	}
+
+	// Init script review (template resolution, user data size) is cheap and runs after the CSP checks
+	for i := range nodeReviews {
+		if viable, warned := applyInitScriptReview(nsId, req.Name, &req.NodeGroups[i], req.InitScript, &nodeReviews[i]); !viable || warned {
+			allViable = allViable && viable
+			hasWarnings = hasWarnings || warned
 		}
 	}
 

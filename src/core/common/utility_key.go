@@ -54,6 +54,11 @@ func GenInfraNodeDetailsKey(nsId string, infraId string, nodeId string) string {
 
 }
 
+// GenInfraNodeInitScriptKey generates the key for a Node's init script result (written by the notifier handler)
+func GenInfraNodeInitScriptKey(nsId string, infraId string, nodeId string) string {
+	return "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrInitScript + "/" + nodeId
+}
+
 // GenInfraPolicyKey is func to generate Infra policy key
 func GenInfraPolicyKey(nsId string, infraId string, nodeId string) string {
 	if nodeId != "" {

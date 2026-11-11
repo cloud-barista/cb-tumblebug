@@ -167,6 +167,15 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		if nodeGroupReqs[i].SgTemplateId == "" && req.SgTemplateId != "" {
 			nodeGroupReqs[i].SgTemplateId = req.SgTemplateId
 		}
+		if nodeGroupReqs[i].InitScript == nil && req.InitScript != nil {
+			nodeGroupReqs[i].InitScript = req.InitScript
+		}
+		// Resolve templates before any resource is created so a bad reference fails the whole request early
+		resolved, err := resolveInitScript(nsId, nodeGroupReqs[i].InitScript)
+		if err != nil {
+			return nil, fmt.Errorf("nodeGroup '%s': %w", nodeGroupReqs[i].Name, err)
+		}
+		nodeGroupReqs[i].InitScript = resolved
 	}
 
 	// Check whether VM names meet requirement.
@@ -1474,6 +1483,14 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 	nodeGroupReq.Description = k.Description
 	nodeGroupReq.RootDiskType = k.RootDiskType
 	nodeGroupReq.RootDiskSize = k.RootDiskSize
+	initScript, err := resolveInitScript(nsId, defaultInitScript(k.InitScript))
+	if err != nil {
+		return &NodeReqWithCreatedResources{VmReq: nodeGroupReq, CreatedResources: createdResources}, fmt.Errorf("initScript for '%s': %w", req.Name, err)
+	}
+	nodeGroupReq.InitScript = initScript
+	if initScriptEnabled(initScript) {
+		nodeGroupReq.NodeUserName = initScriptUserName(initScript)
+	}
 	// NodeUserPassword is not taken from the request; CreateNode generates a random
 	// password internally for the CSP-side requirement (Windows).
 
@@ -2153,6 +2170,23 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 
+	// CB-Tumblebug-managed init script replaces the Spider default when requested (Linux only)
+	windows := requestBody.ReqInfo.WindowsType != nil && *requestBody.ReqInfo.WindowsType
+	if userData, err := buildInitScript(nsId, infraId, nodeInfoData, windows); err != nil {
+		if nodeInfoData.InitScript == nil || !nodeInfoData.InitScript.Implicit {
+			nodeInfoData.Status = model.StatusFailed
+			nodeInfoData.SystemMessage = err.Error()
+			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+			log.Error().Err(err).Msgf("[CreateNode] init script rendering failed for %s", nodeInfoData.Id)
+			return err
+		}
+		// The request did not ask for an init script, so the CB-Spider default user data is good enough
+		nodeInfoData.SystemMessage = "init script not applied (CB-Spider default user data used): " + err.Error()
+		log.Warn().Err(err).Msgf("[CreateNode] implicit init script skipped for %s", nodeInfoData.Id)
+	} else if userData != "" {
+		requestBody.ReqInfo.UserData = userData
+	}
+
 	url := model.SpiderRestUrl + "/vm"
 	if strings.EqualFold(option, model.ActionRegister) {
 		url = model.SpiderRestUrl + "/regvm"
@@ -2227,7 +2261,9 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			}
 		}
 	}
-	nodeInfoData.NodeUserName = callResult.VMUserId
+	if requestBody.ReqInfo.UserData == "" {
+		nodeInfoData.NodeUserName = callResult.VMUserId
+	}
 	nodeInfoData.NodeUserPassword = callResult.VMUserPasswd
 	nodeInfoData.CspResourceName = callResult.IId.NameId
 	nodeInfoData.CspResourceId = callResult.IId.SystemId

@@ -537,6 +537,7 @@ func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfoSummary, er
 		}
 	}
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Id < nodes[j].Id })
+	attachInitScriptSummaries(nsId, infraId, nodes)
 	summary.Node = nodes
 
 	return &summary, nil
@@ -1067,6 +1068,7 @@ func ListInfraNodeInfo(nsId string, infraId string) ([]model.NodeInfo, error) {
 	for nodeInfo := range chanResults {
 		nodeInfoList = append(nodeInfoList, nodeInfo)
 	}
+	attachInitScriptResults(nsId, infraId, nodeInfoList)
 
 	return nodeInfoList, nil
 }
@@ -1177,7 +1179,11 @@ func GetNodeObjectWithNodeGroups(nsId string, infraId string, nodeId string, ngM
 
 // GetNodeObject is func to get Node object
 func GetNodeObject(nsId string, infraId string, nodeId string) (model.NodeInfo, error) {
-	return GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, nil)
+	node, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, nil)
+	if err == nil {
+		attachInitScriptResult(nsId, infraId, &node)
+	}
+	return node, err
 }
 
 // [Update Infra and Node object]
@@ -1641,6 +1647,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 			globalStatusStore.Delete(nsId, infraId, e.id)
 			deleteErrs[i] = kvstore.Delete(e.key)
 			kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, e.id))
+			deleteInitScriptResult(nsId, infraId, e.id)
 		}(i, e)
 	}
 	deleteWg.Wait()
@@ -1872,6 +1879,7 @@ func BatchDeleteInfraNodes(nsId string, infraId string, nodeIds []string, force 
 			_ = kvstore.Delete(common.GenInfraKey(nsId, infraId, e.id))
 			globalStatusStore.Delete(nsId, infraId, e.id)
 			_ = kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, e.id))
+			deleteInitScriptResult(nsId, infraId, e.id)
 			if e.hasInfo && e.info.Uid != "" {
 				_ = label.DeleteLabelObject(model.StrNode, e.info.Uid)
 			}
@@ -2036,6 +2044,7 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 	}
 	globalStatusStore.Delete(nsId, infraId, nodeId)
 	kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, nodeId))
+	deleteInitScriptResult(nsId, infraId, nodeId)
 
 	// remove empty NodeGroup or update NodeGroup record
 	if nodeInfo.NodeGroupId != "" {

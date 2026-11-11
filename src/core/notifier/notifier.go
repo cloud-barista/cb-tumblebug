@@ -32,6 +32,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
@@ -51,11 +52,29 @@ type state struct {
 	info     *model.NotifierInfo
 	cancel   context.CancelFunc
 	recent   []model.NotifierMessage
+	dirty    bool // LastMessageId changed since the last save
 	handlers map[string][]Handler
 	waiters  map[chan model.NotifierMessage]struct{}
 }
 
 var s = &state{handlers: map[string][]Handler{}, waiters: map[chan model.NotifierMessage]struct{}{}}
+
+func init() {
+	infra.NotifierProvider = Current
+	RegisterHandler("initScript", func(msg model.NotifierMessage) {
+		if msg.NsId == "" || msg.InfraId == "" || msg.NodeId == "" {
+			return
+		}
+		var r model.InitScriptResult
+		if err := json.Unmarshal([]byte(msg.Message), &r); err != nil || r.Status == "" {
+			return
+		}
+		r.ReportedAt = msg.Time.UTC().Format(time.RFC3339)
+		if err := infra.RecordInitScriptResult(msg.NsId, msg.InfraId, msg.NodeId, r); err != nil {
+			log.Warn().Err(err).Str("nodeId", msg.NodeId).Msg("notifier: could not record init script result")
+		}
+	})
+}
 
 // Init loads the stored notifier, seeds it from TB_NOTIFIER_* when none is stored, and starts the subscriber.
 func Init() {
@@ -311,6 +330,7 @@ func startSubscriber(info *model.NotifierInfo) {
 	s.cancel = cancel
 	s.mu.Unlock()
 	go subscribe(ctx, *info)
+	go saveLoop(ctx)
 }
 
 func stopSubscriber() {
@@ -319,6 +339,31 @@ func stopSubscriber() {
 	if s.cancel != nil {
 		s.cancel()
 		s.cancel = nil
+	}
+}
+
+// saveLoop persists LastMessageId at most once per interval while messages arrive, and once more when the
+// subscriber stops. Messages received after the last save are re-delivered on restart; handlers are idempotent.
+func saveLoop(ctx context.Context) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	flush := func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if s.dirty && s.info != nil {
+			if err := save(s.info); err == nil {
+				s.dirty = false
+			}
+		}
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			flush()
+			return
+		case <-ticker.C:
+			flush()
+		}
 	}
 }
 
@@ -412,8 +457,9 @@ func streamOnce(ctx context.Context, info *model.NotifierInfo) error {
 func dispatch(msg model.NotifierMessage) {
 	s.mu.Lock()
 	if s.info != nil {
+		// LastMessageId is persisted by saveLoop, not per message: thousands of Nodes can report at once
 		s.info.LastMessageId = msg.Id
-		_ = save(s.info)
+		s.dirty = true
 	}
 	s.recent = append(s.recent, msg)
 	if len(s.recent) > recentMessageMax {

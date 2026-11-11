@@ -3,6 +3,11 @@
   "name": "infra-across-global",
   "description": "Global Infra test with VMs across multiple CSP regions worldwide",
   "infraDynamicReq": {
+    "initScript": {
+      "mode": "default",
+      "userName": "cb-user",
+      "templateId": "initscript-hello"
+    },
     "nodeGroups": [
       {
         "name": "g1-alibaba-ap-northeast-1",
