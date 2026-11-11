@@ -12835,13 +12835,13 @@ paths:
       description: |-
         Delete an object storage (bucket).
 
-        **Query option (mutually exclusive — specify at most one):**
+        **Query option (mutually exclusive - specify at most one):**
 
         | option | Description |
         |--------|-------------|
         | (none) | Standard delete. Fails if the bucket is not empty. |
-        | `empty` | Empty the bucket first, then delete. |
-        | `force` | Force delete bucket with all contents (passed to Spider as `force=true`). Behaviour varies by CSP; use when standard delete is not sufficient. |
+        | `empty` | Empty all objects in the bucket while keeping the bucket itself. |
+        | `force` | Empty all objects and force-delete the bucket and its metadata (passed to Spider as `force=true`). |
 
         To clean up metadata for a bucket whose CSP resource is already gone, use `PUT .../reconcile` followed by `POST .../prune` instead of a delete option.
       operationId: RestDeleteObjectStorage

@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -793,9 +794,9 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 	return false
 }
 
-// DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace.
-// If force is true, Spider force-deletes the bucket with all its contents.
-// If empty is true, Spider empties the bucket contents first, then deletes it.
+// DeleteObjectStorage deletes or empties the specified object storage (bucket) in the namespace.
+// If force is true, Spider empties all contents and force-deletes the bucket.
+// If empty is true, Spider empties the bucket contents while keeping the bucket itself.
 // When empty is true, the post-delete GET verification is skipped because the
 // operation targets bucket contents, not bucket existence.
 func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
@@ -884,8 +885,8 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		delErr = clientManager.HandleHttpResponse(delRestyResp, delErr)
 
 		if delErr != nil {
-			if !apierr.IsNotFound(delErr) {
-				// DELETE failed (non-404) → mark as Failed
+			if empty || !apierr.IsNotFound(delErr) {
+				// Mark resource condition as failed when DELETE or EMPTY returns an error.
 				opDesc := "DELETE"
 				if empty {
 					opDesc = "EMPTY"
@@ -900,8 +901,21 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 				}
 				return err
 			}
-			// 404 → already deleted on CSP
-			log.Warn().Msgf("Spider returned 404 on DELETE for object storage %s — already deleted on CSP", uid)
+			// Purge any orphan Spider IID metadata when the CSP bucket is already gone.
+			log.Warn().Msgf("Spider returned 404 on DELETE for object storage %s; cleaning up Spider metadata with force=true", uid)
+			if !force {
+				forceCleanURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s&force=true", model.SpiderRestUrl, uid, connName)
+				_, _ = clientManager.ExecuteHttpRequest(
+					client,
+					"DELETE",
+					forceCleanURL,
+					spiderS3JSONHeaders,
+					clientManager.SetUseBody(spDelReq),
+					&spDelReq,
+					&spDelResp,
+					clientManager.ShortDuration,
+				)
+			}
 		}
 
 		// DELETE 204 succeeded. For the empty option, bucket existence check is not applicable.
@@ -1939,13 +1953,19 @@ func GetDataObject(nsId, osId, objectKey string) (model.Object, error) {
 
 	eTag := restyRes.Header().Get("ETag")
 	lastModified := restyRes.Header().Get("Last-Modified")
+	size := int64(-1)
+	if cl := restyRes.Header().Get("Content-Length"); cl != "" {
+		if parsed, parseErr := strconv.ParseInt(cl, 10, 64); parseErr == nil && parsed >= 0 {
+			size = parsed
+		}
+	}
 
-	// 4. Since Spider does not return object metadata in the HEAD response,
-	// we will return an empty object with just the key set.
+	// Build object metadata extracted from the Spider HEAD response headers.
 	obj := model.Object{
 		Key:          objectKey,
 		ETag:         eTag,
 		LastModified: lastModified,
+		Size:         size,
 	}
 
 	return obj, nil
