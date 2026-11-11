@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -267,13 +268,13 @@ func RestGetObjectStorageLocation(c echo.Context) error {
 // @Summary Delete an object storage (bucket)
 // @Description Delete an object storage (bucket).
 // @Description
-// @Description **Query option (mutually exclusive — specify at most one):**
+// @Description **Query option (mutually exclusive - specify at most one):**
 // @Description
 // @Description | option | Description |
 // @Description |--------|-------------|
 // @Description | (none) | Standard delete. Fails if the bucket is not empty. |
-// @Description | `empty` | Empty the bucket first, then delete. |
-// @Description | `force` | Force delete bucket with all contents (passed to Spider as `force=true`). Behaviour varies by CSP; use when standard delete is not sufficient. |
+// @Description | `empty` | Empty all objects in the bucket while keeping the bucket itself. |
+// @Description | `force` | Empty all objects and force-delete the bucket and its metadata (passed to Spider as `force=true`). |
 // @Description
 // @Description To clean up metadata for a bucket whose CSP resource is already gone, use `PUT .../reconcile` followed by `POST .../prune` instead of a delete option.
 // @Tags [Infra Resource] Object Storage Management
@@ -893,6 +894,9 @@ func RestGetDataObjectInfo(c echo.Context) error {
 	}
 	if result.LastModified != "" {
 		c.Response().Header().Set("Last-Modified", result.LastModified)
+	}
+	if result.Size >= 0 {
+		c.Response().Header().Set("Content-Length", strconv.FormatInt(result.Size, 10))
 	}
 
 	return c.NoContent(http.StatusOK)
