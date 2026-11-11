@@ -181,6 +181,9 @@ func RestGetNotifierMessages(c echo.Context) error {
 	if limit <= 0 {
 		limit = 50
 	}
+	if limit > 200 {
+		limit = 200 // the notifier keeps at most 200 recent messages
+	}
 	return c.JSON(http.StatusOK, notifier.RecentMessages(limit))
 }
 

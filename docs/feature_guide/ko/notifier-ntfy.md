@@ -207,7 +207,7 @@ CB-Tumblebug은 최근 200개 메시지를 메모리에 보관하고 마지막 �
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | `GET` | `/tumblebug/notifier` | 등록된 notifier. `showSecrets=true`가 아니면 토큰 마스킹 |
-| `PUT` | `/tumblebug/notifier` | 기존 ntfy 서버 등록 |
+| `PUT` | `/tumblebug/notifier` | 기존 ntfy 서버 등록. `url`은 `http(s)://host[:port][/path]` 형식(자격증명·query·fragment 불가, 링크로컬·메타데이터 주소 거부), `topic`은 `A-Za-z0-9_-` 1~64자 |
 | `DELETE` | `/tumblebug/notifier` | 등록 해제. `deleteInfra=true`면 관리형 인프라와 리소스도 삭제 |
 | `POST` | `/tumblebug/notifier/ntfy` | 템플릿으로 프로비저닝 후 등록. 본문: `nsId`, `templateId`, `name`, `domainName`, `recordName` (모두 선택) |
 | `POST` | `/tumblebug/notifier/test` | 발행/구독 왕복 테스트 |

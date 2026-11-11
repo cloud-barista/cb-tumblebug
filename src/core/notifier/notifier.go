@@ -25,9 +25,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -105,8 +107,13 @@ func fromEnv() *model.NotifierInfo {
 	if env.Url == "" || env.Topic == "" {
 		return nil
 	}
+	cleanUrl, err := validateEndpoint(env.Url, env.Topic)
+	if err != nil {
+		log.Error().Err(err).Msg("notifier: TB_NOTIFIER_NTFY_URL/TOPIC rejected")
+		return nil
+	}
 	info := &model.NotifierInfo{
-		Type: model.NotifierTypeNtfy, Url: strings.TrimRight(env.Url, "/"), Topic: env.Topic,
+		Type: model.NotifierTypeNtfy, Url: cleanUrl, Topic: env.Topic,
 		WriteToken: env.WriteToken, ReadToken: env.ReadToken,
 		Source: model.NotifierSourceExternal, Status: model.NotifierStatusActive, RegisteredAt: time.Now(),
 	}
@@ -129,12 +136,43 @@ func RegisterHandler(kind string, fn Handler) {
 }
 
 // Register stores an external notifier and starts subscribing to it.
+// topicPattern is the ntfy topic rule; the topic is appended to the server URL as a path segment.
+var topicPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// validateEndpoint accepts only an http(s) server URL (optional base path, no userinfo/query/fragment) that
+// does not point at a link-local or cloud metadata address, and a topic in ntfy's format. CB-Tumblebug sends
+// requests to this address on behalf of its callers, so the shape is restricted even though the caller is an
+// administrator.
+func validateEndpoint(rawUrl, topic string) (string, error) {
+	u, err := url.Parse(rawUrl) // url.Parse (not ParseRequestURI) so a fragment is seen and rejected
+	if err != nil {
+		return "", fmt.Errorf("invalid url: %w", err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return "", fmt.Errorf("invalid url: scheme must be http or https")
+	}
+	if u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return "", fmt.Errorf("invalid url: expected scheme://host[:port][/path] without credentials, query or fragment")
+	}
+	if ip := net.ParseIP(u.Hostname()); ip != nil && (ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified()) {
+		return "", fmt.Errorf("invalid url: link-local and metadata addresses are not allowed")
+	}
+	if strings.EqualFold(u.Hostname(), "metadata.google.internal") || strings.EqualFold(u.Hostname(), "metadata") {
+		return "", fmt.Errorf("invalid url: metadata hosts are not allowed")
+	}
+	if !topicPattern.MatchString(topic) {
+		return "", fmt.Errorf("invalid topic %q: use 1-64 letters, digits, '_' or '-'", topic)
+	}
+	return strings.TrimRight(u.String(), "/"), nil
+}
+
 func Register(req model.NotifierRegisterReq) (*model.NotifierInfo, error) {
-	if _, err := url.ParseRequestURI(req.Url); err != nil {
-		return nil, fmt.Errorf("invalid url: %w", err)
+	cleanUrl, err := validateEndpoint(req.Url, req.Topic)
+	if err != nil {
+		return nil, err
 	}
 	info := &model.NotifierInfo{
-		Type: model.NotifierTypeNtfy, Url: strings.TrimRight(req.Url, "/"), Topic: req.Topic,
+		Type: model.NotifierTypeNtfy, Url: cleanUrl, Topic: req.Topic,
 		WriteToken: req.WriteToken, ReadToken: req.ReadToken, CaCert: req.CaCert,
 		Source: model.NotifierSourceExternal, RegisteredAt: time.Now(),
 	}
@@ -266,7 +304,7 @@ func RecentMessages(limit int) []model.NotifierMessage {
 	if limit <= 0 || limit > len(s.recent) {
 		limit = len(s.recent)
 	}
-	out := make([]model.NotifierMessage, 0, limit)
+	out := make([]model.NotifierMessage, 0, recentMessageMax)
 	for i := len(s.recent) - 1; i >= len(s.recent)-limit; i-- {
 		out = append(out, s.recent[i])
 	}

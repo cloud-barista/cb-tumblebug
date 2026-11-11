@@ -223,3 +223,40 @@ func TestReaderNameValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateEndpoint(t *testing.T) {
+	ok := map[string]string{
+		"https://ntfy.example.com":   "https://ntfy.example.com",
+		"https://ntfy.example.com/":  "https://ntfy.example.com",
+		"http://10.0.0.5:8080/ntfy/": "http://10.0.0.5:8080/ntfy",
+		"https://192.168.1.10":       "https://192.168.1.10",
+		"https://[fd00::1]:443":      "https://[fd00::1]:443",
+	}
+	for in, want := range ok {
+		got, err := validateEndpoint(in, "tb-topic_1")
+		if err != nil || got != want {
+			t.Fatalf("%s: got %q, %v (want %q)", in, got, err, want)
+		}
+	}
+	bad := []struct{ u, topic string }{
+		{"file:///etc/passwd", "t"},
+		{"gopher://host", "t"},
+		{"https://user:pw@host", "t"},
+		{"https://host/?x=1", "t"},
+		{"https://host/#frag", "t"},
+		{"http://169.254.169.254/latest/meta-data", "t"},
+		{"http://[fe80::1]", "t"},
+		{"http://0.0.0.0", "t"},
+		{"http://metadata.google.internal", "t"},
+		{"https://host", "bad/topic"},
+		{"https://host", "../admin"},
+		{"https://host", ""},
+		{"https://host", strings.Repeat("a", 65)},
+		{"not a url", "t"},
+	}
+	for _, c := range bad {
+		if _, err := validateEndpoint(c.u, c.topic); err == nil {
+			t.Fatalf("%s / %q must be rejected", c.u, c.topic)
+		}
+	}
+}
