@@ -14,6 +14,14 @@
         "rootDiskType": "gp3",
         "rootDiskSize": 30
       }
-    ]
+    ],
+    "sgTemplateId": "sg-usecase-web",
+    "initScript": {
+      "mode": "default",
+      "templateId": "initscript-nginx",
+      "env": {
+        "SITE_TITLE": "CB-Tumblebug web demo"
+      }
+    }
   }
 }

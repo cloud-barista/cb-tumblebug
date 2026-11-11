@@ -288,3 +288,37 @@ type K8sClusterTemplateApplyReq struct {
 type K8sClusterDynamicTemplateListResponse struct {
 	Templates []K8sClusterDynamicTemplateInfo `json:"templates"`
 }
+
+// [Template for Init Script]
+
+// InitScriptTemplateInfo is an init script template stored in ETCD. Templates in the system
+// namespace are shared; a namespace-local template with the same id takes precedence.
+type InitScriptTemplateInfo struct {
+	ResourceType string `json:"resourceType" example:"initScript"`
+	Id           string `json:"id" example:"initscript-hello"`
+	Name         string `json:"name" example:"initscript-hello"`
+	Description  string `json:"description" example:"Writes a first-boot marker"`
+	Source       string `json:"source" example:"user"`
+	CreatedAt    string `json:"createdAt" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt    string `json:"updatedAt" example:"2024-01-01T00:00:00Z"`
+
+	// Scripts run in order on the Node, each by bash with TB_* and env exported; the first failure stops the run
+	Scripts []InitScriptStep `json:"scripts"`
+	// Env is the default variables for every script; the request env overrides them
+	Env map[string]string `json:"env,omitempty" example:"ROLE:demo"`
+}
+
+// InitScriptTemplateReq is struct for creating/updating an init script Template.
+// Give either Scripts (ordered steps) or Script (shorthand for a single step).
+type InitScriptTemplateReq struct {
+	Name        string            `json:"name" validate:"required" example:"initscript-hello"`
+	Description string            `json:"description" example:"Writes a first-boot marker"`
+	Scripts     []InitScriptStep  `json:"scripts,omitempty"`
+	Script      string            `json:"script,omitempty" example:"#!/bin/bash\necho hello > /tmp/hello"`
+	Env         map[string]string `json:"env,omitempty" example:"ROLE:demo"`
+}
+
+// InitScriptTemplateListResponse is struct for listing init script Templates
+type InitScriptTemplateListResponse struct {
+	Templates []InitScriptTemplateInfo `json:"templates"`
+}

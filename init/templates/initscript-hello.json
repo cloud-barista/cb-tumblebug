@@ -1,0 +1,13 @@
+{
+  "resourceType": "initScript",
+  "name": "initscript-hello",
+  "description": "Sample first-boot script: writes /tmp/tb-init-hello with the node identity and ROLE",
+  "scripts": [
+    {
+      "script": "#!/bin/bash\n# TB_* variables identify this node; ROLE comes from the template env (overridable by the request env).\necho \"$TB_CSP/$TB_REGION $TB_NODE_ID booted at $(date -u +%FT%TZ) role=${ROLE:-}\" > /tmp/tb-init-hello\n"
+    }
+  ],
+  "env": {
+    "ROLE": "demo"
+  }
+}

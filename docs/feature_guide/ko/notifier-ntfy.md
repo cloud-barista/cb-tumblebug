@@ -66,7 +66,7 @@ flowchart LR
 | 구성 요소 | 역할 |
 |-----------|------|
 | `src/core/notifier` | 등록 저장(etcd `/system/notifier`), 재접속과 `since=` 이어받기를 갖춘 구독 goroutine, 발행, 왕복 테스트, 최근 메시지 버퍼, 소비자용 `RegisterHandler(kind, fn)` |
-| `src/core/notifier/scripts/install-ntfy.sh` | `//go:embed`로 바이너리에 포함되는 설치 스크립트. GitHub 릴리스의 ntfy `.deb`를 설치하고 토큰과 TLS를 설정 |
+| `src/core/embedded/scripts/install-ntfy.sh` | `//go:embed`로 바이너리에 포함되는 설치 스크립트. GitHub 릴리스의 ntfy `.deb`를 설치하고 토큰과 TLS를 설정 |
 | `init/templates/infra-ntfy.json`, `sg-ntfy.json` | VM 1대 템플릿(기본 AWS t3.micro)과 보안 그룹(443, 80, 22) |
 | `POST /tumblebug/notifier/ntfy` | 템플릿으로 프로비저닝 → (선택) Route53 레코드 → SSH로 설치 스크립트 실행 → 등록 → 왕복 테스트 |
 
@@ -207,7 +207,7 @@ CB-Tumblebug은 최근 200개 메시지를 메모리에 보관하고 마지막 �
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | `GET` | `/tumblebug/notifier` | 등록된 notifier. `showSecrets=true`가 아니면 토큰 마스킹 |
-| `PUT` | `/tumblebug/notifier` | 기존 ntfy 서버 등록 |
+| `PUT` | `/tumblebug/notifier` | 기존 ntfy 서버 등록. `url`은 `http(s)://host[:port][/path]` 형식(자격증명·query·fragment 불가, 링크로컬·메타데이터 주소 거부), `topic`은 `A-Za-z0-9_-` 1~64자 |
 | `DELETE` | `/tumblebug/notifier` | 등록 해제. `deleteInfra=true`면 관리형 인프라와 리소스도 삭제 |
 | `POST` | `/tumblebug/notifier/ntfy` | 템플릿으로 프로비저닝 후 등록. 본문: `nsId`, `templateId`, `name`, `domainName`, `recordName` (모두 선택) |
 | `POST` | `/tumblebug/notifier/test` | 발행/구독 왕복 테스트 |

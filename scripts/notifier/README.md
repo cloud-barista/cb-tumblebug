@@ -1,7 +1,7 @@
 # Notifier (ntfy) scripts
 
-The ntfy install script that `POST /tumblebug/notifier/ntfy` runs on the provisioned VM lives with the Go
-package that embeds it: [`src/core/notifier/scripts/install-ntfy.sh`](../../src/core/notifier/scripts/install-ntfy.sh).
+The ntfy install script that `POST /tumblebug/notifier/ntfy` runs on the provisioned VM lives in the embedded-scripts
+package: [`src/core/embedded/scripts/install-ntfy.sh`](../../src/core/embedded/scripts/install-ntfy.sh).
 It is compiled into the cb-tumblebug binary with `//go:embed`, so no network access to this repository is needed at runtime.
 
 To try a modified copy without rebuilding, place it at `$TB_ROOT_PATH/scripts/notifier/install-ntfy.sh`

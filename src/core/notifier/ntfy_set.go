@@ -15,7 +15,6 @@ package notifier
 
 import (
 	"context"
-	_ "embed"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -26,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/embedded"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -45,9 +45,6 @@ const (
 
 var readerNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{1,31}$`)
 
-//go:embed scripts/install-ntfy.sh
-var embeddedInstallScript string
-
 // installScript returns the ntfy install script, preferring an override on disk
 // (TB_ROOT_PATH/scripts/notifier/install-ntfy.sh) so it can be changed without a rebuild.
 func installScript() string {
@@ -57,7 +54,7 @@ func installScript() string {
 			return string(b)
 		}
 	}
-	return embeddedInstallScript
+	return embedded.InstallNtfy()
 }
 
 // withEnv prefixes a script with exported variables. Values are single-quoted; a quote in a value is rejected upstream.

@@ -68,7 +68,7 @@ flowchart LR
 | Component | Role |
 |-----------|------|
 | `src/core/notifier` | Registration store (etcd `/system/notifier`), subscriber goroutine with reconnect and `since=` resume, publish, round-trip test, recent-message buffer, `RegisterHandler(kind, fn)` for consumers |
-| `src/core/notifier/scripts/install-ntfy.sh` | Install script embedded with `//go:embed`; installs the ntfy `.deb` from GitHub releases, configures tokens and TLS |
+| `src/core/embedded/scripts/install-ntfy.sh` | Install script embedded with `//go:embed`; installs the ntfy `.deb` from GitHub releases, configures tokens and TLS |
 | `init/templates/infra-ntfy.json`, `sg-ntfy.json` | One-VM template (AWS t3.micro by default) and security group (443, 80, 22) |
 | `POST /tumblebug/notifier/ntfy` | Orchestrates: provision from template → optional Route53 record → run install script over SSH → register → round-trip test |
 
@@ -216,7 +216,7 @@ All endpoints are global (not namespaced) and require the CB-Tumblebug API crede
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/tumblebug/notifier` | Registered notifier. Tokens masked unless `showSecrets=true` |
-| `PUT` | `/tumblebug/notifier` | Register an existing ntfy server |
+| `PUT` | `/tumblebug/notifier` | Register an existing ntfy server. `url` must be `http(s)://host[:port][/path]` (no credentials, query or fragment; link-local and metadata addresses rejected) and `topic` 1-64 of `A-Za-z0-9_-` |
 | `DELETE` | `/tumblebug/notifier` | Unregister. `deleteInfra=true` also deletes the managed Infra and its resources |
 | `POST` | `/tumblebug/notifier/ntfy` | Provision from template and register. Body: `nsId`, `templateId`, `name`, `domainName`, `recordName` (all optional) |
 | `POST` | `/tumblebug/notifier/test` | Publish/subscribe round-trip test |

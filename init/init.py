@@ -1309,6 +1309,8 @@ if run_load_templates:
                         template_type = "securityGroup"
                     elif resource_type == "k8sCluster":
                         template_type = "k8sCluster"
+                    elif resource_type == "initScript":
+                        template_type = "initScript"
                     elif "infraDynamicReq" in template_data:
                         template_type = "infra"
                     elif "vNetReq" in template_data or "vNetPolicy" in template_data:
@@ -1317,6 +1319,8 @@ if run_load_templates:
                         template_type = "securityGroup"
                     elif "k8sMultiClusterDynamicReq" in template_data:
                         template_type = "k8sCluster"
+                    elif "scripts" in template_data or "script" in template_data:
+                        template_type = "initScript"
                     else:
                         print(
                             Fore.RED + f"  ❌ Cannot detect template type for {os.path.basename(tf)}: "

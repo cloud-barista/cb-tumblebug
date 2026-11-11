@@ -1193,3 +1193,181 @@ func CreateK8sClusterDynamicTemplateWithReq(nsId string, templateName string, de
 
 	return templateInfo, nil
 }
+
+// [Template for Init Script]
+
+// CreateInitScriptTemplate creates a new init script Template
+func CreateInitScriptTemplate(nsId string, req *model.InitScriptTemplateReq) (model.InitScriptTemplateInfo, error) {
+	emptyResult := model.InitScriptTemplateInfo{}
+	if err := validateInitScriptTemplateReq(req); err != nil {
+		return emptyResult, err
+	}
+	check, err := CheckNs(nsId)
+	if err != nil {
+		return emptyResult, err
+	}
+	if !check {
+		return emptyResult, fmt.Errorf("namespace '%s' does not exist", nsId)
+	}
+	key := GenTemplateKey(nsId, model.StrInitScript, req.Name)
+	_, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		return emptyResult, err
+	}
+	if exists {
+		return emptyResult, fmt.Errorf("initScript template '%s' already exists in namespace '%s'", req.Name, nsId)
+	}
+	now := time.Now().Format(time.RFC3339)
+	info := model.InitScriptTemplateInfo{
+		ResourceType: model.StrInitScript, Id: req.Name, Name: req.Name, Description: req.Description,
+		Source: "user", CreatedAt: now, UpdatedAt: now, Scripts: req.Scripts, Env: req.Env,
+	}
+	return info, putInitScriptTemplate(key, info)
+}
+
+// GetInitScriptTemplate retrieves an init script Template from one namespace
+func GetInitScriptTemplate(nsId string, templateId string) (model.InitScriptTemplateInfo, error) {
+	emptyResult := model.InitScriptTemplateInfo{}
+	if err := CheckString(nsId); err != nil {
+		return emptyResult, err
+	}
+	if err := CheckString(templateId); err != nil {
+		return emptyResult, err
+	}
+	keyValue, exists, err := kvstore.GetKv(GenTemplateKey(nsId, model.StrInitScript, templateId))
+	if err != nil {
+		return emptyResult, err
+	}
+	if !exists {
+		return emptyResult, fmt.Errorf("initScript template '%s' not found in namespace '%s'", templateId, nsId)
+	}
+	result := model.InitScriptTemplateInfo{}
+	if err := json.Unmarshal([]byte(keyValue.Value), &result); err != nil {
+		return emptyResult, err
+	}
+	return result, nil
+}
+
+// FindInitScriptTemplate looks a template up in nsId first and then in the shared system namespace.
+func FindInitScriptTemplate(nsId string, templateId string) (model.InitScriptTemplateInfo, error) {
+	info, err := GetInitScriptTemplate(nsId, templateId)
+	if err == nil || nsId == model.SystemCommonNs {
+		return info, err
+	}
+	if info, sysErr := GetInitScriptTemplate(model.SystemCommonNs, templateId); sysErr == nil {
+		return info, nil
+	}
+	return info, fmt.Errorf("initScript template '%s' not found in namespace '%s' or '%s'", templateId, nsId, model.SystemCommonNs)
+}
+
+// ListInitScriptTemplate lists init script Templates in a namespace, optionally filtered by a keyword in name or description
+func ListInitScriptTemplate(nsId string, filterKeyword string) ([]model.InitScriptTemplateInfo, error) {
+	if err := CheckString(nsId); err != nil {
+		return nil, err
+	}
+	check, err := CheckNs(nsId)
+	if err != nil {
+		return nil, err
+	}
+	if !check {
+		return nil, fmt.Errorf("namespace '%s' does not exist", nsId)
+	}
+	key := GenTemplateKey(nsId, model.StrInitScript, "")
+	keyValue, err := kvstore.GetKvList(key)
+	if err != nil {
+		return nil, err
+	}
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
+	keyword := strings.ToLower(strings.TrimSpace(filterKeyword))
+	templates := []model.InitScriptTemplateInfo{}
+	for _, v := range keyValue {
+		t := model.InitScriptTemplateInfo{}
+		if err := json.Unmarshal([]byte(v.Value), &t); err != nil {
+			log.Error().Err(err).Msg("failed to unmarshal initScript template")
+			continue
+		}
+		if keyword != "" && !strings.Contains(strings.ToLower(t.Name), keyword) && !strings.Contains(strings.ToLower(t.Description), keyword) {
+			continue
+		}
+		templates = append(templates, t)
+	}
+	return templates, nil
+}
+
+// UpdateInitScriptTemplate replaces the script, env and description of an existing init script Template
+func UpdateInitScriptTemplate(nsId string, templateId string, req *model.InitScriptTemplateReq) (model.InitScriptTemplateInfo, error) {
+	existing, err := GetInitScriptTemplate(nsId, templateId)
+	if err != nil {
+		return existing, err
+	}
+	if req.Name == "" {
+		req.Name = templateId
+	}
+	if req.Name != templateId {
+		return model.InitScriptTemplateInfo{}, fmt.Errorf("template name '%s' must match the template id '%s'", req.Name, templateId)
+	}
+	if err := validateInitScriptTemplateReq(req); err != nil {
+		return model.InitScriptTemplateInfo{}, err
+	}
+	existing.Description, existing.Scripts, existing.Env = req.Description, req.Scripts, req.Env
+	existing.UpdatedAt = time.Now().Format(time.RFC3339)
+	return existing, putInitScriptTemplate(GenTemplateKey(nsId, model.StrInitScript, templateId), existing)
+}
+
+// DeleteInitScriptTemplate deletes an init script Template
+func DeleteInitScriptTemplate(nsId string, templateId string) error {
+	if _, err := GetInitScriptTemplate(nsId, templateId); err != nil {
+		return err
+	}
+	return kvstore.Delete(GenTemplateKey(nsId, model.StrInitScript, templateId))
+}
+
+// DeleteAllInitScriptTemplate deletes all init script Templates in a namespace
+func DeleteAllInitScriptTemplate(nsId string) error {
+	templates, err := ListInitScriptTemplate(nsId, "")
+	if err != nil {
+		return err
+	}
+	for _, t := range templates {
+		if err := DeleteInitScriptTemplate(nsId, t.Id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateInitScriptTemplateReq checks the request and folds the Script shorthand into Scripts.
+func validateInitScriptTemplateReq(req *model.InitScriptTemplateReq) error {
+	if err := CheckString(req.Name); err != nil {
+		return fmt.Errorf("invalid template name: %w", err)
+	}
+	if strings.TrimSpace(req.Script) != "" {
+		req.Scripts = append([]model.InitScriptStep{{Script: req.Script}}, req.Scripts...)
+		req.Script = ""
+	}
+	if len(req.Scripts) == 0 {
+		return fmt.Errorf("initScript template '%s': scripts (or script) is required", req.Name)
+	}
+	total := 0
+	for i, st := range req.Scripts {
+		if strings.TrimSpace(st.Script) == "" {
+			return fmt.Errorf("initScript template '%s': scripts[%d] has an empty script", req.Name, i)
+		}
+		if st.Name != "" && !model.IsInitScriptName(st.Name) {
+			return fmt.Errorf("initScript template '%s': scripts[%d].name %q may only contain letters, digits, '.', '_' and '-'", req.Name, i, st.Name)
+		}
+		total += len(st.Script)
+	}
+	if total > model.InitScriptMaxBytes {
+		return fmt.Errorf("initScript template '%s': scripts total %d bytes; the limit is %d bytes", req.Name, total, model.InitScriptMaxBytes)
+	}
+	return model.ValidateInitScriptEnv(req.Env)
+}
+
+func putInitScriptTemplate(key string, info model.InitScriptTemplateInfo) error {
+	val, err := json.Marshal(info)
+	if err != nil {
+		return err
+	}
+	return kvstore.Put(key, string(val))
+}
