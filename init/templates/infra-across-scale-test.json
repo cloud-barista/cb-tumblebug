@@ -4,7 +4,6 @@
   "description": "Scale test template: measure how many VMs can be created per CSP in Korea-nearby regions. nodeGroupSize is the size that actually provisioned in the latest run (2026-08-23, 808 requested / 677 running); per-group descriptions record the observed limit and its cause (account quota vs. zone stock).",
   "infraDynamicReq": {
     "policyOnPartialFailure": "continue",
-    "installMonAgent": "no",
     "nodeGroups": [
       {
         "name": "g1-alibaba-ap-northeast-2",

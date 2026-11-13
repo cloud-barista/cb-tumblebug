@@ -141,8 +141,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
 done
 
 # Construct the request body with the accumulated JSON array
-installMonAgent="no"
-requestBody=$(jq -n --arg name "$infraName" --arg installMonAgent "$installMonAgent" --argjson vm "$vmArray" '{name: $name, installMonAgent: $installMonAgent , vm: $vm}')
+requestBody=$(jq -n --arg name "$infraName" --argjson vm "$vmArray" '{name: $name, vm: $vm}')
 echo "requestBody: $requestBody"
 
 if [ "${option}" == "delete" ]; then

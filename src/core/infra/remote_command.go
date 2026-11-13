@@ -518,6 +518,32 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 		err      error
 	}
 	preCh := make(chan preResult, len(nodeList))
+	// templateId/scripts run through the init script runner (as root, TB_* exported); plain commands get the
+	// request env exported in front of them
+	var runnerSteps []model.InitScriptStep
+	var runnerEnv map[string]string
+	runnerLabel, envPrefix := "", ""
+	if req.TemplateId != "" || len(req.Scripts) > 0 {
+		steps, env, err := ResolveRemoteInitSteps(nsId, req.TemplateId, req.Scripts, req.Env)
+		if err != nil {
+			return nil, err
+		}
+		runnerSteps, runnerEnv = steps, env
+		names := make([]string, 0, len(steps))
+		for _, st := range steps {
+			names = append(names, st.Name)
+		}
+		runnerLabel = fmt.Sprintf("init script steps [%s]", strings.Join(names, ", "))
+		if req.TemplateId != "" {
+			runnerLabel = "init script template " + req.TemplateId + " " + strings.TrimPrefix(runnerLabel, "init script ")
+		}
+	} else if len(req.Env) > 0 {
+		if err := model.ValidateInitScriptEnv(req.Env); err != nil {
+			return nil, err
+		}
+		envPrefix = strings.ReplaceAll(exportLines(req.Env), "\n", "; ")
+	}
+
 	preSem := make(chan struct{}, preprocessConcurrency)
 	var preWg sync.WaitGroup
 	for i, targetNodeId := range nodeList {
@@ -527,17 +553,32 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			preSem <- struct{}{}
 			defer func() { <-preSem }()
 
-			processedCommands := make([]string, len(req.Command))
-			for j, cmd := range req.Command {
-				processedCmd, err := processCommand(cmd, nsId, infraId, targetNodeId, i)
+			var processedCommands []string
+			if runnerSteps != nil {
+				// init script template or steps: one runner command per Node with its own identity env
+				node, err := GetNodeObject(nsId, infraId, targetNodeId)
 				if err != nil {
 					preCh <- preResult{nodeId: targetNodeId, err: err}
 					return
 				}
-				processedCommands[j] = processedCmd
+				processedCommands = []string{InitScriptRunnerCommand(nsId, infraId, &node, runnerSteps, runnerEnv)}
+			} else {
+				processedCommands = make([]string, len(req.Command))
+				for j, cmd := range req.Command {
+					processedCmd, err := processCommand(cmd, nsId, infraId, targetNodeId, i)
+					if err != nil {
+						preCh <- preResult{nodeId: targetNodeId, err: err}
+						return
+					}
+					processedCommands[j] = envPrefix + processedCmd
+				}
 			}
 			combinedCommand := strings.Join(req.Command, " && ")
-			combinedProcessedCommand := strings.Join(processedCommands, " && ")
+			if runnerSteps != nil {
+				combinedCommand = runnerLabel
+			}
+			// the history keeps the display form: the runner payload and env values carry tokens and secrets
+			combinedProcessedCommand := displayCommand(strings.Join(processedCommands, " && "))
 			cmdIndex, err := AddCommandStatusInfo(nsId, infraId, targetNodeId, xRequestId, combinedCommand, combinedProcessedCommand)
 			if err != nil {
 				// AddCommandStatusInfo failure is non-fatal: we still run the
@@ -780,7 +821,7 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, no
 	}
 
 	for i, c := range cmds {
-		result.Command[i] = c
+		result.Command[i] = displayCommand(c)
 	}
 
 	// Update status to Handling
@@ -992,18 +1033,24 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 	default:
 	}
 
-	// Set Bastion SSH config (bastionEndpoint, userName, Private Key).
-	// GetUsableBastionNodes drops a stale (non-Running) bastion and
-	// auto-selects a fresh one when needed.
-	bastionNodes, err := GetUsableBastionNodes(nsId, infraId, nodeId)
+	// The bastion is picked per attempt: an auto-assigned one that cannot be reached is replaced by another
+	stdoutResults, stderrResults := map[int]string{}, map[int]string{}
+	err = withBastionFailover(nsId, infraId, nodeId, func(bastionNode model.BastionNode) error {
+		var runErr error
+		stdoutResults, stderrResults, runErr = runRemoteCommandVia(ctx, nsId, infraId, nodeId, bastionNode,
+			targetNodeIP, targetSshPort, targetUserName, targetPrivateKey, cmds)
+		return runErr
+	})
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return map[int]string{}, map[int]string{}, err
 	}
+	return stdoutResults, stderrResults, err
+}
 
-	// Spread load across the subnet's bastions when more than one is
-	// registered; deterministic per target so retries reuse the same hop.
-	bastionNode := pickBastion(bastionNodes, nsId, infraId, nodeId)
+// runRemoteCommandVia runs the commands on the target through the given bastion (the target itself dials directly).
+func runRemoteCommandVia(ctx context.Context, nsId, infraId, nodeId string, bastionNode model.BastionNode,
+	targetNodeIP string, targetSshPort int, targetUserName, targetPrivateKey string, cmds []string) (map[int]string, map[int]string, error) {
+	var err error
 
 	// Validate bastion node has valid Node ID
 	if bastionNode.NodeId == "" {
@@ -1113,7 +1160,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 
 	log.Debug().Msg("[SSH] " + infraId + "." + nodeId + "(" + targetNodeIP + ")" + " with userName: " + targetUserName)
 	for i, v := range cmds {
-		log.Debug().Msg("[SSH] cmd[" + fmt.Sprint(i) + "]: " + v)
+		log.Debug().Msg("[SSH] cmd[" + fmt.Sprint(i) + "]: " + displayCommand(v))
 	}
 
 	// Set Node SSH config (targetEndpoint, userName, Private Key)
@@ -1189,7 +1236,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, infraId string, node
 	sshResultTmp.NodeIp = nodeIP
 	sshResultTmp.Command = make(map[int]string)
 	for i, c := range cmd {
-		sshResultTmp.Command[i] = c
+		sshResultTmp.Command[i] = displayCommand(c)
 	}
 
 	if err != nil {
@@ -1254,7 +1301,7 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, infraId st
 	sshResultTmp.NodeIp = nodeIP
 	sshResultTmp.Command = make(map[int]string)
 	for i, c := range cmd {
-		sshResultTmp.Command[i] = c
+		sshResultTmp.Command[i] = displayCommand(c)
 	}
 
 	// Update status to Handling
@@ -2091,4 +2138,19 @@ func replaceWithLocation(nsId, infraId, nodeId string) (model.Location, error) {
 		return model.Location{}, err
 	}
 	return nodeInfo.Location, nil
+}
+
+var (
+	runnerCommandPattern = regexp.MustCompile(`echo [A-Za-z0-9+/=]{64,} \| base64 -d \| sudo bash`)
+	exportedValuePattern = regexp.MustCompile(`(export [A-Za-z_][A-Za-z0-9_]*=)'[^']*'`)
+)
+
+// displayCommand returns cmd in the form used for logs, the command history and API results. The init script
+// runner payload (base64 of the scripts and their exports) and exported env values are replaced: both carry
+// the report token or user secrets, and base64 is not masked by the log writer.
+func displayCommand(cmd string) string {
+	cmd = runnerCommandPattern.ReplaceAllStringFunc(cmd, func(m string) string {
+		return fmt.Sprintf("[init script runner, %d bytes]", len(m))
+	})
+	return exportedValuePattern.ReplaceAllString(cmd, "${1}********")
 }

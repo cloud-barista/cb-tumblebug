@@ -32,7 +32,7 @@ import (
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param option query string false "summary returns the counts only" Enums(default, summary)
-// @Param status query string false "Only list Nodes with this status" Enums(initializing, ok, fail, pending, notApplicable)
+// @Param status query string false "Only list Nodes with this status" Enums(initializing, ok, fail, pending, noReport, notApplicable)
 // @Success 200 {object} model.InfraInitScriptStatus "Init script results"
 // @Failure 404 {object} model.SimpleMsg "Infra not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"

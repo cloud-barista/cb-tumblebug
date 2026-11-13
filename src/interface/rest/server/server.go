@@ -115,6 +115,7 @@ func RunServer() {
 	// Middleware
 
 	e.Use(middlewares.Zerologger(logfilter.APISkipPatterns))
+	e.Use(middlewares.SlowRequestLogger(logfilter.APISkipPatterns, 2*time.Second))
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
@@ -213,6 +214,16 @@ func RunServer() {
 	e.POST("/tumblebug/notifier/reader", rest_common.RestPostNotifierReader)
 	e.GET("/tumblebug/notifier/reader", rest_common.RestGetNotifierReaders)
 	e.DELETE("/tumblebug/notifier/reader/:name", rest_common.RestDeleteNotifierReader)
+
+	// Observability (OTel endpoint + Grafana that Nodes send metrics and logs to)
+	e.GET("/tumblebug/observability", rest_common.RestGetObservability)
+	e.PUT("/tumblebug/observability", rest_common.RestPutObservability)
+	e.DELETE("/tumblebug/observability", rest_common.RestDeleteObservability)
+	e.POST("/tumblebug/observability/stack", rest_common.RestPostObservabilityStack)
+	e.POST("/tumblebug/observability/test", rest_common.RestPostObservabilityTest)
+	e.POST("/tumblebug/observability/reader", rest_common.RestPostObservabilityReader)
+	e.GET("/tumblebug/observability/reader", rest_common.RestGetObservabilityReaders)
+	e.DELETE("/tumblebug/observability/reader/:name", rest_common.RestDeleteObservabilityReader)
 
 	allowedOrigins := os.Getenv("TB_ALLOW_ORIGINS")
 	if allowedOrigins == "" {
@@ -581,10 +592,6 @@ func RunServer() {
 	g.PUT("/:nsId/policy/infra/:infraId", rest_infra.RestPutInfraPolicy)
 	g.DELETE("/:nsId/policy/infra/:infraId", rest_infra.RestDelInfraPolicy)
 	g.DELETE("/:nsId/policy/infra", rest_infra.RestDelAllInfraPolicy)
-
-	g.POST("/:nsId/monitoring/install/infra/:infraId", rest_infra.RestPostInstallMonitorAgentToInfra)
-	g.GET("/:nsId/monitoring/infra/:infraId/metric/:metric", rest_infra.RestGetMonitorData)
-	g.PUT("/:nsId/monitoring/status/infra/:infraId/node/:nodeId", rest_infra.RestPutMonitorAgentStatusInstalled)
 
 	// K8sCluster
 	e.GET("/tumblebug/availableK8sVersion", rest_resource.RestGetAvailableK8sVersion)

@@ -8,11 +8,13 @@ package infra
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -51,6 +53,127 @@ func releaseBastionSlot(bastionEndpoint string) {
 	}
 }
 
+// bastionUnreachableError reports that the bastion itself could not be reached, before the target was contacted.
+type bastionUnreachableError struct{ err error }
+
+func (e *bastionUnreachableError) Error() string { return e.err.Error() }
+func (e *bastionUnreachableError) Unwrap() error { return e.err }
+
+func isBastionUnreachable(err error) bool {
+	var e *bastionUnreachableError
+	return errors.As(err, &e)
+}
+
+// bastionCooldown is how long an auto-assigned bastion that could not be reached is passed over.
+const bastionCooldown = 5 * time.Minute
+
+// maxBastionFailovers bounds how many other bastions one request tries after the first one fails.
+const maxBastionFailovers = 2
+
+// unreachableBastions maps "ns/infra/node" to the time until which that bastion is passed over.
+var unreachableBastions sync.Map
+
+func bastionKey(defaultNsId string, b model.BastionNode) string {
+	bNsId := b.NsId
+	if bNsId == "" {
+		bNsId = defaultNsId
+	}
+	return bNsId + "/" + b.InfraId + "/" + b.NodeId
+}
+
+func markBastionUnreachable(defaultNsId string, b model.BastionNode) {
+	unreachableBastions.Store(bastionKey(defaultNsId, b), time.Now().Add(bastionCooldown))
+}
+
+func bastionCoolingDown(defaultNsId string, b model.BastionNode) bool {
+	key := bastionKey(defaultNsId, b)
+	until, ok := unreachableBastions.Load(key)
+	if !ok {
+		return false
+	}
+	if time.Now().After(until.(time.Time)) {
+		unreachableBastions.Delete(key)
+		return false
+	}
+	return true
+}
+
+// reachableBastions drops auto-assigned bastions that recently could not be reached. Entries an operator
+// registered stay, so a request reports their failure instead of routing around the operator's choice.
+func reachableBastions(defaultNsId string, bastions []model.BastionNode) []model.BastionNode {
+	kept := []model.BastionNode{}
+	for _, b := range bastions {
+		if b.Assigned != model.BastionAssignedAuto || !bastionCoolingDown(defaultNsId, b) {
+			kept = append(kept, b)
+		}
+	}
+	return kept
+}
+
+// needsInfraBastion reports whether auto-assignment should add a bastion of this Infra to the subnet: every
+// entry is auto-assigned and none that can be reached belongs to the Infra. A shared subnet otherwise keeps
+// routing this Infra through another Infra's Node, which can stop answering on its own.
+func needsInfraBastion(bastions []model.BastionNode, nsId, infraId string) bool {
+	for _, b := range bastions {
+		if b.Assigned != model.BastionAssignedAuto {
+			return false
+		}
+		if isSameBastion(b, nsId, nsId, infraId, b.NodeId) && !bastionCoolingDown(nsId, b) {
+			return false
+		}
+	}
+	return true
+}
+
+// withBastionFailover runs fn through the bastion picked for the target. When that bastion cannot be reached
+// and was auto-assigned, it is passed over for bastionCooldown and fn runs again through another one. The
+// target has not been contacted at that point, so nothing is repeated on it.
+func withBastionFailover(nsId, infraId, nodeId string, fn func(bastion model.BastionNode) error) error {
+	bastions, err := GetUsableBastionNodes(nsId, infraId, nodeId)
+	if err != nil {
+		return err
+	}
+	refill := func() []model.BastionNode {
+		if _, asgErr := SetBastionNodes(nsId, infraId, nodeId, "", "", ""); asgErr != nil {
+			log.Debug().Err(asgErr).Str("nodeId", nodeId).Msg("no further bastion assigned")
+		}
+		more, getErr := GetUsableBastionNodes(nsId, infraId, nodeId)
+		if getErr != nil {
+			return nil
+		}
+		return more
+	}
+	return runWithBastionFailover(nsId, infraId, nodeId, bastions, refill, fn)
+}
+
+func runWithBastionFailover(nsId, infraId, nodeId string, bastions []model.BastionNode, refill func() []model.BastionNode, fn func(bastion model.BastionNode) error) error {
+	var err error
+	for attempt := 0; ; attempt++ {
+		candidates := reachableBastions(nsId, bastions)
+		if len(candidates) == 0 && refill != nil {
+			if more := refill(); len(more) > 0 {
+				bastions = more
+				candidates = reachableBastions(nsId, bastions)
+			}
+		}
+		if len(candidates) == 0 {
+			if err != nil {
+				return err
+			}
+			// set aside by earlier requests and nothing else to use: dial it rather than fail untried
+			candidates = bastions
+		}
+		bastion := pickBastion(candidates, nsId, infraId, nodeId)
+		err = fn(bastion)
+		if err == nil || !isBastionUnreachable(err) || bastion.Assigned != model.BastionAssignedAuto || attempt >= maxBastionFailovers {
+			return err
+		}
+		markBastionUnreachable(nsId, bastion)
+		log.Warn().Err(err).Str("nodeId", nodeId).Str("bastionInfraId", bastion.InfraId).Str("bastionNodeId", bastion.NodeId).
+			Msg("bastion unreachable, set aside for a while")
+	}
+}
+
 // SetBastionNodes func sets bastion nodes
 func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNsId string, bastionInfraId string, bastionNodeId string) (string, error) {
 
@@ -68,9 +191,13 @@ func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNs
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	if len(currentBastion) > 0 && bastionNodeId == "" {
-		return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in Infra (ID: %s) under namespace (ID: %s)",
-			targetNodeId, infraId, nsId)
+	if bastionNodeId == "" {
+		// auto-assignment from the target's own Infra adds to another Infra's auto entries; otherwise one is enough
+		ownInfra := bastionNsId == nsId && bastionInfraId == infraId
+		if (ownInfra && !needsInfraBastion(currentBastion, nsId, infraId)) || (!ownInfra && len(currentBastion) > 0) {
+			return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in Infra (ID: %s) under namespace (ID: %s)",
+				targetNodeId, infraId, nsId)
+		}
 	}
 
 	nodeObj, err := GetNodeObject(nsId, infraId, targetNodeId)
@@ -107,20 +234,27 @@ func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNs
 				// For same-Infra, prefer VMs in the same subnet (original behaviour).
 				// For cross-Infra/cross-NS, search all VMs in bastionNsId/bastionInfraId.
 				isSameInfra := bastionNsId == nsId && bastionInfraId == infraId
+				storeKnowsSubnet := false
+				if isSameInfra {
+					bastionNodeId, storeKnowsSubnet = pickBastionInSubnet(nsId, infraId, nodeObj)
+				}
 				var candidateNodes []string
 				var listErr error
-				if isSameInfra {
-					candidateNodes, listErr = ListNodeByFilter(nsId, infraId, "subnetId", nodeObj.SubnetId)
-					if listErr != nil || len(candidateNodes) == 0 {
-						// Fall back to all VMs in the Infra if no VM found in the subnet
-						candidateNodes, listErr = ListNodeByFilter(nsId, infraId, "", "")
+				if bastionNodeId == "" && !storeKnowsSubnet {
+					// another Infra, or the status store holds no Node of this subnet yet: list from etcd
+					if isSameInfra {
+						candidateNodes, listErr = ListNodeByFilter(nsId, infraId, "subnetId", nodeObj.SubnetId)
+						if listErr != nil || len(candidateNodes) == 0 {
+							// Fall back to all VMs in the Infra if no VM found in the subnet
+							candidateNodes, listErr = ListNodeByFilter(nsId, infraId, "", "")
+						}
+					} else {
+						candidateNodes, listErr = ListNodeByFilter(bastionNsId, bastionInfraId, "", "")
 					}
-				} else {
-					candidateNodes, listErr = ListNodeByFilter(bastionNsId, bastionInfraId, "", "")
-				}
-				if listErr != nil {
-					log.Error().Err(listErr).Msg("")
-					return "", fmt.Errorf("failed to list VMs in Infra (ID: %s): %w", bastionInfraId, listErr)
+					if listErr != nil {
+						log.Error().Err(listErr).Msg("")
+						return "", fmt.Errorf("failed to list VMs in Infra (ID: %s): %w", bastionInfraId, listErr)
+					}
 				}
 
 				// Find a Running VM with public IP to use as bastion — a stopped
@@ -253,7 +387,8 @@ func RemoveBastionNodes(nsId string, infraId string, bastionNsId string, bastion
 					// When bastionNsId/bastionInfraId are provided, also match on them
 					// so that two bastions with the same NodeId but different Infras are
 					// not accidentally conflated.
-					if bastionInfraId != "" {
+					// an entry without an Infra id predates the field and still matches by Node id alone
+					if bastionInfraId != "" && node.InfraId != "" {
 						effectiveNsId := node.NsId
 						if effectiveNsId == "" {
 							effectiveNsId = nsId
@@ -277,6 +412,30 @@ func RemoveBastionNodes(nsId string, infraId string, bastionNsId string, bastion
 		}
 	}
 	return fmt.Sprintf("Successfully removed the bastion (ID: %s) in Infra (ID: %s) from all subnets", bastionNodeId, infraId), nil
+}
+
+// pickBastionInSubnet chooses a Running Node with a public IP in the target's subnet without reading any Node
+// object: the target itself when it qualifies, otherwise the lowest-id one in the status store. known reports
+// whether the store holds a Node of that subnet, i.e. whether an empty result is conclusive.
+// On a large Infra the first Nodes of every subnet finish creation together; listing the whole Infra from etcd
+// once per such Node (hundreds at a time) flooded etcd for minutes.
+func pickBastionInSubnet(nsId, infraId string, target model.NodeInfo) (nodeId string, known bool) {
+	setAside := func(id string) bool {
+		return bastionCoolingDown(nsId, model.BastionNode{NsId: nsId, InfraId: infraId, NodeId: id})
+	}
+	if strings.EqualFold(target.Status, model.StatusRunning) && target.PublicIP != "" && !setAside(target.Id) {
+		return target.Id, true
+	}
+	for _, e := range globalStatusStore.Snapshot() {
+		if e.NsId != nsId || e.InfraId != infraId || e.SubnetId != target.SubnetId {
+			continue
+		}
+		known = true
+		if strings.EqualFold(e.Status, model.StatusRunning) && e.PublicIP != "" && !setAside(e.NodeId) && (nodeId == "" || e.NodeId < nodeId) {
+			nodeId = e.NodeId
+		}
+	}
+	return nodeId, known
 }
 
 // GetBastionNodes func retrieves bastion nodes for a given VM
@@ -484,8 +643,18 @@ func pickBastion(bastions []model.BastionNode, nsId string, infraId string, targ
 		}
 	}
 	if len(candidates) == 0 {
-		nonSelf := []model.BastionNode{}
+		// bastions of the target's own Infra come first: another Infra's Node can go away or stop answering
+		pool := []model.BastionNode{}
 		for _, b := range bastions {
+			if isSameBastion(b, nsId, nsId, infraId, b.NodeId) {
+				pool = append(pool, b)
+			}
+		}
+		if len(pool) == 0 {
+			pool = bastions
+		}
+		nonSelf := []model.BastionNode{}
+		for _, b := range pool {
 			if !isSelf(b) {
 				nonSelf = append(nonSelf, b)
 			}
@@ -493,7 +662,7 @@ func pickBastion(bastions []model.BastionNode, nsId string, infraId string, targ
 		if len(nonSelf) > 0 {
 			candidates = nonSelf
 		} else {
-			candidates = bastions
+			candidates = pool
 		}
 	}
 	if len(candidates) == 0 {

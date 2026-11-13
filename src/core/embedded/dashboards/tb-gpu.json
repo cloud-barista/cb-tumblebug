@@ -1,0 +1,2564 @@
+{
+ "uid": "tb-gpu",
+ "title": "TB GPU",
+ "description": "GPU fleet at a glance, one row per GPU, fleet trends, and a chart per GPU on demand. Metrics come from the nvidia-smi exporter the node agent installs.",
+ "tags": [
+  "cb-tumblebug"
+ ],
+ "editable": true,
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 3,
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "fiscalYearStartMonth": 0,
+ "weekStart": "",
+ "annotations": {
+  "list": []
+ },
+ "links": [
+  {
+   "type": "dashboards",
+   "tags": [
+    "cb-tumblebug"
+   ],
+   "asDropdown": true,
+   "title": "TB dashboards",
+   "includeVars": true,
+   "keepTime": true,
+   "icon": "external link",
+   "tooltip": "",
+   "url": ""
+  }
+ ],
+ "templating": {
+  "list": [
+   {
+    "name": "ns",
+    "label": "Namespace",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "label_values(nvidia_smi_gpu_info, tb_ns)",
+    "query": "label_values(nvidia_smi_gpu_info, tb_ns)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "infra",
+    "label": "Infra",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "label_values(nvidia_smi_gpu_info{tb_ns=~\"$ns\"}, tb_infra)",
+    "query": "label_values(nvidia_smi_gpu_info{tb_ns=~\"$ns\"}, tb_infra)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "node",
+    "label": "Node",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "label_values(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_node)",
+    "query": "label_values(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_node)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "gpu",
+    "label": "GPU",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "query_result(label_join(last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]), \"gpu\", \" #\", \"job\", \"index\"))",
+    "query": "query_result(label_join(last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]), \"gpu\", \" #\", \"job\", \"index\"))",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    },
+    "regex": "/gpu=\"(?<text>[^\"]+)\".*uuid=\"(?<value>[^\"]+)\"/"
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "At a glance",
+   "collapsed": false,
+   "panels": [],
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "GPUs reporting",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "count(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Nodes with GPUs",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "count(count by (tb_ns,tb_infra,tb_node) (nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 3,
+   "gridPos": {
+    "x": 3,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Avg utilization",
+   "description": "Average over all GPUs",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 4,
+   "gridPos": {
+    "x": 6,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Idle GPUs",
+   "description": "GPUs under 5% utilization for the last 10 minutes",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       },
+       {
+        "color": "#fab219",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "(count(avg_over_time(nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[10m]) < 0.05) or vector(0)) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 0)",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 5,
+   "gridPos": {
+    "x": 9,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Memory in use",
+   "description": "Used share of the memory of all GPUs",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       },
+       {
+        "color": "#fab219",
+        "value": 0.9
+       },
+       {
+        "color": "#d03b3b",
+        "value": 0.97
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_used_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) / sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_total_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 6,
+   "gridPos": {
+    "x": 12,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Hottest GPU",
+   "description": "Highest GPU temperature; 75 and 85 degrees mark warning and critical",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#0ca30c",
+        "value": null
+       },
+       {
+        "color": "#fab219",
+        "value": 75
+       },
+       {
+        "color": "#d03b3b",
+        "value": 85
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "celsius"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_temperature_gpu{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 7,
+   "gridPos": {
+    "x": 15,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Total power",
+   "description": "Draw of all GPUs",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "watt",
+     "decimals": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_power_draw_watts{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 8,
+   "gridPos": {
+    "x": 18,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Exporter failures",
+   "description": "Nodes whose GPU exporter could not read nvidia-smi for most of the last five minutes",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#0ca30c",
+        "value": null
+       },
+       {
+        "color": "#d03b3b",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "(count(avg_over_time(nvidia_smi_last_collect_success{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[5m]) < 0.5) or vector(0)) and on () (count(nvidia_smi_last_collect_success{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}) > 0)",
+     "legendFormat": "",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 9,
+   "gridPos": {
+    "x": 21,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "row",
+   "title": "GPUs",
+   "collapsed": false,
+   "panels": [],
+   "id": 10,
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "table",
+   "title": "Last values per GPU",
+   "description": "The last values each GPU reported in the time range. The node name links to the node dashboards.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "transformations": [
+    {
+     "id": "merge",
+     "options": {}
+    },
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "uuid": true
+      },
+      "renameByName": {
+       "tb_ns": "ns",
+       "tb_infra": "infra",
+       "tb_node": "node",
+       "index": "gpu",
+       "name": "model",
+       "driver_version": "driver",
+       "Value #B": "Utilization",
+       "Value #C": "Memory used",
+       "Value #D": "Used",
+       "Value #E": "Total",
+       "Value #F": "Temperature",
+       "Value #G": "Power",
+       "Value #H": "Power limit",
+       "Value #I": "Last seen"
+      },
+      "indexByName": {
+       "Time": 0,
+       "tb_ns": 1,
+       "tb_infra": 2,
+       "tb_node": 3,
+       "index": 4,
+       "name": 5,
+       "driver_version": 6,
+       "uuid": 7,
+       "Value #B": 8,
+       "Value #C": 9,
+       "Value #D": 10,
+       "Value #E": 11,
+       "Value #F": 12,
+       "Value #G": 13,
+       "Value #H": 14,
+       "Value #I": 15
+      }
+     }
+    }
+   ],
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    },
+    "sortBy": [
+     {
+      "displayName": "Utilization",
+      "desc": true
+     }
+    ]
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      },
+      "filterable": true
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "ns"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 130
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "infra"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 150
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "node"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 110
+       },
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Node detail",
+          "url": "/d/tb-node-detail?var-ns=${__data.fields.ns}&var-infra=${__data.fields.infra}&var-node=${__data.fields.node}&${__url_time_range}"
+         },
+         {
+          "title": "Node logs",
+          "url": "/d/tb-node-logs?var-ns=${__data.fields.ns}&var-infra=${__data.fields.infra}&var-node=${__data.fields.node}&${__url_time_range}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "gpu"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 60
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "model"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 170
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "driver"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 120
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Utilization"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percentunit"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "min",
+        "value": 0
+       },
+       {
+        "id": "max",
+        "value": 1
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "gauge",
+         "mode": "basic",
+         "valueDisplayMode": "text"
+        }
+       },
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Memory used"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percentunit"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "min",
+        "value": 0
+       },
+       {
+        "id": "max",
+        "value": 1
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "gauge",
+         "mode": "basic",
+         "valueDisplayMode": "text"
+        }
+       },
+       {
+        "id": "color",
+        "value": {
+         "mode": "thresholds"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "#3987e5",
+           "value": null
+          },
+          {
+           "color": "#fab219",
+           "value": 0.9
+          },
+          {
+           "color": "#d03b3b",
+           "value": 0.97
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Used"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "bytes"
+       },
+       {
+        "id": "decimals",
+        "value": 1
+       },
+       {
+        "id": "custom.width",
+        "value": 100
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Total"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "bytes"
+       },
+       {
+        "id": "decimals",
+        "value": 1
+       },
+       {
+        "id": "custom.width",
+        "value": 100
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Temperature"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "celsius"
+       },
+       {
+        "id": "custom.width",
+        "value": 120
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "color",
+        "value": {
+         "mode": "thresholds"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "#0ca30c",
+           "value": null
+          },
+          {
+           "color": "#fab219",
+           "value": 75
+          },
+          {
+           "color": "#d03b3b",
+           "value": 85
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Power"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "watt"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.width",
+        "value": 90
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Power limit"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "watt"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.width",
+        "value": 110
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Last seen"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "dateTimeFromNow"
+       },
+       {
+        "id": "custom.width",
+        "value": 140
+       }
+      ]
+     }
+    ]
+   },
+   "targets": [
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range])) * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "(max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_memory_used_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range])) / max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_memory_total_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))) * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_memory_used_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range])) * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    },
+    {
+     "refId": "E",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_memory_total_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range])) * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    },
+    {
+     "refId": "F",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_temperature_gpu{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range])) * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    },
+    {
+     "refId": "G",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_power_draw_watts{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range])) * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    },
+    {
+     "refId": "H",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,uuid) (last_over_time(nvidia_smi_power_limit_watts{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range])) * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    },
+    {
+     "refId": "I",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,uuid) (max_over_time(timestamp(nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})[$__range:1m])) * 1000 * on (tb_ns,tb_infra,tb_node,uuid) group_left(index,name,driver_version) max by (tb_ns,tb_infra,tb_node,uuid,index,name,driver_version) (last_over_time(nvidia_smi_gpu_info{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[$__range]))",
+     "legendFormat": "",
+     "range": false,
+     "instant": true,
+     "editorMode": "code",
+     "format": "table"
+    }
+   ],
+   "id": 11,
+   "gridPos": {
+    "x": 0,
+    "y": 6,
+    "w": 24,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "Trends",
+   "collapsed": false,
+   "panels": [],
+   "id": 12,
+   "gridPos": {
+    "x": 0,
+    "y": 13,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Utilization",
+   "description": "Average over all GPUs; the busiest GPU is drawn when more than one reports",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Average"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Busiest GPU"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "Average",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 1)",
+     "legendFormat": "Busiest GPU",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 13,
+   "gridPos": {
+    "x": 0,
+    "y": 14,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Memory used",
+   "description": "Used share of GPU memory; the fullest GPU is drawn when more than one reports",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "All GPUs"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Fullest GPU"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_used_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) / sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_total_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "All GPUs",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max((max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_used_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}) / max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_total_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 1)",
+     "legendFormat": "Fullest GPU",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 14,
+   "gridPos": {
+    "x": 12,
+    "y": 14,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Temperature",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "celsius"
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Average"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hottest GPU"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_temperature_gpu{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "Average",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_temperature_gpu{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 1)",
+     "legendFormat": "Hottest GPU",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 15,
+   "gridPos": {
+    "x": 0,
+    "y": 22,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Power draw",
+   "description": "Total draw against the total power limit of all GPUs",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "watt",
+     "min": 0,
+     "decimals": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Draw"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Limit"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#898781"
+        }
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_power_draw_watts{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "Draw",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_power_limit_watts{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "Limit",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 16,
+   "gridPos": {
+    "x": 8,
+    "y": 22,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "GPUs by load",
+   "description": "Number of GPUs in each utilization band",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0,
+     "decimals": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Idle, under 5%"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#898781"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 55
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Light, 5 to 50%"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#86b6ef"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 55
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Busy, 50 to 90%"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 55
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Saturated, 90% and over"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#184f95"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 55
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "(count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}) < 0.05) or vector(0)) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 0)",
+     "legendFormat": "Idle, under 5%",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "(count((max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}) >= 0.05) < 0.5) or vector(0)) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 0)",
+     "legendFormat": "Light, 5 to 50%",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "(count((max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}) >= 0.5) < 0.9) or vector(0)) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 0)",
+     "legendFormat": "Busy, 50 to 90%",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "(count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}) >= 0.9) or vector(0)) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 0)",
+     "legendFormat": "Saturated, 90% and over",
+     "range": true,
+     "instant": false,
+     "editorMode": "code"
+    }
+   ],
+   "id": 17,
+   "gridPos": {
+    "x": 16,
+    "y": 22,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "Per GPU",
+   "collapsed": true,
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "${gpu:text}",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "percentunit",
+       "min": 0,
+       "max": 1
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Utilization"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#3987e5"
+          }
+         },
+         {
+          "id": "custom.fillOpacity",
+          "value": 12
+         }
+        ]
+       },
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Memory used"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#d95926"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "max(nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",uuid=~\"$gpu\"})",
+       "legendFormat": "Utilization",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      },
+      {
+       "refId": "B",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "max(nvidia_smi_memory_used_bytes{tb_ns=~\"$ns\",uuid=~\"$gpu\"}) / max(nvidia_smi_memory_total_bytes{tb_ns=~\"$ns\",uuid=~\"$gpu\"})",
+       "legendFormat": "Memory used",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      }
+     ],
+     "id": 18,
+     "gridPos": {
+      "x": 0,
+      "y": 30,
+      "w": 24,
+      "h": 7
+     },
+     "repeat": "gpu",
+     "repeatDirection": "h",
+     "maxPerRow": 4
+    }
+   ],
+   "id": 19,
+   "gridPos": {
+    "x": 0,
+    "y": 29,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "row",
+   "title": "Details",
+   "collapsed": true,
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Exporter failures",
+     "description": "Nodes whose GPU exporter could not read nvidia-smi for most of the last five minutes",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "short",
+       "min": 0,
+       "decimals": 0
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Nodes failing"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#d03b3b"
+          }
+         },
+         {
+          "id": "custom.fillOpacity",
+          "value": 12
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "(count(avg_over_time(nvidia_smi_last_collect_success{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}[5m]) < 0.5) or vector(0)) and on () (count(nvidia_smi_last_collect_success{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}) > 0)",
+       "legendFormat": "Nodes failing",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      }
+     ],
+     "id": 20,
+     "gridPos": {
+      "x": 0,
+      "y": 31,
+      "w": 6,
+      "h": 7
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Encoder and decoder",
+     "description": "Average over all GPUs",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "percentunit",
+       "min": 0,
+       "max": 1
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Encoder"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#3987e5"
+          }
+         }
+        ]
+       },
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Decoder"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#d95926"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_encoder_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+       "legendFormat": "Encoder",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      },
+      {
+       "refId": "B",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_decoder_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+       "legendFormat": "Decoder",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      }
+     ],
+     "id": 21,
+     "gridPos": {
+      "x": 6,
+      "y": 31,
+      "w": 6,
+      "h": 7
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "SM clock",
+     "description": "A clock below its usual level points to throttling",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "hertz"
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Average"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#3987e5"
+          }
+         }
+        ]
+       },
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Slowest GPU"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#d95926"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_clocks_current_sm_clock_hz{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+       "legendFormat": "Average",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      },
+      {
+       "refId": "B",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "min(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_clocks_current_sm_clock_hz{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 1)",
+       "legendFormat": "Slowest GPU",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      }
+     ],
+     "id": 22,
+     "gridPos": {
+      "x": 12,
+      "y": 31,
+      "w": 6,
+      "h": 7
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Fan speed",
+     "description": "Empty for GPUs without a fan of their own, such as passively cooled data center cards",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "percentunit",
+       "min": 0,
+       "max": 1
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Average"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#3987e5"
+          }
+         }
+        ]
+       },
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Fastest fan"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#d95926"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_fan_speed_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+       "legendFormat": "Average",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      },
+      {
+       "refId": "B",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "max(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_fan_speed_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) and on () (count(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) > 1)",
+       "legendFormat": "Fastest fan",
+       "range": true,
+       "instant": false,
+       "editorMode": "code"
+      }
+     ],
+     "id": 23,
+     "gridPos": {
+      "x": 18,
+      "y": 31,
+      "w": 6,
+      "h": 7
+     }
+    }
+   ],
+   "id": 24,
+   "gridPos": {
+    "x": 0,
+    "y": 30,
+    "w": 24,
+    "h": 1
+   }
+  }
+ ]
+}

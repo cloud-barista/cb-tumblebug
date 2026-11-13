@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -35,6 +34,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/managedset"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
@@ -139,31 +139,17 @@ func RegisterHandler(kind string, fn Handler) {
 // topicPattern is the ntfy topic rule; the topic is appended to the server URL as a path segment.
 var topicPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
-// validateEndpoint accepts only an http(s) server URL (optional base path, no userinfo/query/fragment) that
-// does not point at a link-local or cloud metadata address, and a topic in ntfy's format. CB-Tumblebug sends
-// requests to this address on behalf of its callers, so the shape is restricted even though the caller is an
-// administrator.
+// validateEndpoint checks the server URL (see managedset.ValidateServerUrl) and the topic, which is appended
+// to the URL as a path segment.
 func validateEndpoint(rawUrl, topic string) (string, error) {
-	u, err := url.Parse(rawUrl) // url.Parse (not ParseRequestURI) so a fragment is seen and rejected
+	cleanUrl, err := managedset.ValidateServerUrl(rawUrl)
 	if err != nil {
-		return "", fmt.Errorf("invalid url: %w", err)
-	}
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return "", fmt.Errorf("invalid url: scheme must be http or https")
-	}
-	if u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
-		return "", fmt.Errorf("invalid url: expected scheme://host[:port][/path] without credentials, query or fragment")
-	}
-	if ip := net.ParseIP(u.Hostname()); ip != nil && (ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified()) {
-		return "", fmt.Errorf("invalid url: link-local and metadata addresses are not allowed")
-	}
-	if strings.EqualFold(u.Hostname(), "metadata.google.internal") || strings.EqualFold(u.Hostname(), "metadata") {
-		return "", fmt.Errorf("invalid url: metadata hosts are not allowed")
+		return "", err
 	}
 	if !topicPattern.MatchString(topic) {
 		return "", fmt.Errorf("invalid topic %q: use 1-64 letters, digits, '_' or '-'", topic)
 	}
-	return strings.TrimRight(u.String(), "/"), nil
+	return cleanUrl, nil
 }
 
 func Register(req model.NotifierRegisterReq) (*model.NotifierInfo, error) {

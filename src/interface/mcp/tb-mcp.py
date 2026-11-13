@@ -4857,7 +4857,6 @@ if review_result.get("overallStatus") == "Ready":
     # Add optional fields
     if description:
         data["description"] = description
-    # Only include installMonAgent if explicitly set to "yes"
     if system_label:
         data["systemLabel"] = system_label
     if label:
@@ -8753,7 +8752,6 @@ def generate_infra_creation_summary(
     name: str,
     node_groups: List[Dict],
     description: str = "Infra to be created",
-    install_mon_agent: str = "no",
     hold: bool = False
 ) -> Dict:
     """

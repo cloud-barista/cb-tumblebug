@@ -1,0 +1,24 @@
+{
+  "resourceType": "infra",
+  "name": "infra-obs",
+  "description": "Observability stack (OTel Collector gateway + Prometheus + Loki + Grafana) for CB-Tumblebug nodes; used by POST /tumblebug/observability/stack",
+  "infraDynamicReq": {
+    "name": "obs",
+    "description": "observability stack for CB-Tumblebug nodes",
+    "sgTemplateId": "sg-obs",
+    "initScript": {
+      "mode": "default"
+    },
+    "nodeGroups": [
+      {
+        "name": "obs",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-2+m5.2xlarge",
+        "imageId": "ami-0fde5763b4c293a0b",
+        "rootDiskType": "gp3",
+        "rootDiskSize": 500,
+        "description": "OTel gateway, Prometheus, Loki, Grafana"
+      }
+    ]
+  }
+}

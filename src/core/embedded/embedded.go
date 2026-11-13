@@ -16,16 +16,55 @@ limitations under the License.
 // directory, which is for operator-run tooling; go:embed cannot reach outside this package.
 package embedded
 
-import "embed"
+import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
+	"embed"
+	"io/fs"
+	"path"
+)
 
 //go:embed scripts
 var scripts embed.FS
+
+//go:embed dashboards
+var dashboards embed.FS
 
 // InitScript is the first-boot wrapper that CB-Tumblebug delivers as VM user data.
 func InitScript() string { return read("init-script.sh") }
 
 // InstallNtfy installs and configures a self-hosted ntfy server for the notifier.
 func InstallNtfy() string { return read("install-ntfy.sh") }
+
+// InstallOtelStack installs the observability stack (OTel Collector gateway, Prometheus, Loki, Grafana, nginx).
+func InstallOtelStack() string { return read("install-otel-stack.sh") }
+
+// InstallOtelAgent installs the OTel Collector agent on a node; the stack serves it at /dl/install-agent.sh.
+func InstallOtelAgent() string { return read("install-otel-agent.sh") }
+
+// DashboardsTarGz packs the Grafana dashboards (dashboards/*.json) so the stack installer can unpack them
+// into Grafana's provisioning directory with one command.
+func DashboardsTarGz() []byte {
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gz)
+	entries, _ := fs.ReadDir(dashboards, "dashboards")
+	for _, e := range entries {
+		if e.IsDir() || path.Ext(e.Name()) != ".json" {
+			continue
+		}
+		b, err := dashboards.ReadFile("dashboards/" + e.Name())
+		if err != nil {
+			panic("embedded dashboard missing: " + e.Name())
+		}
+		_ = tw.WriteHeader(&tar.Header{Name: e.Name(), Mode: 0644, Size: int64(len(b))})
+		_, _ = tw.Write(b)
+	}
+	_ = tw.Close()
+	_ = gz.Close()
+	return buf.Bytes()
+}
 
 func read(name string) string {
 	b, err := scripts.ReadFile("scripts/" + name)

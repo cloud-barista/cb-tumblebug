@@ -7,6 +7,12 @@ CB-Tumblebug provisions. They are not operator tooling (that lives in the reposi
 |---|---|---|---|
 | `init-script.sh` | `core/infra` (`initScript` of a NodeGroup) | every Linux node, first boot, as user data; reports each step start and the end | `TB_INIT_ACCESS`/`TB_INIT_USER`/`TB_INIT_PUBKEY`, `TB_INIT_SCRIPT_COUNT` + `TB_INIT_SCRIPT_<i>_NAME`/`_B64`, node identity `TB_NS_ID`/`TB_INFRA_ID`/`TB_NODEGROUP_ID`/`TB_NODE_ID`/`TB_CSP`/`TB_REGION`, `TB_NOTIFY_*` |
 | `install-ntfy.sh` | `core/notifier` (`POST /tumblebug/notifier/ntfy`) | the ntfy VM, over remote command | `TB_NTFY_*` |
+| `install-otel-stack.sh` | `core/observability` (`POST /tumblebug/observability/stack`) | the observability VM, over remote command | `TB_OBS_*` |
+| `install-otel-agent.sh` | served by the stack at `/dl/install-agent.sh`; run by the `initscript-otel-agent` template | every node that opts in | `TB_OTEL_*`, node identity `TB_*`, `OTEL_*` toggles |
+
+Grafana dashboards in `dashboards/` are embedded the same way: `DashboardsTarGz()` packs them and the stack
+installer unpacks them into Grafana's file-provisioned folder (`/var/lib/grafana/dashboards/tb`). Edit a
+dashboard in Grafana, export its JSON and replace the file here; the `uid` must stay the same.
 
 Conventions:
 - Each script reads its inputs from environment variables only; CB-Tumblebug prepends `export K='v'` lines.

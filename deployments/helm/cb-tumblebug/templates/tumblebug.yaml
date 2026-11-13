@@ -109,6 +109,15 @@ spec:
             - { name: TB_NOTIFIER_NTFY_READ_TOKEN, value: {{ .readToken | quote }} }
             {{- end }}
             {{- end }}
+            {{- with .Values.tumblebug.observability }}
+            {{- if .otlpEndpoint }}
+            - { name: TB_OBSERVABILITY_OTLP_ENDPOINT, value: {{ .otlpEndpoint | quote }} }
+            - { name: TB_OBSERVABILITY_WRITE_TOKEN, value: {{ .writeToken | quote }} }
+            - { name: TB_OBSERVABILITY_GRAFANA_URL, value: {{ .grafanaUrl | quote }} }
+            - { name: TB_OBSERVABILITY_GRAFANA_ADMIN_USER, value: {{ .grafanaAdminUser | quote }} }
+            - { name: TB_OBSERVABILITY_GRAFANA_ADMIN_PASSWORD, value: {{ .grafanaAdminPassword | quote }} }
+            {{- end }}
+            {{- end }}
             - { name: TB_LOGWRITER, value: {{ .Values.tumblebug.logWriter | quote }} }
             - { name: TB_LOGFORMAT, value: {{ .Values.tumblebug.logFormat | quote }} }
             - { name: TB_LOGLEVEL, value: {{ .Values.tumblebug.logLevel | quote }} }

@@ -1,0 +1,1698 @@
+{
+ "uid": "tb-ollama",
+ "title": "TB Ollama",
+ "description": "Ollama serving read from the journal of ollama.service: requests, failures, request time, token speed and model loads. Ollama has no metrics endpoint, so no scrape target is needed; the node agent's journal logs are enough.",
+ "tags": [
+  "cb-tumblebug"
+ ],
+ "editable": true,
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "fiscalYearStartMonth": 0,
+ "weekStart": "",
+ "annotations": {
+  "list": []
+ },
+ "links": [
+  {
+   "type": "dashboards",
+   "tags": [
+    "cb-tumblebug"
+   ],
+   "asDropdown": true,
+   "title": "TB dashboards",
+   "includeVars": true,
+   "keepTime": true,
+   "icon": "external link",
+   "tooltip": "",
+   "url": ""
+  }
+ ],
+ "templating": {
+  "list": [
+   {
+    "name": "ns",
+    "label": "Namespace",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "tb-loki"
+    },
+    "definition": "label_values(tb_ns)",
+    "query": "label_values(tb_ns)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "infra",
+    "label": "Infra",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "tb-loki"
+    },
+    "definition": "label_values({tb_ns=~\"$ns\"}, tb_infra)",
+    "query": "label_values({tb_ns=~\"$ns\"}, tb_infra)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "node",
+    "label": "Node",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "tb-loki"
+    },
+    "definition": "label_values({tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_node)",
+    "query": "label_values({tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_node)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "At a glance",
+   "collapsed": false,
+   "panels": [],
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Nodes serving",
+   "description": "Nodes whose ollama.service wrote to the journal in the time range",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "count(sum by (tb_ns, tb_infra, tb_node) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" [$__range])))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Requests",
+   "description": "Inference requests in the time range: generate, chat, embeddings and the OpenAI-compatible paths",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short",
+     "decimals": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" [$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 3,
+   "gridPos": {
+    "x": 3,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Failed",
+   "description": "Share of inference requests answered with a 4xx or 5xx status",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#0ca30c",
+        "value": null
+       },
+       {
+        "color": "#fab219",
+        "value": 0.01
+       },
+       {
+        "color": "#d03b3b",
+        "value": 0.05
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "percentunit"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" | status=~\"[45]..\" [$__range])) / sum(count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" [$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 4,
+   "gridPos": {
+    "x": 6,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Request time, p50",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "s"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "quantile_over_time(0.5, {tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" | status=~\"2..\" | unwrap duration(latency) [$__range]) by ()",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 5,
+   "gridPos": {
+    "x": 9,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Request time, p95",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "s"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "quantile_over_time(0.95, {tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" | status=~\"2..\" | unwrap duration(latency) [$__range]) by ()",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 6,
+   "gridPos": {
+    "x": 12,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Generation speed",
+   "description": "Average output tokens per second while generating, as the runner reports per request",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short",
+     "decimals": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "avg_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"print_timing\" |~ `\\|\\s+eval time =` | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `eval time =\\s+(?P<ms>[0-9.]+) ms /\\s+(?P<tokens>\\d+) tokens \\(\\s*[0-9.]+ ms per token,\\s+(?P<tps>[0-9.]+) tokens per second\\)` | unwrap tps [$__range]) by ()",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 7,
+   "gridPos": {
+    "x": 15,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Output tokens",
+   "description": "Tokens generated in the time range",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short",
+     "decimals": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(sum_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"print_timing\" |~ `\\|\\s+eval time =` | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `eval time =\\s+(?P<ms>[0-9.]+) ms /\\s+(?P<tokens>\\d+) tokens \\(\\s*[0-9.]+ ms per token,\\s+(?P<tps>[0-9.]+) tokens per second\\)` | unwrap tokens [$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 8,
+   "gridPos": {
+    "x": 18,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Model loads",
+   "description": "Times a model was loaded into memory in the time range",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short",
+     "decimals": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |~ \"loading model via llama-server|llama runner started in\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" [$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 9,
+   "gridPos": {
+    "x": 21,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "row",
+   "title": "Traffic",
+   "collapsed": false,
+   "panels": [],
+   "id": 10,
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Requests",
+   "description": "Inference requests per second by outcome",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "reqps",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Completed"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Failed"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d03b3b"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(rate({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" | status=~\"2..\" [5m]))",
+     "legendFormat": "Completed",
+     "editorMode": "code",
+     "queryType": "range"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(rate({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" | status=~\"[45]..\" [5m]))",
+     "legendFormat": "Failed",
+     "editorMode": "code",
+     "queryType": "range"
+    }
+   ],
+   "id": 11,
+   "gridPos": {
+    "x": 0,
+    "y": 6,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "bargauge",
+   "title": "Requests by endpoint",
+   "description": "Inference requests in the time range",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "min": 0,
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "horizontal",
+    "displayMode": "basic",
+    "valueMode": "text",
+    "showUnfilled": true,
+    "namePlacement": "auto",
+    "sizing": "auto",
+    "minVizHeight": 16,
+    "minVizWidth": 8,
+    "maxVizHeight": 40
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "topk(10, sum by (path) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" [$__range])))",
+     "legendFormat": "{{path}}",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 12,
+   "gridPos": {
+    "x": 12,
+    "y": 6,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "type": "bargauge",
+   "title": "Responses by status",
+   "description": "Inference requests in the time range, by HTTP status",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "min": 0,
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "horizontal",
+    "displayMode": "basic",
+    "valueMode": "text",
+    "showUnfilled": true,
+    "namePlacement": "auto",
+    "sizing": "auto",
+    "minVizHeight": 16,
+    "minVizWidth": 8,
+    "maxVizHeight": 40
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "topk(10, sum by (status) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" [$__range])))",
+     "legendFormat": "{{status}}",
+     "editorMode": "code",
+     "queryType": "instant"
+    }
+   ],
+   "id": 13,
+   "gridPos": {
+    "x": 18,
+    "y": 6,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "type": "row",
+   "title": "Latency and speed",
+   "collapsed": false,
+   "panels": [],
+   "id": 14,
+   "gridPos": {
+    "x": 0,
+    "y": 14,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Request time",
+   "description": "Whole request, from the server's access log",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "s",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p50"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p95"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "quantile_over_time(0.5, {tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" | status=~\"2..\" | unwrap duration(latency) [5m]) by ()",
+     "legendFormat": "p50",
+     "editorMode": "code",
+     "queryType": "range"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "quantile_over_time(0.95, {tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"[GIN]\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `\\| (?P<status>\\d{3}) \\|\\s*(?P<latency>\\S+) \\|\\s*(?P<client>\\S+) \\|\\s*(?P<method>[A-Z]+)\\s+\"(?P<path>[^\"]+)\"` | path=~\"/api/(generate|chat|embed|embeddings)|/v1/.+\" | status=~\"2..\" | unwrap duration(latency) [5m]) by ()",
+     "legendFormat": "p95",
+     "editorMode": "code",
+     "queryType": "range"
+    }
+   ],
+   "id": 15,
+   "gridPos": {
+    "x": 0,
+    "y": 15,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Tokens per second while running",
+   "description": "Average speed per request, as the runner reports",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0,
+     "decimals": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Generating"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Reading the prompt"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "avg_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"print_timing\" |~ `\\|\\s+eval time =` | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `eval time =\\s+(?P<ms>[0-9.]+) ms /\\s+(?P<tokens>\\d+) tokens \\(\\s*[0-9.]+ ms per token,\\s+(?P<tps>[0-9.]+) tokens per second\\)` | unwrap tps [5m]) by ()",
+     "legendFormat": "Generating",
+     "editorMode": "code",
+     "queryType": "range"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "avg_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"print_timing\" |~ `\\|\\s+prompt eval time =` | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `prompt eval time =\\s+(?P<ms>[0-9.]+) ms /\\s+(?P<tokens>\\d+) tokens \\(\\s*[0-9.]+ ms per token,\\s+(?P<tps>[0-9.]+) tokens per second\\)` | unwrap tps [5m]) by ()",
+     "legendFormat": "Reading the prompt",
+     "editorMode": "code",
+     "queryType": "range"
+    }
+   ],
+   "id": 16,
+   "gridPos": {
+    "x": 8,
+    "y": 15,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Output tokens per second",
+   "description": "Generated tokens per second over all requests",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0,
+     "decimals": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Output"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(rate({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |= \"print_timing\" |~ `\\|\\s+eval time =` | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `eval time =\\s+(?P<ms>[0-9.]+) ms /\\s+(?P<tokens>\\d+) tokens \\(\\s*[0-9.]+ ms per token,\\s+(?P<tps>[0-9.]+) tokens per second\\)` | unwrap tokens [5m]))",
+     "legendFormat": "Output",
+     "editorMode": "code",
+     "queryType": "range"
+    }
+   ],
+   "id": 17,
+   "gridPos": {
+    "x": 16,
+    "y": 15,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "row",
+   "title": "Models and GPU",
+   "collapsed": false,
+   "panels": [],
+   "id": 18,
+   "gridPos": {
+    "x": 0,
+    "y": 23,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Model loads",
+   "description": "Model loads per five minutes; frequent loads mean models are being evicted",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "bars",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0,
+     "decimals": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Loads"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum(count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |~ \"loading model via llama-server|llama runner started in\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" [5m]))",
+     "legendFormat": "Loads",
+     "editorMode": "code",
+     "queryType": "range"
+    }
+   ],
+   "id": 19,
+   "gridPos": {
+    "x": 0,
+    "y": 24,
+    "w": 6,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Model load time",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "s",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Average"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "avg_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |~ \"started in [0-9.]+ seconds\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.MESSAGE}}\" | regexp `started in (?P<secs>[0-9.]+) seconds` | unwrap secs [5m]) by ()",
+     "legendFormat": "Average",
+     "editorMode": "code",
+     "queryType": "range"
+    }
+   ],
+   "id": 20,
+   "gridPos": {
+    "x": 6,
+    "y": 24,
+    "w": 6,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "GPU utilization",
+   "description": "GPUs of the selected nodes; empty for nodes without a GPU",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Average"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "avg(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_utilization_gpu_ratio{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "Average",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 21,
+   "gridPos": {
+    "x": 12,
+    "y": 24,
+    "w": 6,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "GPU memory used",
+   "description": "GPUs of the selected nodes; empty for nodes without a GPU",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "All GPUs"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_used_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"})) / sum(max by (tb_ns,tb_infra,tb_node,uuid) (nvidia_smi_memory_total_bytes{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}))",
+     "legendFormat": "All GPUs",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 22,
+   "gridPos": {
+    "x": 18,
+    "y": 24,
+    "w": 6,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "Logs",
+   "collapsed": false,
+   "panels": [],
+   "id": 23,
+   "gridPos": {
+    "x": 0,
+    "y": 31,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "logs",
+   "title": "Warnings, errors and model loading",
+   "description": "Journal lines of ollama.service that report a problem or a model load",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "options": {
+    "showTime": true,
+    "showLabels": false,
+    "showCommonLabels": false,
+    "wrapLogMessage": true,
+    "prettifyLogMessage": false,
+    "enableLogDetails": true,
+    "dedupStrategy": "none",
+    "sortOrder": "Descending"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"} |= \"ollama.service\" |~ \"level=(WARN|ERROR)|loading model|started in [0-9.]+ seconds|inference compute|system memory\" | json | __error__=\"\" | _SYSTEMD_UNIT=\"ollama.service\" | line_format \"{{.tb_node}} {{.MESSAGE}}\"",
+     "legendFormat": "",
+     "editorMode": "code",
+     "queryType": "range"
+    }
+   ],
+   "id": 24,
+   "gridPos": {
+    "x": 0,
+    "y": 32,
+    "w": 24,
+    "h": 9
+   }
+  }
+ ]
+}

@@ -91,17 +91,27 @@ Infra / NodeGroup 요청 ──▶ 템플릿 해석 ──▶ user data 렌더�
 | `userName` | `default` 모드에서 만들 계정(기본 `cb-user`). |
 | `templateId` | 스크립트들을 먼저 순서대로 실행할 init script 템플릿. 요청당 하나이며, 템플릿의 기본 `env` 위에 요청 `env`가 덮어씁니다. |
 | `script` | `inline`이라는 이름의 인라인 단계 축약 표기. |
-| `scripts[]` | 템플릿 단계 뒤에 이어 붙는 인라인 단계 `{name?, script}`. 이름이 없으면 `step-<n>`. |
+| `scripts[]` | 템플릿 단계 뒤에 이어 붙는 인라인 단계 `{name?, script, continueOnError?, timeoutSec?, labelSelector?}`. 이름이 없으면 `step-<n>`. |
 | `env` | 모든 단계에 export되는 변수. 키는 셸 변수 이름 규칙을 따르고 `TB_`로 시작할 수 없으며, 값에 작은따옴표와 줄바꿈을 쓸 수 없습니다. |
 | `notify` | `false`면 노드가 Notifier로 보고하지 않습니다. 기본은 Notifier가 등록되어 있을 때 보고. |
 
-단계는 템플릿 스크립트, `script`, `scripts[]` 순서로 실행됩니다. 각 단계는 `bash`로 실행되므로 셔뱅은 없어도 됩니다. 템플릿의 단계 이름은 템플릿이 지정하지 않으면 템플릿 id(`initscript-nginx`, 여러 단계면 `initscript-nginx-2`)가 됩니다.
+단계는 템플릿 스크립트, `script`, `scripts[]` 순서로 실행됩니다. 각 단계는 `bash`로 실행되므로 셔뱅은 없어도 됩니다.
+
+단계별 옵션(템플릿 안에서도 사용 가능):
+
+| 옵션 | 효과 |
+|------|------|
+| `continueOnError` | 이 단계가 실패해도 계속 진행합니다. 노드는 `ok`로 보고되고 `initScriptMessage`에 `optional step(s) failed: ...`가, 단계 목록에는 `fail`이 남습니다 |
+| `timeoutSec` | 지정한 초가 지나면 단계를 중단(종료 코드 124)하고 실패로 처리합니다 |
+| `labelSelector` | 라벨이 맞는 노드에서만 실행합니다(post-deployment 명령과 같은 문법, 예 `role=gpu`). 역할이 다른 그룹을 Infra 단위 스크립트 하나로 다룰 수 있습니다 |
+
+**Infra 단위와 NodeGroup 단위.** Infra의 `initScript`는 모든 NodeGroup에 적용됩니다. `mode`, `userName`, `notify`를 지정하지 않은 NodeGroup `initScript`는 Infra 것을 *확장*합니다(그룹의 `templateId`, `script`, `scripts`가 Infra 단계 뒤에 실행되고 env는 덮어씀). 셋 중 하나라도 지정하면 그 그룹에서는 Infra 것을 *대체*합니다. 템플릿의 단계 이름은 템플릿이 지정하지 않으면 템플릿 id(`initscript-nginx`, 여러 단계면 `initscript-nginx-2`)가 됩니다.
 
 ---
 
 ## 스크립트 템플릿
 
-Init script 템플릿은 순서 있는 스크립트 목록(`scripts[]`, 하나면 `script`)과 기본 `env`를 저장합니다. 기본 설정 → 에이전트 설치 → 애플리케이션 시작처럼 하나의 프로필을 템플릿 하나로 표현할 수 있습니다. `system` 네임스페이스의 템플릿은 모든 네임스페이스에서 공용으로 쓰이며, 요청 네임스페이스에 같은 id의 템플릿이 있으면 그쪽이 우선합니다. `make init`은 `init/templates/initscript-*.json`을 `system`에 적재합니다. 기본 제공은 `initscript-hello`(마커 기록)와 `initscript-nginx`(nginx 설치 후 노드를 식별하는 페이지 제공)이며, nginx는 80 포트가 열리도록 `infra-usecase-aws-ap-northeast-2-web` 템플릿처럼 `sgTemplateId: sg-usecase-web`과 함께 씁니다.
+Init script 템플릿은 순서 있는 스크립트 목록(`scripts[]`, 하나면 `script`)과 기본 `env`를 저장합니다. 기본 설정 → 에이전트 설치 → 애플리케이션 시작처럼 하나의 프로필을 템플릿 하나로 표현할 수 있습니다. `system` 네임스페이스의 템플릿은 모든 네임스페이스에서 공용으로 쓰이며, 요청 네임스페이스에 같은 id의 템플릿이 있으면 그쪽이 우선합니다. `make init`은 `init/templates/initscript-*.json`을 `system`에 적재합니다. 기본 제공은 `initscript-hello`(마커 기록)와 `initscript-nginx`(nginx 설치 후 노드를 식별하는 페이지 제공)이며, nginx는 80 포트가 열리도록 `infra-usecase-aws-ap-northeast-2-web` 템플릿처럼 `sgTemplateId: sg-usecase-web`과 함께 씁니다. `initscript-swap`은 메모리가 1GiB 미만인 노드에 스왑 파일을 추가해, 서비스가 떠 있는 상태의 패키지 설치로 노드가 멈추지 않게 합니다.
 
 ```bash
 # system 네임스페이스에 공용 템플릿 생성
@@ -133,6 +143,8 @@ curl -u default:default -X POST http://localhost:1323/tumblebug/ns/default/infra
 | `TB_CSP`, `TB_REGION` | 노드의 CSP와 리전 |
 | `TB_INIT_USER` | 이 init script의 계정 이름(`userName`을 지정하지 않으면 `cb-user`) |
 | `TB_NOTIFY_URL`, `TB_NOTIFY_TOPIC` | 보고 대상 Notifier(등록된 경우에만 존재) |
+| `TB_OTEL_ENDPOINT`, `TB_OTEL_TOKEN`, `TB_OTEL_CA_B64` | [관측성 스택](observability-otel.md)(등록된 경우에만 존재) |
+| `TB_ACCELERATOR_TYPE`, `TB_ACCELERATOR_MODEL`, `TB_ACCELERATOR_COUNT` | 노드 스펙의 가속기(가속기가 있는 스펙에서만 존재, 예 `gpu`) |
 | 사용자 `env` | 템플릿과 요청 `env`를 합친 모든 키 |
 
 `TB_`로 시작하는 변수는 예약되어 있어 요청 `env`로 설정할 수 없습니다.
@@ -151,7 +163,7 @@ curl -u default:default -X POST http://localhost:1323/tumblebug/ns/default/infra
 
 **목록 조회.** MapUI가 지도용으로 폴링하는 `GET /ns/{nsId}/infra` 응답의 각 노드에도 `initScriptStatus`, `initScriptMessage`와, 초기화 중이거나 실패한 경우에만 `initScriptSteps`가 실립니다. 보고 결과의 메모리 인덱스에서 읽으므로 큰 Infra를 폴링해도 etcd 읽기가 늘지 않습니다.
 
-**Infra 전체 한 번에.** `GET /ns/{nsId}/infra/{infraId}/initScript`는 노드 레코드를 읽지 않고 집계와 노드별 결과(단계별 상세 포함)를 돌려줍니다. `option=summary`는 집계만, `status=ok|fail|pending|notApplicable`은 해당 상태만 나열합니다. 보고가 아직 없는 노드는 `pending`(부팅 중, Notifier 없음, 보고 유실), NodeGroup이 `mode: none`이면 `notApplicable`입니다.
+**Infra 전체 한 번에.** `GET /ns/{nsId}/infra/{infraId}/initScript`는 노드 레코드를 읽지 않고 집계와 노드별 결과(단계별 상세 포함)를 돌려줍니다. `option=summary`는 집계만, `status=ok|fail|pending|notApplicable`은 해당 상태만 나열합니다. 보고가 아직 없는 노드는 `pending`이고, Running이 된 뒤 `TB_INIT_SCRIPT_NO_REPORT_TIMEOUT`(기본 `3m`)이 지나도 보고가 없으면 `noReport`(user data 미실행, 또는 그 리전에서 Notifier에 닿지 못함. 늦게라도 보고가 오면 덮어씁니다), NodeGroup이 `mode: none`이거나 노드가 Running에 이르지 못했으면(Failed·Terminated) `notApplicable`입니다.
 
 ```json
 { "infraId": "web", "total": 100, "notApplicable": 0, "reported": 98, "ok": 97, "fail": 1, "pending": 2,
@@ -182,6 +194,17 @@ VM 안에서는 `/var/lib/tb/init-script.status`에 `ok|fail <종료 코드> <�
 
 `initScript` 자체는 Infra, Infra 템플릿, NodeGroup 동적 요청의 필드이며, 노드 객체는 `initScript`, `initScriptStatus`, `initScriptMessage`를 노출합니다.
 
+**나중에 SSH로 템플릿 실행.** 원격 명령(`POST /ns/{nsId}/cmd/infra/{infraId}`, `nodeGroupId`·`nodeId`·`labelSelector` 지정)과 post-deployment 단계는 `command` 대신 `templateId`와 `scripts`, 그리고 `env`를 받을 수 있습니다. 단계는 첫 부팅 때와 같은 `TB_*` 변수와 규칙으로 root로 실행됩니다. 기존 노드에 템플릿을 적용하거나 실패한 init script를 노드 재생성 없이 다시 돌릴 때 씁니다.
+
+```bash
+curl -u default:default -X POST http://localhost:1323/tumblebug/ns/default/cmd/infra/web?nodeId=g1-1 \
+  -H 'Content-Type: application/json' -d '{"templateId": "initscript-nginx", "env": {"SITE_TITLE": "retry"}}'
+```
+
+이렇게 실행하면 첫 부팅과 같이 Notifier로 `event: done`을 보고하므로 노드의 `initScriptStatus`와 단계 결과는 가장 최근 실행을 따릅니다. MapUI에서는 init이 실패한 노드의 Infra 카드에 **re-run via SSH** 버튼이 보이며 그 노드의 단계를 그대로 다시 실행합니다. post-deployment 명령 작성기에서는 단계마다 명령 대신 템플릿을 고를 수 있고, 검토 창에서는 NodeGroup별로 템플릿·인라인 단계를 추가할 수 있습니다.
+
+일반 `command` 요청도 `env`를 주면 각 명령 앞에 export됩니다.
+
 ---
 
 ## 제약 사항과 문제 해결
@@ -189,6 +212,8 @@ VM 안에서는 `/var/lib/tb/init-script.status`에 `ok|fail <종료 코드> <�
 - **Linux 전용.** Windows 노드는 CB-Spider 기본(CSP를 통한 계정·비밀번호)을 유지합니다.
 - **16KB 제한.** 변수, 래퍼, base64로 인코딩된 모든 단계를 합친 user data가 16KB 미만이어야 합니다. 큰 내용은 인라인하지 말고 다운로드 단계로 분리하세요.
 - **Notifier가 없으면 보고되지 않습니다.** 스크립트는 실행되지만 노드는 `pending`으로 남습니다. 이때는 VM의 상태 마커가 기준입니다.
+- **전체 로그.** 보고에는 마지막 줄만 담깁니다. 노드의 `/var/log/tb-init-script.log`에 전체가 있고, 관측성 스택을 쓰면 OTel 에이전트가 이 파일을 그대로 올립니다.
+- **`env`의 비밀값.** CB-Tumblebug은 스크립트 본문, `env` 값, 렌더링된 user data를 자체 로그, 디버그 출력, 원격 명령 이력에 남기지 않습니다. `[N bytes redacted]` 또는 `********`로 표시됩니다. 다만 노드 블루프린트에는 저장되어 인증된 API 사용자에게 보이고, VM 안에서는 user data가 평문입니다. 수명이 긴 비밀값은 `env`에 넣지 마세요.
 - **보고는 최선 노력 방식입니다.** 진행 보고(단계 시작마다 1회)는 한 번만 보내고, 최종 보고는 3회 재시도합니다. VM 네트워크에서 Notifier에 닿지 않으면 Notifier VM의 Security Group(443)과 노드의 아웃바운드를 확인하세요.
 - **`custom` 모드와 SSH.** `custom` 모드에서는 계정을 만들지 않으므로 원격 명령은 이미지 기본 계정을 사용합니다. `nodeUserName`을 그에 맞게 지정하세요.
 - **마커가 이미 있는 경우.** Init script가 실행된 노드로 만든 커스텀 이미지에는 `/var/lib/tb/init-script.status`가 들어 있어 새 VM에서 래퍼가 바로 종료됩니다. 이미지를 만들기 전에 파일을 지우세요.

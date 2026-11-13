@@ -804,7 +804,6 @@ func buildStatusEntry(nsId, infraId string, nodeInfo model.NodeInfo) StatusEntry
 		SSHPort:          nodeInfo.SSHPort,
 		CreatedTime:      nodeInfo.CreatedTime,
 		Location:         nodeInfo.Location,
-		MonAgentStatus:   nodeInfo.MonAgentStatus,
 	}
 	applyStaticNodeFields(&entry, nodeInfo)
 	return entry
@@ -911,7 +910,6 @@ func writeStatusToStore(nsId, infraId, nodeId string, statusInfo model.NodeStatu
 		e.SSHPort = nodeInfo.SSHPort
 		e.CreatedTime = nodeInfo.CreatedTime
 		e.Location = nodeInfo.Location
-		e.MonAgentStatus = statusInfo.MonAgentStatus
 
 		// Recalculate polling schedule (lock enforcement is in dispatchEligible, not here)
 		newPriority := priorityForStatus(statusInfo.Status, statusInfo.TargetAction)
@@ -937,7 +935,6 @@ func fetchNodeStatusWithCache(nsId, infraId, nodeId string) (model.NodeStatusInf
 		cached.SSHPort = entry.SSHPort
 		cached.PrivateIp = entry.PrivateIP
 		cached.Location = entry.Location
-		cached.MonAgentStatus = entry.MonAgentStatus
 		cached.CreatedTime = entry.CreatedTime
 		// Dynamic fields from the last CSP poll
 		cached.Status = entry.Status
@@ -1048,4 +1045,3 @@ func refreshBatchNodePublicIP(nsId, infraId, nodeId string) {
 		}
 	}
 }
-

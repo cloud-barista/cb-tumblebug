@@ -105,6 +105,8 @@ A **Bastion Host** is a Node with a public IP that acts as a gateway for SSH con
 - Each Node in an Infra is assigned a Bastion Host automatically.
 - The Bastion can be any Node in the Infra with a public IP.
 - SSH connections: `User → Bastion (Public IP) → Target Node (Private IP)`
+- In a subnet shared by several Infras, each Infra registers a bastion of its own, and its Nodes use that one first.
+- When an auto-assigned bastion cannot be reached, it is set aside for five minutes and the request goes through another one (a Node of the same Infra with a public IP is registered if none is left). A bastion registered by hand is never bypassed.
 
 ### Command Execution Flow
 

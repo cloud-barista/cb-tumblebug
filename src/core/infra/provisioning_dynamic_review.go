@@ -801,8 +801,12 @@ func ReviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, req *mode
 
 	// Use the common VM review function with empty deployOption.
 	// No infra-level SgTemplateId context here; the request's own SgTemplateId (if any) applies.
-	nodeReview, _, _, _, _ := reviewSingleNodeGroupDynamicReq(ctx, nsId, "", "", *req, "")
-	applyInitScriptReview(nsId, "infra", req, nil, &nodeReview)
+	nodeReview, specInfo, _, _, _ := reviewSingleNodeGroupDynamicReq(ctx, nsId, "", "", *req, "")
+	var memoryGiB float32
+	if specInfo != nil {
+		memoryGiB = specInfo.MemoryGiB
+	}
+	applyInitScriptReview(nsId, "infra", req, nil, memoryGiB, &nodeReview)
 
 	log.Debug().Msgf("Single VM review completed: %s - %s", nodeReview.Status, nodeReview.Message)
 	return &nodeReview, nil
@@ -959,6 +963,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 	// Collect results and maintain order
 	nodeReviews := make([]model.ReviewNodeGroupDynamicReqInfo, len(req.NodeGroups))
+	specMemoryGiB := make([]float32, len(req.NodeGroups))
 	allViable := true
 	hasWarnings := false
 	totalEstimatedCost := 0.0
@@ -986,6 +991,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 		// Update resource summary maps (thread-safe since we're processing sequentially here)
 		if result.specInfo != nil {
+			specMemoryGiB[result.index] = result.specInfo.MemoryGiB
 			specMap[req.NodeGroups[result.index].SpecId] = true
 			connectionMap[result.specInfo.ConnectionName] = true
 			providerMap[result.specInfo.ProviderName] = true
@@ -999,7 +1005,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 	// Init script review (template resolution, user data size) is cheap and runs after the CSP checks
 	for i := range nodeReviews {
-		if viable, warned := applyInitScriptReview(nsId, req.Name, &req.NodeGroups[i], req.InitScript, &nodeReviews[i]); !viable || warned {
+		if viable, warned := applyInitScriptReview(nsId, req.Name, &req.NodeGroups[i], req.InitScript, specMemoryGiB[i], &nodeReviews[i]); !viable || warned {
 			allViable = allViable && viable
 			hasWarnings = hasWarnings || warned
 		}

@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -294,18 +293,16 @@ func ListNsId() ([]string, error) {
 	// }
 	// EOF of Implementation Option 1
 
-	// Use GetKeyList to fetch only key bytes — avoids downloading all node JSON
-	// objects (~7 MB) that live under the same /ns prefix.
-	keys, err := kvstore.GetKeyList(key)
+	// Namespaces are the names directly under /ns/ that have a record ("/ns/default"). Listing them as
+	// children skips everything stored below each namespace instead of scanning every key in the store.
+	children, err := kvstore.GetChildList(key + "/")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	for _, k := range keys {
-		trimmed := strings.TrimPrefix(k, "/ns/")
-		// Only top-level namespace entries: "/ns/default" → "default" (no slash)
-		if !strings.Contains(trimmed, "/") && trimmed != "" {
-			nsList = append(nsList, trimmed)
+	for _, c := range children {
+		if c.HasRecord {
+			nsList = append(nsList, c.Name)
 		}
 	}
 

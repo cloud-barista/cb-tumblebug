@@ -1321,7 +1321,6 @@ func runInternalDataTest(
 	infraReq := model.InfraReq{
 		Name:            infraId,
 		Description:     "test runner VM for internal RDBMS SQL test",
-		InstallMonAgent: "no",
 		NodeGroups: []model.CreateNodeGroupReq{
 			{
 				Name:             fmt.Sprintf("ng-%s", cspLabel(tc.RdbmsId)),

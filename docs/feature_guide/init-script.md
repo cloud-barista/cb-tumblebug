@@ -91,17 +91,27 @@ Infra / NodeGroup request ──▶ resolve templates ──▶ render user data
 | `userName` | Account to create in `default` mode (default `cb-user`). |
 | `templateId` | Init script template whose scripts run first, in order. One template per request; its default `env` is applied under the request `env`. |
 | `script` | Shorthand for an inline step named `inline`. |
-| `scripts[]` | Inline steps `{name?, script}` appended after the template's steps. Unnamed steps are named `step-<n>`. |
+| `scripts[]` | Inline steps `{name?, script, continueOnError?, timeoutSec?, labelSelector?}` appended after the template's steps. Unnamed steps are named `step-<n>`. |
 | `env` | Variables exported to every step. Keys must be valid shell names and must not start with `TB_`; values must not contain single quotes or newlines. |
 | `notify` | `false` stops the Node from reporting to the Notifier. Default: report when a Notifier is registered. |
 
-Steps run in the order template scripts, `script`, `scripts[]`. A step does not need a shebang; each one is run with `bash`. Steps of a template are named after the template id (`initscript-nginx`, or `initscript-nginx-2` for a multi-step template) unless the template names them.
+Steps run in the order template scripts, `script`, `scripts[]`. A step does not need a shebang; each one is run with `bash`.
+
+Per-step options (also valid inside templates):
+
+| Option | Effect |
+|--------|--------|
+| `continueOnError` | The run goes on when this step fails; the Node reports `ok` with `initScriptMessage: optional step(s) failed: ...` and the step shows `fail` in the step list |
+| `timeoutSec` | The step is stopped after this many seconds (exit code 124) and counted as failed |
+| `labelSelector` | The step runs only on Nodes whose labels match (same syntax as post-deployment commands, e.g. `role=gpu`); other Nodes skip it. Lets one Infra-level script serve groups with different roles |
+
+**Infra and NodeGroup levels.** `initScript` on the Infra applies to every NodeGroup. A NodeGroup `initScript` that does not set `mode`, `userName` or `notify` *extends* the Infra one: its `templateId`, `script` and `scripts` run after the Infra steps and its env overrides. A NodeGroup `initScript` that sets `mode`, `userName` or `notify` *replaces* the Infra one for that group. Steps of a template are named after the template id (`initscript-nginx`, or `initscript-nginx-2` for a multi-step template) unless the template names them.
 
 ---
 
 ## Script Templates
 
-An init script template stores an ordered list of scripts (`scripts[]`, or `script` for a single one) and its default `env`, so one template can describe a whole profile such as base setup, agent install and application start. Templates in the `system` namespace are shared with every namespace; a template with the same id in the request namespace takes precedence. `make init` loads `init/templates/initscript-*.json` into `system`: `initscript-hello` (writes a marker) and `initscript-nginx` (installs nginx and serves a page identifying the node; pair it with `sgTemplateId: sg-usecase-web` so port 80 is open, as the `infra-usecase-aws-ap-northeast-2-web` template does).
+An init script template stores an ordered list of scripts (`scripts[]`, or `script` for a single one) and its default `env`, so one template can describe a whole profile such as base setup, agent install and application start. Templates in the `system` namespace are shared with every namespace; a template with the same id in the request namespace takes precedence. `make init` loads `init/templates/initscript-*.json` into `system`: `initscript-hello` (writes a marker) and `initscript-nginx` (installs nginx and serves a page identifying the node; pair it with `sgTemplateId: sg-usecase-web` so port 80 is open, as the `infra-usecase-aws-ap-northeast-2-web` template does). `initscript-swap` adds a swap file for Nodes with less than 1 GiB of memory, so a package install next to a running service does not stall them.
 
 ```bash
 # Create a template in the system namespace (shared)
@@ -133,6 +143,8 @@ Updating a template changes Infras and NodeGroups created afterwards only. Templ
 | `TB_CSP`, `TB_REGION` | Provider and region of the Node |
 | `TB_INIT_USER` | Account name of this init script (`cb-user` unless `userName` was set) |
 | `TB_NOTIFY_URL`, `TB_NOTIFY_TOPIC` | The Notifier the script reports to (present only when one is registered) |
+| `TB_OTEL_ENDPOINT`, `TB_OTEL_TOKEN`, `TB_OTEL_CA_B64` | The [observability stack](observability-otel.md) (present only when one is registered) |
+| `TB_ACCELERATOR_TYPE`, `TB_ACCELERATOR_MODEL`, `TB_ACCELERATOR_COUNT` | Accelerator of the Node spec (present only for specs with one, e.g. `gpu`) |
 | user `env` | Every key of the merged template and request `env` |
 
 Variables beginning with `TB_` are reserved; the request `env` cannot set them.
@@ -151,7 +163,7 @@ Variables beginning with `TB_` are reserved; the request `env` cannot set them.
 
 **List view.** `GET /ns/{nsId}/infra` (the view MapUI polls for the map) carries `initScriptStatus`, `initScriptMessage` and, while initializing or failed, `initScriptSteps` on each Node. These come from an in-memory index of the reports, so polling a large Infra adds no etcd reads.
 
-**Whole Infra at once.** `GET /ns/{nsId}/infra/{infraId}/initScript` returns the counts and every Node's result with per-step details, without loading the Node records. Use `option=summary` for the counts only and `status=ok|fail|pending|notApplicable` to list one group. A Node is `pending` until its report arrives (still booting, no Notifier, or report lost) and `notApplicable` when its NodeGroup has `mode: none`.
+**Whole Infra at once.** `GET /ns/{nsId}/infra/{infraId}/initScript` returns the counts and every Node's result with per-step details, without loading the Node records. Use `option=summary` for the counts only and `status=ok|fail|pending|notApplicable` to list one group. A Node is `pending` until its report arrives, `noReport` when it has been Running for longer than `TB_INIT_SCRIPT_NO_REPORT_TIMEOUT` (default `3m`) without any report (user data did not run, or the Notifier is unreachable from that region; a late report still replaces it), and `notApplicable` when its NodeGroup has `mode: none` or the Node never reached Running (Failed, Terminated).
 
 ```json
 { "infraId": "web", "total": 100, "notApplicable": 0, "reported": 98, "ok": 97, "fail": 1, "pending": 2,
@@ -182,6 +194,17 @@ On the VM itself: `/var/lib/tb/init-script.status` holds `ok|fail <exit code> <t
 
 `initScript` itself is a field of the Infra, Infra template and NodeGroup dynamic requests; the Node object exposes `initScript`, `initScriptStatus` and `initScriptMessage`.
 
+**Running a template later over SSH.** Remote commands (`POST /ns/{nsId}/cmd/infra/{infraId}`, with `nodeGroupId`, `nodeId` or `labelSelector`) and post-deployment phases accept `templateId` and/or `scripts` instead of `command`, plus `env`. The steps then run as root with the same `TB_*` variables and rules as at first boot. Use it to apply a template to existing Nodes or to re-run a failed init script without recreating the Node:
+
+```bash
+curl -u default:default -X POST http://localhost:1323/tumblebug/ns/default/cmd/infra/web?nodeId=g1-1 \
+  -H 'Content-Type: application/json' -d '{"templateId": "initscript-nginx", "env": {"SITE_TITLE": "retry"}}'
+```
+
+Such a run reports `event: done` through the Notifier like a first boot, so the Node's `initScriptStatus` and steps follow the latest run. In MapUI, a Node whose init failed shows a **re-run via SSH** button in the Infra card that repeats the Node's own steps; the post-deployment command composer lets a phase run a template instead of commands, and the review dialog can add template or inline steps per NodeGroup.
+
+Plain `command` requests may also carry `env`; it is exported in front of each command.
+
 ---
 
 ## Limitations and Troubleshooting
@@ -189,6 +212,8 @@ On the VM itself: `/var/lib/tb/init-script.status` holds `ok|fail <exit code> <t
 - **Linux only.** Windows Nodes keep the CB-Spider default (account and password via the CSP).
 - **16 KB limit.** The rendered user data (variables, wrapper and all steps, base64-encoded) must stay under 16 KB. Put large payloads behind a download step rather than inlining them.
 - **No report without a Notifier.** The script still runs, but the Node stays `pending`. The status marker on the VM remains the source of truth.
+- **Full logs.** The report carries the last lines only; `/var/log/tb-init-script.log` on the Node has everything, and the OTel agent ships that file to the observability stack when one is used.
+- **Secrets in `env`.** CB-Tumblebug keeps script bodies, `env` values and the rendered user data out of its own logs, debug output and the remote-command history; they appear as `[N bytes redacted]` or `********`. They are still stored in the Node's blueprint, which the API returns to authenticated users, and user data is plain text on the VM itself. Do not put long-lived secrets in `env`.
 - **Reporting is best effort.** Progress reports (one per step start) are sent once; the final report is retried three times; if the Notifier is unreachable from the VM's network, check the Security Group of the Notifier VM (443) and the egress of the Node.
 - **`custom` mode and SSH.** CB-Tumblebug does not create an account in `custom` mode, so remote commands use the image's default account; set `nodeUserName` accordingly.
 - **Marker already present.** Custom images built from a Node that ran an init script carry `/var/lib/tb/init-script.status`, so the wrapper exits immediately on new VMs. Remove the file before creating the image.

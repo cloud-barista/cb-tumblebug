@@ -1,6 +1,5 @@
 {
   "description": "Multi-CSP Test infra for VPN tunnel",
-  "installMonAgent": "no",
   "name": "",
   "nodeGroups": [
     {

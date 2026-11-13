@@ -18,7 +18,6 @@ echo "${PRINT}" >./infraTest-$option.csv
 
 
 description="Made in CB-TB"
-installMonAgent="no"
 label="DynamicVM"
 
 echo 
@@ -113,7 +112,6 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
             {
                     "name": "${infraName}",
                     "description": "${description}",
-                    "installMonAgent": "${installMonAgent}",
                     "label": "${label}",
                     "systemLabel": "Managed-by-Tumblebug",
                     "vm": [ {

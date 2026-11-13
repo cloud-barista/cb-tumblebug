@@ -412,7 +412,7 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 				return fmt.Errorf("VNet template '%s' has neither vNetPolicy nor vNetReq defined", effectiveVNetTemplateId)
 			}
 
-			common.PrintJsonPretty(reqTmp)
+			// common.PrintJsonPretty(reqTmp)
 			resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
 			// KT has a single account-wide VPC whose tiers persist; a leftover tier with the same
 			// auto-assigned CIDR yields 409 "duplicate network cidr" — retry with a different /16.
@@ -429,7 +429,7 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 				log.Error().Err(err).Msgf("Failed to create vNet from template '%s'", effectiveVNetTemplateId)
 				return err
 			}
-			common.PrintJsonPretty(resultInfo)
+			// common.PrintJsonPretty(resultInfo)
 
 			// Tag a dedicated per-Infra VNet (sys.infraId, sys.purpose) so the unused-resource
 			// release operation can reclaim it once no VMs reference it.
@@ -524,13 +524,13 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 			}
 			reqTmp.FirewallRules = &ruleList
 
-			common.PrintJsonPretty(reqTmp)
+			// common.PrintJsonPretty(reqTmp)
 			resultInfo, err := CreateSecurityGroup(ctx, nsId, &reqTmp, "")
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to create SecurityGroup (template: '%s')", effectiveSgTemplateId)
 				return err
 			}
-			common.PrintJsonPretty(resultInfo)
+			// common.PrintJsonPretty(resultInfo)
 
 			// Tag a dedicated per-Infra SG (sys.infraId, sys.purpose) so the unused-resource
 			// release operation can reclaim it once no VMs reference it. Labels merge with the
@@ -559,7 +559,7 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 			reqTmp.Name = resourceName
 			reqTmp.Description = description
 
-			common.PrintJsonPretty(reqTmp)
+			// common.PrintJsonPretty(reqTmp)
 
 			resultInfo, err := CreateSshKey(ctx, nsId, &reqTmp, "")
 			if err != nil {

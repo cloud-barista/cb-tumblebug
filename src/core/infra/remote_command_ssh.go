@@ -381,6 +381,7 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 			connCh := make(chan net.Conn, 1)
 			errCh := make(chan error, 1)
 			sshClientCh := make(chan *ssh.Client, 1)
+			var bastionUp atomic.Bool
 
 			go func() {
 				if isSelfBastion {
@@ -424,8 +425,8 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 					// Tag the error so the retry/final-wrap layer can call out which
 					// SIDE failed (bastion vs target) instead of presenting a single
 					// opaque "failed to connect to target host" message.
-					err = fmt.Errorf("[bastion] failed to establish SSH connection to bastion %s as user %q (bastionNodeId=%s): %v",
-						bastionInfo.EndPoint, bastionInfo.UserName, bastionCtx.NodeId, err)
+					err = &bastionUnreachableError{fmt.Errorf("[bastion] failed to establish SSH connection to bastion %s as user %q (bastionNodeId=%s): %v",
+						bastionInfo.EndPoint, bastionInfo.UserName, bastionCtx.NodeId, err)}
 					log.Error().
 						Str("bastionEndpoint", bastionInfo.EndPoint).
 						Str("bastionUserName", bastionInfo.UserName).
@@ -437,6 +438,7 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 					return
 				}
 				log.Debug().Str("bastionEndpoint", bastionInfo.EndPoint).Msg("Successfully connected to bastion host")
+				bastionUp.Store(true)
 
 				sshClientCh <- client
 
@@ -493,6 +495,10 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 					return stdoutMap, stderrMap, fmt.Errorf("connection cancelled: %w", ctx.Err())
 				}
 				lastErr = retryCtx.Err()
+				if !isSelfBastion && !bastionUp.Load() {
+					lastErr = &bastionUnreachableError{fmt.Errorf("[bastion] no SSH connection to bastion %s within %v: %w",
+						bastionInfo.EndPoint, timeout, lastErr)}
+				}
 				waitTime := time.Duration(3) * time.Second
 				log.Warn().Err(lastErr).Msgf("Connection timeout. Attempt %d/%d. Retrying in %v...",
 					i+1, retryCount, waitTime)
@@ -512,7 +518,7 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 				targetCtx.NodeId, targetInfo.EndPoint, targetInfo.UserName, retryCount, lastErr)
 		}
 		return stdoutMap, stderrMap, fmt.Errorf(
-			"failed to connect to target Node %q at %s (as %q) via bastion Node %q at %s (as %q) after %d attempts: %v",
+			"failed to connect to target Node %q at %s (as %q) via bastion Node %q at %s (as %q) after %d attempts: %w",
 			targetCtx.NodeId, targetInfo.EndPoint, targetInfo.UserName,
 			bastionCtx.NodeId, bastionInfo.EndPoint, bastionInfo.UserName,
 			retryCount, lastErr)
@@ -675,8 +681,8 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 		default:
 		}
 
-		log.Debug().Int("commandIndex", i).Str("command", cmd).Msg("Executing SSH command")
-		publishSSHSystemLog(ctx, "stdout", "[TB] Executing command [%d/%d]: %s", i+1, len(cmds), summarizeCommand(cmd, 120))
+		log.Debug().Int("commandIndex", i).Str("command", displayCommand(cmd)).Msg("Executing SSH command")
+		publishSSHSystemLog(ctx, "stdout", "[TB] Executing command [%d/%d]: %s", i+1, len(cmds), summarizeCommand(displayCommand(cmd), 120))
 
 		// Create a new SSH session for each command
 		session, err := client.NewSession()

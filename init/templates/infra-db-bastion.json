@@ -3,7 +3,6 @@
   "name": "infra-db-bastion",
   "description": "Multi-CSP DB Bastion template for secure in-VPC RDBMS access and testing. Contains lightweight verified specs/images per CSP with MySQL/MariaDB client pre-installed.",
   "infraDynamicReq": {
-    "installMonAgent": "no",
     "nodeGroups": [
       {
         "name": "g-aws",

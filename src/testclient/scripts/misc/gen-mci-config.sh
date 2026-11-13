@@ -10,7 +10,6 @@ nsForSystem="system"
 
 PRINT="{
   \"description\": \"Made in CB-TB\",
-  \"installMonAgent\": \"no\",
   \"label\": \"DynamicVM\",
   \"name\": \"infra01\",
   \"systemLabel\": \"\",

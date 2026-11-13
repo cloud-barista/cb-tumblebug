@@ -1,0 +1,723 @@
+{
+ "uid": "tb-node-logs",
+ "title": "TB Node Logs",
+ "description": "Journal and file logs of the selected Nodes: volume by Node and level, noisiest units, and the entries themselves.",
+ "tags": [
+  "cb-tumblebug"
+ ],
+ "editable": true,
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 2,
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "fiscalYearStartMonth": 0,
+ "weekStart": "",
+ "annotations": {
+  "list": []
+ },
+ "links": [
+  {
+   "type": "dashboards",
+   "tags": [
+    "cb-tumblebug"
+   ],
+   "asDropdown": true,
+   "title": "TB dashboards",
+   "includeVars": true,
+   "keepTime": true,
+   "icon": "external link",
+   "tooltip": "",
+   "url": ""
+  }
+ ],
+ "templating": {
+  "list": [
+   {
+    "name": "ns",
+    "label": "Namespace",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "tb-loki"
+    },
+    "definition": "label_values(tb_ns)",
+    "query": "label_values(tb_ns)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "infra",
+    "label": "Infra",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "tb-loki"
+    },
+    "definition": "label_values({tb_ns=~\"$ns\"}, tb_infra)",
+    "query": "label_values({tb_ns=~\"$ns\"}, tb_infra)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "nodegroup",
+    "label": "NodeGroup",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "tb-loki"
+    },
+    "definition": "label_values({tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_nodegroup)",
+    "query": "label_values({tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_nodegroup)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "node",
+    "label": "Node",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "tb-loki"
+    },
+    "definition": "label_values({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\"}, tb_node)",
+    "query": "label_values({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\"}, tb_node)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "search",
+    "label": "Search (line contains)",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "text": "",
+     "value": "",
+     "selected": false
+    },
+    "options": [
+     {
+      "text": "",
+      "value": "",
+      "selected": false
+     }
+    ]
+   },
+   {
+    "name": "unit",
+    "label": "systemd unit contains",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "text": "",
+     "value": "",
+     "selected": false
+    },
+    "options": [
+     {
+      "text": "",
+      "value": "",
+      "selected": false
+     }
+    ]
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "Volume",
+   "collapsed": false,
+   "panels": [],
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Log lines / min by Node",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 1,
+      "fillOpacity": 60,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "bars",
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "palette-classic"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": []
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum by (tb_node) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\" [1m]))",
+     "legendFormat": "{{tb_node}}",
+     "queryType": "range"
+    }
+   ],
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 1,
+    "w": 12,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Journal lines / min by level",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 1,
+      "fillOpacity": 60,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "bars",
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "palette-classic"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "error"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "red"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "warning"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "orange"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "info"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "green"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "debug"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "blue"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": []
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "sum by (level) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\" | scope_name=~\".*journald.*\" | json | __error__=\"\" | _SYSTEMD_UNIT=~\".*$unit.*\" | label_format level=`{{ if le .PRIORITY \"3\" }}error{{ else if eq .PRIORITY \"4\" }}warning{{ else if eq .PRIORITY \"7\" }}debug{{ else }}info{{ end }}` [1m]))",
+     "legendFormat": "{{level}}",
+     "queryType": "range"
+    }
+   ],
+   "id": 3,
+   "gridPos": {
+    "x": 12,
+    "y": 1,
+    "w": 12,
+    "h": 7
+   }
+  },
+  {
+   "type": "bargauge",
+   "title": "Noisiest units",
+   "description": "Journal lines per systemd unit in the selected range",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "min": 0,
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "horizontal",
+    "displayMode": "gradient",
+    "valueMode": "color",
+    "showUnfilled": true,
+    "namePlacement": "auto",
+    "sizing": "auto",
+    "minVizHeight": 16,
+    "minVizWidth": 8,
+    "maxVizHeight": 300
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "topk(10, sum by (_SYSTEMD_UNIT) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\" | scope_name=~\".*journald.*\" | json | __error__=\"\" | _SYSTEMD_UNIT=~\".*$unit.*\" [$__range])))",
+     "legendFormat": "{{_SYSTEMD_UNIT}}",
+     "queryType": "instant"
+    }
+   ],
+   "id": 4,
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "bargauge",
+   "title": "Noisiest identifiers",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "min": 0,
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "horizontal",
+    "displayMode": "gradient",
+    "valueMode": "color",
+    "showUnfilled": true,
+    "namePlacement": "auto",
+    "sizing": "auto",
+    "minVizHeight": 16,
+    "minVizWidth": 8,
+    "maxVizHeight": 300
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "topk(10, sum by (SYSLOG_IDENTIFIER) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\" | scope_name=~\".*journald.*\" | json | __error__=\"\" | _SYSTEMD_UNIT=~\".*$unit.*\" [$__range])))",
+     "legendFormat": "{{SYSLOG_IDENTIFIER}}",
+     "queryType": "instant"
+    }
+   ],
+   "id": 5,
+   "gridPos": {
+    "x": 8,
+    "y": 8,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "bargauge",
+   "title": "Journal errors by Node",
+   "description": "Entries with priority err or worse in the selected range",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "min": 0,
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "horizontal",
+    "displayMode": "gradient",
+    "valueMode": "color",
+    "showUnfilled": true,
+    "namePlacement": "auto",
+    "sizing": "auto",
+    "minVizHeight": 16,
+    "minVizWidth": 8,
+    "maxVizHeight": 300
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "topk(10, sum by (tb_node) (count_over_time({tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\" | scope_name=~\".*journald.*\" | json | __error__=\"\" | _SYSTEMD_UNIT=~\".*$unit.*\" | PRIORITY <= 3 [$__range])))",
+     "legendFormat": "{{tb_node}}",
+     "queryType": "instant"
+    }
+   ],
+   "id": 6,
+   "gridPos": {
+    "x": 16,
+    "y": 8,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "row",
+   "title": "Entries",
+   "collapsed": false,
+   "panels": [],
+   "id": 7,
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "logs",
+   "title": "System journal",
+   "description": "Level comes from the journal priority: err and worse are red, warning orange",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "options": {
+    "showTime": true,
+    "showLabels": false,
+    "showCommonLabels": false,
+    "wrapLogMessage": true,
+    "prettifyLogMessage": false,
+    "enableLogDetails": true,
+    "dedupStrategy": "none",
+    "sortOrder": "Descending"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\" | scope_name=~\".*journald.*\" | json | __error__=\"\" | _SYSTEMD_UNIT=~\".*$unit.*\" | label_format level=`{{ if le .PRIORITY \"3\" }}error{{ else if eq .PRIORITY \"4\" }}warning{{ else if eq .PRIORITY \"7\" }}debug{{ else }}info{{ end }}` | line_format \"{{.tb_node}} {{.SYSLOG_IDENTIFIER}}{{ if ._PID }}[{{._PID}}]{{ end }}: {{.MESSAGE}}\"",
+     "legendFormat": "",
+     "queryType": "range"
+    }
+   ],
+   "id": 8,
+   "gridPos": {
+    "x": 0,
+    "y": 17,
+    "w": 24,
+    "h": 16
+   }
+  },
+  {
+   "type": "logs",
+   "title": "Init script and file logs",
+   "description": "The init script log (/var/log/tb-init-script.log) and any OTEL_LOG_PATHS files",
+   "datasource": {
+    "type": "loki",
+    "uid": "tb-loki"
+   },
+   "options": {
+    "showTime": true,
+    "showLabels": false,
+    "showCommonLabels": false,
+    "wrapLogMessage": true,
+    "prettifyLogMessage": false,
+    "enableLogDetails": true,
+    "dedupStrategy": "none",
+    "sortOrder": "Descending"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "expr": "{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\" | scope_name=~\".*filelog.*\" | line_format \"{{.tb_node}} {{.log_file_name}}: {{__line__}}\"",
+     "legendFormat": "",
+     "queryType": "range"
+    }
+   ],
+   "id": 9,
+   "gridPos": {
+    "x": 0,
+    "y": 33,
+    "w": 24,
+    "h": 10
+   }
+  },
+  {
+   "type": "row",
+   "title": "Raw lines",
+   "collapsed": true,
+   "panels": [
+    {
+     "id": 99,
+     "type": "logs",
+     "title": "All lines as received",
+     "datasource": {
+      "type": "loki",
+      "uid": "tb-loki"
+     },
+     "gridPos": {
+      "x": 0,
+      "y": 44,
+      "w": 24,
+      "h": 14
+     },
+     "options": {
+      "showTime": true,
+      "showLabels": false,
+      "showCommonLabels": false,
+      "wrapLogMessage": true,
+      "prettifyLogMessage": false,
+      "enableLogDetails": true,
+      "dedupStrategy": "none",
+      "sortOrder": "Descending"
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "loki",
+        "uid": "tb-loki"
+       },
+       "expr": "{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_nodegroup=~\"$nodegroup\",tb_node=~\"$node\"} |= \"$search\"",
+       "legendFormat": "",
+       "queryType": "range"
+      }
+     ]
+    }
+   ],
+   "id": 10,
+   "gridPos": {
+    "x": 0,
+    "y": 43,
+    "w": 24,
+    "h": 1
+   }
+  }
+ ]
+}

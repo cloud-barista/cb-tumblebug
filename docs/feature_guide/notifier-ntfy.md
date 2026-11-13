@@ -215,7 +215,7 @@ All endpoints are global (not namespaced) and require the CB-Tumblebug API crede
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/tumblebug/notifier` | Registered notifier. Tokens masked unless `showSecrets=true` |
+| `GET` | `/tumblebug/notifier` | Registered notifier (204 when none). Tokens masked unless `showSecrets=true` |
 | `PUT` | `/tumblebug/notifier` | Register an existing ntfy server. `url` must be `http(s)://host[:port][/path]` (no credentials, query or fragment; link-local and metadata addresses rejected) and `topic` 1-64 of `A-Za-z0-9_-` |
 | `DELETE` | `/tumblebug/notifier` | Unregister. `deleteInfra=true` also deletes the managed Infra and its resources |
 | `POST` | `/tumblebug/notifier/ntfy` | Provision from template and register. Body: `nsId`, `templateId`, `name`, `domainName`, `recordName` (all optional) |

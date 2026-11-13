@@ -141,9 +141,6 @@ type RegionInfo struct {
 type InfraReq struct {
 	Name string `json:"name" validate:"required" example:"infra01"`
 
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
-
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
 
@@ -192,9 +189,6 @@ type InfraInfo struct {
 	StatusCount  StatusCountInfo `json:"statusCount"`
 	TargetStatus string          `json:"targetStatus"`
 	TargetAction string          `json:"targetAction"`
-
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
 	// ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
 	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"no" enums:"yes,no"` // yes or no
@@ -269,6 +263,12 @@ type InitScriptReq struct {
 type InitScriptStep struct {
 	Name   string `json:"name,omitempty" example:"install-agent"`
 	Script string `json:"script" example:"#!/bin/bash\napt-get install -y -qq jq"`
+	// ContinueOnError keeps running the next steps when this one fails; the Node then reports ok with a note
+	ContinueOnError bool `json:"continueOnError,omitempty" example:"false"`
+	// TimeoutSec stops the step after this many seconds (0: no limit); a timeout counts as a failure
+	TimeoutSec int `json:"timeoutSec,omitempty" example:"600"`
+	// LabelSelector runs the step only on Nodes whose labels match (e.g. "role=gpu"); empty runs everywhere
+	LabelSelector string `json:"labelSelector,omitempty" example:"role=gpu"`
 }
 
 // InitScriptResult is the latest snapshot a Node reported about its init script, stored per Node.
@@ -303,10 +303,19 @@ func (r InitScriptResult) FailedStep() string {
 	return ""
 }
 
-// Summary renders the one-line message shown on the Node: empty for ok, the current step while initializing,
-// "<step> exit <code>: <tail>" for fail.
+// Summary renders the one-line message shown on the Node: empty for ok (or the optional steps that failed),
+// the current step while initializing, "<step> exit <code>: <tail>" for fail.
 func (r InitScriptResult) Summary() string {
 	if r.Status == "ok" {
+		var optional []string
+		for _, s := range r.Steps {
+			if s.Status == "fail" {
+				optional = append(optional, s.Name)
+			}
+		}
+		if len(optional) > 0 {
+			return "optional step(s) failed: " + strings.Join(optional, ", ")
+		}
 		return ""
 	}
 	if r.Status == InitScriptStatusInitializing {
@@ -334,9 +343,12 @@ type InfraInitScriptStatus struct {
 	Initializing  int `json:"initializing" example:"0"`
 	Ok            int `json:"ok" example:"97"`
 	Fail          int `json:"fail" example:"1"`
-	// Pending are applicable Nodes that have not reported yet (still booting, no notifier, or report lost)
+	// Pending are applicable Nodes that have not reported yet (still booting or being created)
 	Pending int `json:"pending" example:"2"`
-	// Nodes lists every Node unless option=summary; status is initializing, ok, fail, pending or notApplicable
+	// NoReport are Running Nodes that sent nothing within TB_INIT_SCRIPT_NO_REPORT_TIMEOUT (user data not run,
+	// or the Notifier unreachable from the Node); a late report still replaces it
+	NoReport int `json:"noReport" example:"0"`
+	// Nodes lists every Node unless option=summary; status is initializing, ok, fail, pending, noReport or notApplicable
 	Nodes []NodeInitScriptStatus `json:"nodes,omitempty"`
 }
 
@@ -354,6 +366,8 @@ const (
 	InitScriptStatusPending       = "pending"
 	InitScriptStatusInitializing  = "initializing"
 	InitScriptStatusNotApplicable = "notApplicable"
+	// InitScriptStatusNoReport marks a Running Node that sent nothing within the report timeout
+	InitScriptStatusNoReport = "noReport"
 )
 
 // InitScriptMaxBytes is the rendered user data limit (AWS; the most restrictive among supported CSPs).
@@ -566,9 +580,6 @@ type InfraDynamicReq struct {
 	// - "rollback": Cleanup entire Infra when any Node fails
 	// - "refine": Mark failed Nodes for refinement
 	PolicyOnPartialFailure string `json:"policyOnPartialFailure" example:"continue" default:"continue" enums:"continue,rollback,refine"`
-
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
 	// NodeGroups is array of Node requests for multi-cloud infrastructure
 	// Example: Multiple Node groups across different CSPs
@@ -1019,7 +1030,6 @@ type CompactNodeInfo struct {
 	TargetStatus string `json:"targetStatus,omitempty"`
 	TargetAction string `json:"targetAction,omitempty"`
 
-	MonAgentStatus     string               `json:"monAgentStatus,omitempty"`
 	NetworkAgentStatus string               `json:"networkAgentStatus,omitempty"`
 	SystemMessage      string               `json:"systemMessage,omitempty"`
 	Failure            *ProvisioningFailure `json:"failure,omitempty"`
@@ -1191,7 +1201,6 @@ func ToCompactNodeInfo(node NodeInfo, ng *NodeGroupInfo) CompactNodeInfo {
 		Status:             node.Status,
 		TargetStatus:       node.TargetStatus,
 		TargetAction:       node.TargetAction,
-		MonAgentStatus:     node.MonAgentStatus,
 		NetworkAgentStatus: node.NetworkAgentStatus,
 		SystemMessage:      node.SystemMessage,
 		Failure:            node.Failure,
@@ -1427,9 +1436,6 @@ type NodeInfo struct {
 	TargetStatus string `json:"targetStatus"`
 	TargetAction string `json:"targetAction"`
 
-	// Montoring agent status
-	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
-
 	// NetworkAgent status
 	NetworkAgentStatus string `json:"networkAgentStatus" example:"[notInstalled, installing, installed, failed]"` // notInstalled, installing, installed, failed
 
@@ -1512,7 +1518,6 @@ type NodeSummary struct {
 	Status           string            `json:"status"`
 	TargetStatus     string            `json:"targetStatus"`
 	TargetAction     string            `json:"targetAction"`
-	MonAgentStatus   string            `json:"monAgentStatus"`
 	SystemMessage    string            `json:"systemMessage"`
 	CreatedTime      string            `json:"createdTime"`
 	Region           RegionInfo        `json:"region"`
@@ -1560,7 +1565,6 @@ type InfraInfoSummary struct {
 	StatusCount                   StatusCountInfo   `json:"statusCount"`
 	TargetStatus                  string            `json:"targetStatus"`
 	TargetAction                  string            `json:"targetAction"`
-	InstallMonAgent               string            `json:"installMonAgent"`
 	ConfigureCloudAdaptiveNetwork string            `json:"configureCloudAdaptiveNetwork"`
 	Label                         map[string]string `json:"label"`
 	SystemLabel                   string            `json:"systemLabel"`
@@ -1705,9 +1709,6 @@ type InfraStatusInfo struct {
 	TargetStatus string          `json:"targetStatus"`
 	TargetAction string          `json:"targetAction"`
 
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
-
 	MasterNodeId  string `json:"masterNodeId" example:"node-asiaeast1-cb-01"`
 	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
 	MasterSSHPort int    `json:"masterSSHPort"`
@@ -1779,9 +1780,6 @@ type NodeStatusInfo struct {
 	TargetStatus string `json:"targetStatus"`
 	TargetAction string `json:"targetAction"`
 	NativeStatus string `json:"nativeStatus"`
-
-	// Montoring agent status
-	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
@@ -1899,8 +1897,16 @@ type InfraCmdReq struct {
 	// UserName is the SSH username to use for command execution
 	UserName string `json:"userName" example:"cb-user" default:""`
 
-	// Command is the list of commands to execute
-	Command []string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
+	// Command is the list of commands to execute (not needed when TemplateId or Scripts is given)
+	Command []string `json:"command" validate:"required_without_all=TemplateId Scripts" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
+
+	// TemplateId runs an init script template over SSH instead of Command: its steps run in order as root with
+	// the Node identity (TB_*) and Env exported, exactly like a first-boot init script
+	TemplateId string `json:"templateId,omitempty" example:"initscript-nginx"`
+	// Scripts runs these steps over SSH (same runner as TemplateId), appended after the template's steps
+	Scripts []InitScriptStep `json:"scripts,omitempty"`
+	// Env is exported to Command, TemplateId and Scripts
+	Env map[string]string `json:"env,omitempty" example:"ROLE:web"`
 
 	// TimeoutMinutes is the timeout for command execution in minutes (default: 30, min: 1, max: 120)
 	// If not specified or set to 0, the default timeout (30 minutes) will be used
@@ -2713,13 +2719,12 @@ type AutopilotPolicy struct {
 
 // InfraAutopilotReq is the request body for POST /:nsId/infraAutopilot.
 type InfraAutopilotReq struct {
-	Name            string            `json:"name" validate:"required" example:"my-infra"`
-	NodeSpecs       []NodeSpec        `json:"nodeSpecs" validate:"required,min=1"`
-	Policy          AutopilotPolicy   `json:"policy,omitempty"`
-	InstallMonAgent string            `json:"installMonAgent,omitempty" example:"no"`
-	PostCommands    []PostCommandReq  `json:"postCommands,omitempty"`
-	Description     string            `json:"description,omitempty"`
-	Label           map[string]string `json:"label,omitempty"`
+	Name         string            `json:"name" validate:"required" example:"my-infra"`
+	NodeSpecs    []NodeSpec        `json:"nodeSpecs" validate:"required,min=1"`
+	Policy       AutopilotPolicy   `json:"policy,omitempty"`
+	PostCommands []PostCommandReq  `json:"postCommands,omitempty"`
+	Description  string            `json:"description,omitempty"`
+	Label        map[string]string `json:"label,omitempty"`
 }
 
 // ProvisioningAttempt records one pre-flight review pass for a candidate spec.

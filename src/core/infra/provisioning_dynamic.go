@@ -106,7 +106,6 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 	infraReq.Name = req.Name
 	infraReq.Label = req.Label
 	infraReq.SystemLabel = req.SystemLabel
-	infraReq.InstallMonAgent = req.InstallMonAgent
 	infraReq.Description = req.Description
 	infraReq.PostCommands = req.PostCommands
 	infraReq.PostCommandAsync = req.PostCommandAsync
@@ -167,11 +166,9 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		if nodeGroupReqs[i].SgTemplateId == "" && req.SgTemplateId != "" {
 			nodeGroupReqs[i].SgTemplateId = req.SgTemplateId
 		}
-		if nodeGroupReqs[i].InitScript == nil && req.InitScript != nil {
-			nodeGroupReqs[i].InitScript = req.InitScript
-		}
-		// Resolve templates before any resource is created so a bad reference fails the whole request early
-		resolved, err := resolveInitScript(nsId, nodeGroupReqs[i].InitScript)
+		// A NodeGroup that only adds steps extends the Infra-level init script; otherwise it replaces it.
+		// Templates are resolved here, before any resource is created, so a bad reference fails early.
+		resolved, err := mergeGroupInitScript(nsId, req.InitScript, nodeGroupReqs[i].InitScript)
 		if err != nil {
 			return nil, fmt.Errorf("nodeGroup '%s': %w", nodeGroupReqs[i].Name, err)
 		}
@@ -512,7 +509,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 	UpdateInfraInfo(nsId, infraTmp)
 
 	// Log the prepared Infra request and update the progress
-	common.PrintJsonPretty(infraReq)
+	// common.PrintJsonPretty(infraReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
 		Title: fmt.Sprintf("Prepared %d resources for provisioning Infra: %s", len(infraReq.NodeGroups), infraReq.Name),
 		Info:  infraReq, Time: time.Now(),
@@ -577,7 +574,6 @@ func CreateSystemInfraDynamic(option string) (*model.InfraInfo, error) {
 	req.Label = labels
 	req.SystemLabel = option
 	req.Description = option
-	req.InstallMonAgent = "no"
 
 	switch option {
 	case "probe":
@@ -600,7 +596,7 @@ func CreateSystemInfraDynamic(option string) (*model.InfraInfo, error) {
 
 			recommendSpecReq.Filter.Policy = append(recommendSpecReq.Filter.Policy, model.FilterCondition{Metric: "region", Condition: condition})
 			recommendSpecReq.Limit = 1
-			common.PrintJsonPretty(recommendSpecReq)
+			// common.PrintJsonPretty(recommendSpecReq)
 
 			specList, err := RecommendSpec(common.NewDefaultContext(), model.SystemCommonNs, recommendSpecReq)
 			if err != nil {
@@ -1494,7 +1490,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 	// NodeUserPassword is not taken from the request; CreateNode generates a random
 	// password internally for the CSP-side requirement (Windows).
 
-	common.PrintJsonPretty(nodeGroupReq)
+	// common.PrintJsonPretty(nodeGroupReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for VM:" + nodeGroupReq.Name, Info: nodeGroupReq, Time: time.Now()})
 
 	return &NodeReqWithCreatedResources{VmReq: nodeGroupReq, CreatedResources: createdResources}, nil
@@ -1560,6 +1556,10 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 		log.Error().Err(err).Msg("")
 		return err
 	}
+	// Register the reserved Node in the status store, parked (PollSkip) until its create call starts. Without
+	// this, status views read every Node still waiting in the creation queue from etcd on each request.
+	globalStatusStore.Set(nsId, infraId, nodeInfoData.Id, buildStatusEntry(nsId, infraId, *nodeInfoData))
+	GlobalAgent.AcquireLock(nsId, infraId, nodeInfoData.Id, nodeInfoData.Status, nodeInfoData.TargetAction)
 
 	return nil
 }
@@ -1680,14 +1680,7 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 							select {
 							case nodeSemaphore <- struct{}{}:
 							case <-regionCtx.Done():
-								reason := skipReason()
-								nodeInfoData := *nodeInfo
-								nodeInfoData.Status = model.StatusFailed
-								nodeInfoData.TargetAction = model.ActionComplete
-								nodeInfoData.TargetStatus = ""
-								nodeInfoData.SystemMessage = "VM creation skipped: " + reason
-								UpdateNodeInfo(nsId, infraId, nodeInfoData)
-								log.Warn().Msgf("[CreateNode] VM %s skipped in %s/%s: %s", nodeInfo.Name, providerName, regionName, reason)
+								reason := markNodeSkipped(nsId, infraId, nodeInfo, providerName, regionName, skipReason())
 								nodeMutex.Lock()
 								regionErrors = append(regionErrors, fmt.Errorf("VM %s: creation skipped: %s", nodeInfo.Name, reason))
 								nodeMutex.Unlock()
@@ -1697,14 +1690,7 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 
 							// Re-check after acquiring slot (another goroutine may have just cancelled).
 							if regionCtx.Err() != nil {
-								reason := skipReason()
-								nodeInfoData := *nodeInfo
-								nodeInfoData.Status = model.StatusFailed
-								nodeInfoData.TargetAction = model.ActionComplete
-								nodeInfoData.TargetStatus = ""
-								nodeInfoData.SystemMessage = "VM creation skipped: " + reason
-								UpdateNodeInfo(nsId, infraId, nodeInfoData)
-								log.Warn().Msgf("[CreateNode] VM %s skipped in %s/%s: %s", nodeInfo.Name, providerName, regionName, reason)
+								reason := markNodeSkipped(nsId, infraId, nodeInfo, providerName, regionName, skipReason())
 								nodeMutex.Lock()
 								regionErrors = append(regionErrors, fmt.Errorf("VM %s: creation skipped: %s", nodeInfo.Name, reason))
 								nodeMutex.Unlock()
@@ -2246,6 +2232,46 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		return err
 	}
 
+	if callResult.IId.SystemId == "" {
+		// the driver reported success without an instance id (seen with Tencent LAUNCH_FAILED). Spider's record is
+		// unusable, but the instance may still exist: ask the CSP directly before giving the Node up.
+		if nodeInfoData.CspResourceName == "" {
+			nodeInfoData.CspResourceName = callResult.IId.NameId
+			if nodeInfoData.CspResourceName == "" {
+				nodeInfoData.CspResourceName = requestBody.ReqInfo.Name
+			}
+		}
+		id, known := locateNodeOnCsp(*nodeInfoData)
+		if known && id != "" {
+			if refreshed, aerr := adoptNodeFromCsp(nsId, infraId, *nodeInfoData, id); aerr != nil {
+				log.Warn().Err(aerr).Str("nodeId", nodeInfoData.Id).Msg("[CreateNode] could not adopt the instance found on the CSP")
+			} else if info, gerr := getSpiderVMInfo(refreshed.ConnectionName, refreshed.CspResourceName); gerr != nil || info.IId.SystemId == "" {
+				log.Warn().Err(gerr).Str("nodeId", nodeInfoData.Id).Msg("[CreateNode] adopted the instance but could not read it back from Spider")
+			} else {
+				callResult = *info
+				log.Warn().Str("nodeId", nodeInfoData.Id).Str("cspSystemId", id).Msg("[CreateNode] Spider returned no instance id; adopted the instance found on the CSP")
+			}
+		}
+		if callResult.IId.SystemId == "" {
+			err = fmt.Errorf("Spider returned no CSP instance id for VM %s", nodeInfoData.Name)
+			recordNodeFailure(nodeInfoData, providerName, attemptedZone, err)
+			nodeInfoData.Status = model.StatusFailed
+			nodeInfoData.TargetAction = model.ActionComplete
+			nodeInfoData.TargetStatus = ""
+			if known && id == "" {
+				nodeInfoData.SystemMessage = err.Error() + "; the CSP has no such instance, Spider record removed"
+				if uerr := unregisterSpiderVM(nodeInfoData.ConnectionName, nodeInfoData.CspResourceName); uerr != nil {
+					log.Warn().Err(uerr).Str("nodeId", nodeInfoData.Id).Msg("[CreateNode] could not remove the Spider record")
+				}
+			} else {
+				nodeInfoData.SystemMessage = err.Error() + "; CSP state unknown, run action=reconcile to rescue or refine"
+			}
+			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+			log.Warn().Err(err).Msgf("[CreateNode] marking VM %s Failed", nodeInfoData.Name)
+			return err
+		}
+	}
+
 	nodeInfoData.AddtionalDetails = callResult.KeyValueList
 
 	// Merge CSP tags into Node labels (existing user/system labels take precedence)
@@ -2563,7 +2589,6 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	}
 
 	// Monitoring Agent Installation Status (init: notInstalled)
-	nodeInfoData.MonAgentStatus = "notInstalled"
 	nodeInfoData.NetworkAgentStatus = "notInstalled"
 
 	// set CreatedTime
@@ -2618,9 +2643,23 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		e.SSHPort = nodeInfoData.SSHPort
 		e.CreatedTime = nodeInfoData.CreatedTime
 		e.Location = nodeInfoData.Location
-		e.MonAgentStatus = nodeInfoData.MonAgentStatus
 		e.Label = labels
 	})
 
 	return nil
+}
+
+// markNodeSkipped records a Node that was never sent to the CSP as Failed, in etcd and in the status store.
+// The store entry matters: the Node skipped the per-Node create path that registers it, and list views
+// are served from the store alone.
+func markNodeSkipped(nsId, infraId string, nodeInfo *model.NodeInfo, providerName, regionName, reason string) string {
+	nodeInfoData := *nodeInfo
+	nodeInfoData.Status = model.StatusFailed
+	nodeInfoData.TargetAction = model.ActionComplete
+	nodeInfoData.TargetStatus = ""
+	nodeInfoData.SystemMessage = "VM creation skipped: " + reason
+	UpdateNodeInfo(nsId, infraId, nodeInfoData)
+	globalStatusStore.Set(nsId, infraId, nodeInfoData.Id, buildStatusEntry(nsId, infraId, nodeInfoData))
+	log.Warn().Msgf("[CreateNode] VM %s skipped in %s/%s: %s", nodeInfo.Name, providerName, regionName, reason)
+	return reason
 }

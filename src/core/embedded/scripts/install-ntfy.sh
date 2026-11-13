@@ -34,7 +34,11 @@ apt-get install -y -qq curl openssl >/dev/null
 ARCH=$(dpkg --print-architecture)
 DEB_URL=$(curl -fsSL https://api.github.com/repos/binwiederhier/ntfy/releases/latest | grep -oE "https://[^\"]+_linux_${ARCH}\.deb" | head -1 || true)
 [ -n "$DEB_URL" ] || DEB_URL="https://github.com/binwiederhier/ntfy/releases/download/v${VERSION}/ntfy_${VERSION}_linux_${ARCH}.deb"
-curl -fsSL -o /tmp/ntfy.deb "$DEB_URL"
+for i in 1 2 3 4 5; do
+  curl -fsSL --connect-timeout 15 --speed-limit 10240 --speed-time 30 -o /tmp/ntfy.deb "$DEB_URL" && break
+  [ "$i" = 5 ] && { echo "cannot download $DEB_URL"; exit 1; }
+  sleep $((i * 5))
+done
 apt-get install -y -qq /tmp/ntfy.deb >/dev/null
 
 mkdir -p /etc/ntfy /var/lib/ntfy /var/cache/ntfy

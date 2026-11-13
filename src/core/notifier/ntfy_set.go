@@ -15,20 +15,18 @@ package notifier
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/embedded"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/managedset"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -55,20 +53,6 @@ func installScript() string {
 		}
 	}
 	return embedded.InstallNtfy()
-}
-
-// withEnv prefixes a script with exported variables. Values are single-quoted; a quote in a value is rejected upstream.
-func withEnv(env map[string]string, script string) string {
-	keys := make([]string, 0, len(env))
-	for k := range env {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	var b strings.Builder
-	for _, k := range keys {
-		fmt.Fprintf(&b, "export %s='%s'\n", k, env[k])
-	}
-	return b.String() + script
 }
 
 // CreateNtfySet provisions an ntfy server from an Infra template, configures it, and registers it as the notifier.
@@ -98,30 +82,21 @@ func CreateNtfySet(ctx context.Context, req model.NotifierSetReq) (*model.Notifi
 	if err != nil {
 		return nil, err
 	}
-	var node *model.NodeInfo
-	for i := range infraInfo.Node {
-		if infraInfo.Node[i].PublicIP != "" {
-			node = &infraInfo.Node[i]
-			break
-		}
-	}
-	if node == nil {
-		return nil, fmt.Errorf("ntfy infra '%s' has no node with a public IP", infraInfo.Id)
+	node, err := managedset.PublicNode(infraInfo)
+	if err != nil {
+		return nil, err
 	}
 	publicIP := node.PublicIP
 
 	fqdn := ""
 	if domain != "" {
-		fqdn, err = chooseRecordName(ctx, domain, recordName)
+		fqdn, err = chooseRecordName(ctx, domain, recordName, publicIP)
 		if err != nil {
 			return nil, err
 		}
 		log.Info().Str("record", fqdn).Str("ip", publicIP).Msg("notifier: upserting Route53 record")
-		if _, err := resource.UpdateGlobalDnsRecord(ctx, &model.GlobalDnsRecordReq{
-			DomainName: domain, RecordName: fqdn, RecordType: "A", TTL: 60, RoutingPolicy: "simple",
-			SetBy: model.GlobalDnsIPSource{Ips: []string{publicIP}},
-		}); err != nil {
-			return nil, fmt.Errorf("failed to create DNS record '%s': %w", fqdn, err)
+		if err := managedset.UpsertDnsRecord(ctx, domain, fqdn, publicIP); err != nil {
+			return nil, err
 		}
 	}
 
@@ -134,13 +109,16 @@ func CreateNtfySet(ctx context.Context, req model.NotifierSetReq) (*model.Notifi
 
 	log.Info().Str("infra", infraInfo.Id).Str("ip", publicIP).Str("fqdn", fqdn).Msg("notifier: installing ntfy")
 	stdout, err := runWithRetry(nsId, infraInfo.Id, shellCommand(script))
+	if err == nil {
+		_, err = extractCA(stdout)
+	}
 	if err != nil {
+		if fqdn != "" {
+			managedset.DeleteDnsRecord(domain, fqdn, "notifier") // a retry draws a fresh name
+		}
 		return nil, fmt.Errorf("ntfy install failed on infra '%s': %w", infraInfo.Id, err)
 	}
-	caCert, err := extractCA(stdout)
-	if err != nil {
-		return nil, fmt.Errorf("ntfy install on infra '%s': %w", infraInfo.Id, err)
-	}
+	caCert, _ := extractCA(stdout)
 
 	info := &model.NotifierInfo{
 		Type: model.NotifierTypeNtfy, Url: "https://" + publicIP, Topic: topic,
@@ -180,34 +158,6 @@ func DeleteNtfySet(deleteInfra bool) error {
 		deleteManagedResources(info)
 	}
 	return nil
-}
-
-// deleteManagedResources removes the DNS record, SecurityGroups, SSHKey and vNet created for the managed Infra.
-// A resource still used by another Infra fails to delete and is left in place.
-func deleteManagedResources(info *model.NotifierInfo) {
-	ns := info.ManagedNsId
-	if info.ManagedDnsRecord != "" {
-		if _, err := resource.DeleteGlobalDnsRecord(context.Background(), &model.GlobalDnsDeleteReq{
-			DomainName: info.ManagedDnsDomain, RecordName: info.ManagedDnsRecord, RecordType: "A",
-		}); err != nil {
-			log.Warn().Err(err).Str("record", info.ManagedDnsRecord).Msg("notifier: left DNS record in place")
-		}
-	}
-	for _, sgId := range info.ManagedSecurityGroupIds {
-		if err := resource.DelResource(ns, model.StrSecurityGroup, sgId, "false"); err != nil {
-			log.Warn().Err(err).Str("securityGroup", sgId).Msg("notifier: left managed securityGroup in place")
-		}
-	}
-	if info.ManagedSshKeyId != "" {
-		if err := resource.DelResource(ns, model.StrSSHKey, info.ManagedSshKeyId, "false"); err != nil {
-			log.Warn().Err(err).Str("sshKey", info.ManagedSshKeyId).Msg("notifier: left managed sshKey in place")
-		}
-	}
-	if info.ManagedVNetId != "" {
-		if _, err := resource.DeleteVNet(ns, info.ManagedVNetId, string(resource.ActionWithSubnets)); err != nil {
-			log.Warn().Err(err).Str("vNet", info.ManagedVNetId).Msg("notifier: left managed vNet in place")
-		}
-	}
 }
 
 // AddReader creates a read-only ntfy user on the managed server. The password is returned once.
@@ -304,118 +254,33 @@ func readerNote(info *model.NotifierInfo) string {
 	return "Self-signed certificate: phone apps cannot subscribe; use the web UI or curl with caCert as a trusted CA."
 }
 
-// provisionOrReuse creates the ntfy Infra from the template, or reuses an existing Infra of the same name
-// so that a failed install can be retried without re-provisioning.
+var (
+	withEnv       = managedset.WithEnv
+	shellCommand  = managedset.ShellCommand
+	firstNonEmpty = managedset.FirstNonEmpty
+)
+
 func provisionOrReuse(ctx context.Context, nsId, templateId, name, description string) (*model.InfraInfo, error) {
-	if existing, err := infra.GetInfraInfo(nsId, name); err == nil && existing != nil && len(existing.Node) > 0 {
-		log.Info().Str("ns", nsId).Str("infra", name).Msg("notifier: reusing existing ntfy infra")
-		return existing, nil
-	}
-	log.Info().Str("ns", nsId).Str("template", templateId).Str("name", name).Msg("notifier: provisioning ntfy infra")
-	infraInfo, err := infra.CreateInfraDynamicFromTemplate(ctx, nsId, templateId,
-		&model.TemplateApplyReq{Name: name, Description: description}, "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to provision ntfy infra: %w", err)
-	}
-	return infraInfo, nil
+	return managedset.ProvisionOrReuse(ctx, nsId, templateId, name, description, "notifier")
 }
 
-// chooseRecordName returns the FQDN for the ntfy server. An explicit record name is used as given but
-// must not exist yet; otherwise "ntfy-<3 random chars>" is drawn until a free name is found, so repeated
-// set creations never reuse a name (Let's Encrypt limits certificates per exact name).
-func chooseRecordName(ctx context.Context, domain, recordName string) (string, error) {
-	toFQDN := func(name string) string {
-		if strings.HasSuffix(name, "."+domain) || name == domain {
-			return name
-		}
-		return name + "." + domain
-	}
-	if recordName != "" {
-		fqdn := toFQDN(recordName)
-		exists, err := dnsRecordExists(ctx, domain, fqdn)
-		if err != nil {
-			return "", err
-		}
-		if exists {
-			return "", fmt.Errorf("DNS record '%s' already exists; choose another recordName or leave it empty", fqdn)
-		}
-		return fqdn, nil
-	}
-	for attempt := 0; attempt < 10; attempt++ {
-		fqdn := toFQDN(defaultRecordName + "-" + randomToken(3))
-		exists, err := dnsRecordExists(ctx, domain, fqdn)
-		if err != nil {
-			return "", err
-		}
-		if !exists {
-			return fqdn, nil
-		}
-	}
-	return "", fmt.Errorf("could not find a free '%s-xxx' record name under %s", defaultRecordName, domain)
+func chooseRecordName(ctx context.Context, domain, recordName, ip string) (string, error) {
+	return managedset.ChooseRecordName(ctx, domain, recordName, defaultRecordName, ip)
 }
 
-func dnsRecordExists(ctx context.Context, domain, fqdn string) (bool, error) {
-	res, err := resource.GetGlobalDnsRecord(ctx, domain, fqdn, "")
-	if err != nil {
-		return false, fmt.Errorf("failed to query DNS records for %s: %w", domain, err)
-	}
-	for _, r := range res.Record {
-		if strings.EqualFold(strings.TrimSuffix(r.Name, "."), fqdn) {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// shellCommand wraps a script so it runs as root regardless of quoting.
-func shellCommand(script string) string {
-	return "echo " + base64.StdEncoding.EncodeToString([]byte(script)) + " | base64 -d | sudo bash"
-}
-
-// runWithRetry runs the command on the infra, retrying while SSH is not yet reachable after boot.
 func runWithRetry(nsId, infraId, command string) (string, error) {
-	var lastErr error
-	for attempt := 1; attempt <= 6; attempt++ {
-		stdout, err := runOnce(nsId, infraId, command)
-		if err == nil {
-			return stdout, nil
-		}
-		lastErr = err
-		log.Warn().Err(err).Int("attempt", attempt).Msg("notifier: ntfy install attempt failed, retrying")
-		time.Sleep(15 * time.Second)
-	}
-	return "", lastErr
+	return managedset.RunScript(nsId, infraId, command, 6, "notifier")
 }
 
 func runOnce(nsId, infraId, command string) (string, error) {
-	results, err := infra.RemoteCommandToInfra(nsId, infraId, "", "", "",
-		&model.InfraCmdReq{Command: []string{command}, TimeoutMinutes: 20}, "")
-	if err != nil {
-		return "", err
-	}
-	if len(results) == 0 {
-		return "", errors.New("no command result")
-	}
-	if results[0].Err != nil {
-		return "", fmt.Errorf("%v (stderr: %s)", results[0].Err, strings.TrimSpace(results[0].Stderr[0]))
-	}
-	return results[0].Stdout[0], nil
+	return managedset.RunOnce(nsId, infraId, command, 20)
 }
 
 func extractCA(stdout string) (string, error) {
-	start := strings.Index(stdout, caBegin)
-	end := strings.Index(stdout, caEnd)
-	if start < 0 || end < 0 || end <= start {
-		return "", errors.New("CA certificate not found in install output")
-	}
-	return strings.TrimSpace(stdout[start+len(caBegin):end]) + "\n", nil
+	return managedset.ExtractMarked(stdout, caBegin, caEnd)
 }
 
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
+func deleteManagedResources(info *model.NotifierInfo) {
+	managedset.DeleteManagedResources(info.ManagedNsId, info.ManagedVNetId, info.ManagedSecurityGroupIds,
+		info.ManagedSshKeyId, info.ManagedDnsDomain, info.ManagedDnsRecord, "notifier")
 }

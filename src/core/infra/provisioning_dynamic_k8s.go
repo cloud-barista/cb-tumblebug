@@ -488,7 +488,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 	k8sReq.Label = dReq.Label
 	k8sReq.Storage = dReq.Storage
 
-	common.PrintJsonPretty(k8sReq)
+	// common.PrintJsonPretty(k8sReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
 
 	return k8sReq, nil
@@ -552,7 +552,7 @@ func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.K8sCl
 			}
 	*/
 
-	common.PrintJsonPretty(k8sReq)
+	// common.PrintJsonPretty(k8sReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared all resources for provisioning K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
@@ -657,7 +657,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 	k8sNgReq.Description = dReq.Description
 	k8sNgReq.Label = dReq.Label
 
-	common.PrintJsonPretty(k8sNgReq)
+	// common.PrintJsonPretty(k8sNgReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
 
 	return k8sNgReq, nil
@@ -713,7 +713,7 @@ func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId st
 		return emptyK8sCluster, err
 	}
 
-	common.PrintJsonPretty(k8sNgReq)
+	// common.PrintJsonPretty(k8sNgReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared all resources for provisioning K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 

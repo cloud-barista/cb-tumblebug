@@ -36,7 +36,6 @@ func ConvertNodeInfoToNodeStatusInfo(nodeInfo model.NodeInfo) model.NodeStatusIn
 		TargetStatus:    nodeInfo.TargetStatus,
 		TargetAction:    nodeInfo.TargetAction,
 		NativeStatus:    "", // NodeInfo doesn't have NativeStatus, will be updated by status fetch
-		MonAgentStatus:  nodeInfo.MonAgentStatus,
 		SystemMessage:   nodeInfo.SystemMessage,
 		CreatedTime:     nodeInfo.CreatedTime,
 		PublicIp:        nodeInfo.PublicIP,
@@ -60,16 +59,15 @@ func ConvertNodeInfoListToNodeStatusInfoList(nodeInfoList []model.NodeInfo) []mo
 // ConvertInfraInfoToInfraStatusInfo converts InfraInfo to InfraStatusInfo (partial conversion for basic fields)
 func ConvertInfraInfoToInfraStatusInfo(infraInfo model.InfraInfo) model.InfraStatusInfo {
 	return model.InfraStatusInfo{
-		Id:              infraInfo.Id,
-		Name:            infraInfo.Name,
-		Status:          infraInfo.Status,
-		StatusCount:     infraInfo.StatusCount,
-		TargetStatus:    infraInfo.TargetStatus,
-		TargetAction:    infraInfo.TargetAction,
-		InstallMonAgent: infraInfo.InstallMonAgent,
-		Label:           infraInfo.Label,
-		SystemLabel:     infraInfo.SystemLabel,
-		Node:            ConvertNodeInfoListToNodeStatusInfoList(infraInfo.Node),
+		Id:           infraInfo.Id,
+		Name:         infraInfo.Name,
+		Status:       infraInfo.Status,
+		StatusCount:  infraInfo.StatusCount,
+		TargetStatus: infraInfo.TargetStatus,
+		TargetAction: infraInfo.TargetAction,
+		Label:        infraInfo.Label,
+		SystemLabel:  infraInfo.SystemLabel,
+		Node:         ConvertNodeInfoListToNodeStatusInfoList(infraInfo.Node),
 		// MasterNodeId, MasterIp, MasterSSHPort will be set by status determination logic
 	}
 }
@@ -80,7 +78,6 @@ func ConvertNodeInfoFieldsToNodeStatusInfo(nodeStatus *model.NodeStatusInfo, nod
 	// Always convert from NodeInfo as it's the trusted source
 	nodeStatus.CreatedTime = nodeInfo.CreatedTime
 	nodeStatus.SystemMessage = nodeInfo.SystemMessage
-	nodeStatus.MonAgentStatus = nodeInfo.MonAgentStatus
 	nodeStatus.TargetStatus = nodeInfo.TargetStatus
 	nodeStatus.TargetAction = nodeInfo.TargetAction
 
@@ -185,7 +182,6 @@ func nodeStatusInfoFromEntry(e StatusEntry) model.NodeStatusInfo {
 		PrivateIp:       e.PrivateIP,
 		SSHPort:         e.SSHPort,
 		Location:        e.Location,
-		MonAgentStatus:  e.MonAgentStatus,
 		CreatedTime:     e.CreatedTime,
 		SystemMessage:   e.SystemMessage,
 	}
@@ -206,31 +202,84 @@ func nodeStatusesFromStore(nsId, infraId string, nodeList []string) []model.Node
 	}
 
 	result := make([]model.NodeStatusInfo, 0, len(nodeList))
-	var missing []string
+	// Nodes whose stored object is needed: not in the store, or Running there without a public IP
+	var lookups []string
+	ipBackfill := make(map[string]int) // nodeId -> index in result
 	for _, nodeId := range nodeList {
 		if e, ok := byId[nodeId]; ok {
 			nsi := nodeStatusInfoFromEntry(e)
 			if nsi.PublicIp == "" && strings.EqualFold(nsi.Status, model.StatusRunning) {
-				if nodeObj, err := GetNodeObject(nsId, infraId, nodeId); err == nil && nodeObj.PublicIP != "" {
-					nsi.PublicIp = nodeObj.PublicIP
-					globalStatusStore.Update(nsId, infraId, nodeId, func(entry *StatusEntry) {
-						entry.PublicIP = nodeObj.PublicIP
-					})
-				}
+				ipBackfill[nodeId] = len(result)
+				lookups = append(lookups, nodeId)
 			}
 			result = append(result, nsi)
 		} else {
-			missing = append(missing, nodeId)
+			lookups = append(lookups, nodeId)
 		}
 	}
-	for _, nodeId := range missing {
-		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
-		if err != nil {
+	if len(lookups) == 0 {
+		return result
+	}
+	start := time.Now()
+	objects := readNodeObjects(nsId, infraId, lookups)
+	for _, nodeId := range lookups {
+		nodeObj, ok := objects[nodeId]
+		if !ok {
 			continue
 		}
-		result = append(result, ConvertNodeInfoListToNodeStatusInfoList([]model.NodeInfo{nodeInfo})...)
+		if i, had := ipBackfill[nodeId]; had {
+			if nodeObj.PublicIP != "" {
+				result[i].PublicIp = nodeObj.PublicIP
+				publicIP := nodeObj.PublicIP
+				globalStatusStore.Update(nsId, infraId, nodeId, func(entry *StatusEntry) {
+					entry.PublicIP = publicIP
+				})
+			}
+			continue
+		}
+		result = append(result, ConvertNodeInfoListToNodeStatusInfoList([]model.NodeInfo{nodeObj})...)
+	}
+	if d := time.Since(start); d > slowViewThreshold {
+		log.Warn().Str("infraId", infraId).Int("nodes", len(nodeList)).Int("notInStore", len(lookups)-len(ipBackfill)).
+			Int("ipBackfill", len(ipBackfill)).Dur("elapsed", d).Msg("status view read Node objects from etcd")
 	}
 	return result
+}
+
+// slowViewThreshold is how long a polling view may take before it leaves a log line.
+const slowViewThreshold = time.Second
+
+// nodeObjectReadConcurrency bounds parallel Node object reads of one view.
+const nodeObjectReadConcurrency = 50
+
+// readNodeObjects reads the stored objects of the given Nodes with bounded parallelism. A view can need
+// thousands at once, and reading them one after another multiplies any etcd latency by the Node count.
+func readNodeObjects(nsId, infraId string, nodeIds []string) map[string]model.NodeInfo {
+	out := make(map[string]model.NodeInfo, len(nodeIds))
+	if len(nodeIds) == 0 {
+		return out
+	}
+	ngMap := LoadInfraNodeGroupMap(nsId, infraId)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, nodeObjectReadConcurrency)
+	for _, id := range nodeIds {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(id string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			nodeInfo, err := GetNodeObjectWithNodeGroups(nsId, infraId, id, ngMap)
+			if err != nil {
+				return
+			}
+			mu.Lock()
+			out[id] = nodeInfo
+			mu.Unlock()
+		}(id)
+	}
+	wg.Wait()
+	return out
 }
 
 // GetInfraStatus is func to Get Infra Status
@@ -250,6 +299,16 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 
 	key := common.GenInfraKey(nsId, infraId, "")
 
+	statusStart := time.Now()
+	var statusNodes int
+	var statusListIds, statusFromStore time.Duration
+	defer func() {
+		if d := time.Since(statusStart); d > slowViewThreshold {
+			log.Warn().Str("infraId", infraId).Int("nodes", statusNodes).Dur("total", d).
+				Dur("listNodeIds", statusListIds).Dur("nodeStatuses", statusFromStore).Msg("slow infra status")
+		}
+	}()
+
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -267,7 +326,9 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	infraTmp := model.InfraInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
 
+	listStart := time.Now()
 	nodeList, err := ListNodeId(nsId, infraId)
+	statusListIds, statusNodes = time.Since(listStart), len(nodeList)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.InfraStatusInfo{}, err
@@ -291,7 +352,9 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	// Serve node statuses from the StatusAgent's in-memory store instead of a live
 	// per-node CSP fanout: the daemon keeps the store fresh, and materializing N
 	// statuses + goroutines here OOMs on large infras.
+	fromStoreStart := time.Now()
 	nodeStatusList := nodeStatusesFromStore(nsId, infraId, nodeList)
+	statusFromStore = time.Since(fromStoreStart)
 	// log.Debug().Msgf("Fetched %d VM statuses for Infra %s", len(nodeStatusList), infraId)
 	// log.Debug().Msgf("VM Status List: %+v", nodeStatusList)
 
@@ -1125,7 +1188,6 @@ func populateNodeStatusInfoFromNodeInfo(statusInfo *model.NodeStatusInfo, nodeIn
 	statusInfo.TargetAction = nodeInfo.TargetAction
 	statusInfo.TargetStatus = nodeInfo.TargetStatus
 	statusInfo.Location = nodeInfo.Location
-	statusInfo.MonAgentStatus = nodeInfo.MonAgentStatus
 	statusInfo.CreatedTime = nodeInfo.CreatedTime
 	statusInfo.SystemMessage = nodeInfo.SystemMessage
 }
@@ -1357,7 +1419,14 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 						}
 
 						if streak >= terminatingFailStreakMax {
-							if isNodeGoneError(err) {
+							gone := isNodeGoneError(err)
+							if !gone && nodeInfo.CspResourceId == "" {
+								// Spider cannot look this record up; confirm absence on the CSP directly
+								if id, known := locateNodeOnCsp(nodeInfo); known && id == "" {
+									gone = true
+								}
+							}
+							if gone {
 								terminatingFailStreak.Delete(streakKey)
 								terminatingReTerminateSent.Delete(streakKey)
 								log.Info().Msgf("[FetchNodeStatus] Node %s: Spider error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
@@ -1430,7 +1499,6 @@ applyStatus:
 	nodeStatusTmp.TargetAction = nodeInfo.TargetAction
 	nodeStatusTmp.TargetStatus = nodeInfo.TargetStatus
 	nodeStatusTmp.Location = nodeInfo.Location
-	nodeStatusTmp.MonAgentStatus = nodeInfo.MonAgentStatus
 	nodeStatusTmp.CreatedTime = nodeInfo.CreatedTime
 	nodeStatusTmp.SystemMessage = nodeInfo.SystemMessage
 
@@ -1766,7 +1834,6 @@ func GetInfraNodeStatus(nsId string, infraId string, nodeId string, fetchFromCSP
 			PrivateIp:       nodeObject.PrivateIP,
 			SSHPort:         nodeObject.SSHPort,
 			Location:        nodeObject.Location,
-			MonAgentStatus:  nodeObject.MonAgentStatus,
 			CreatedTime:     nodeObject.CreatedTime,
 			SystemMessage:   nodeObject.SystemMessage,
 		}

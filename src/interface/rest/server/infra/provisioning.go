@@ -42,7 +42,6 @@ import (
 // @Description - Multi-cloud node deployment with heterogeneous configurations
 // @Description - Automatic resource dependency management (VPC → Security Group → node)
 // @Description - Built-in failure handling with configurable policies (continue/rollback/refine)
-// @Description - Optional CB-Dragonfly monitoring agent installation
 // @Description - Post-deployment command execution support
 // @Description - Real-time status updates and progress tracking
 // @Description
@@ -115,7 +114,6 @@ func RestPostInfra(c echo.Context) error {
 // @Description
 // @Description **Post-Registration Capabilities:**
 // @Description - Standard CB-Tumblebug node lifecycle operations (start, stop, terminate)
-// @Description - Monitoring agent installation (if CB-Dragonfly is configured)
 // @Description - Command execution and automation
 // @Description - Integration with other CB-Tumblebug Infras
 // @Description
@@ -286,7 +284,6 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Description - Built-in rate limiting prevents CSP API throttling
 // @Description
 // @Description **Monitoring and Post-Deployment:**
-// @Description - Optional CB-Dragonfly monitoring agent installation
 // @Description - Custom post-deployment command execution
 // @Description - Real-time status tracking and progress updates
 // @Description - Automatic resource labeling and metadata management

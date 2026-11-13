@@ -96,7 +96,7 @@ func CallMilkyway(wg *sync.WaitGroup, nodeList []string, nsId string, infraId st
 			hostTmp.Spec = GetNodeSpecId(nsId, infraId, nodeIdTmp)
 			reqTmp.Multihost = append(reqTmp.Multihost, hostTmp)
 		}
-		common.PrintJsonPretty(reqTmp)
+		// common.PrintJsonPretty(reqTmp)
 		payload, _ = json.MarshalIndent(reqTmp, "", "  ")
 	}
 

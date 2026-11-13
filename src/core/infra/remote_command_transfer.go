@@ -16,6 +16,7 @@ package infra
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -203,13 +204,13 @@ func TransferFileAndCmdToInfra(nsId string, infraId string, nodeGroupId string, 
 
 // transferFileToNodeViaBastion is a function to transfer a file to a specific Node via Bastion Host
 func transferFileToNodeViaBastion(nsId string, infraId string, nodeId string, targetSshInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
+	return withBastionFailover(nsId, infraId, nodeId, func(bastionNode model.BastionNode) error {
+		return transferFileToNodeVia(nsId, infraId, nodeId, bastionNode, targetSshInfo, fileData, fileName, targetPath)
+	})
+}
 
-	bastionNodes, err := GetUsableBastionNodes(nsId, infraId, nodeId)
-	if err != nil {
-		return fmt.Errorf("failed to get bastion nodes: %v", err)
-	}
-
-	bastionNode := pickBastion(bastionNodes, nsId, infraId, nodeId)
+func transferFileToNodeVia(nsId string, infraId string, nodeId string, bastionNode model.BastionNode, targetSshInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
+	var err error
 	bastionNsId := bastionNode.NsId
 	if bastionNsId == "" {
 		bastionNsId = nsId
@@ -265,7 +266,7 @@ func transferFileToNodeViaBastion(nsId string, infraId string, nodeId string, ta
 			strings.Contains(err.Error(), "EOF")
 
 		if !isTransient || attempt == scpRetryCount-1 {
-			return fmt.Errorf("failed to transfer file to Node via bastion: %v", err)
+			return fmt.Errorf("failed to transfer file to Node via bastion: %w", err)
 		}
 
 		waitTime := time.Duration(3*(attempt+1)) * time.Second
@@ -275,6 +276,20 @@ func transferFileToNodeViaBastion(nsId string, infraId string, nodeId string, ta
 
 	log.Info().Msgf("File successfully transferred to VM %s via bastion", nodeId)
 	return nil
+}
+
+// transferDialTimeout bounds the bastion dial and handshake of a file transfer; a bastion that accepts TCP
+// but never completes the handshake would otherwise hold the transfer indefinitely.
+const transferDialTimeout = 30 * time.Second
+
+func dialBastionForTransfer(endpoint string, config *ssh.ClientConfig) (*ssh.Client, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), transferDialTimeout)
+	defer cancel()
+	client, err := dialSSHWithContext(ctx, "tcp", endpoint, config)
+	if err != nil {
+		return nil, &bastionUnreachableError{fmt.Errorf("failed to dial bastion: %v", err)}
+	}
+	return client, nil
 }
 
 // runSCPWithBastion is func to send a file using SCP over SSH via a Bastion host
@@ -313,9 +328,9 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 	}
 
 	// Setup the bastion host connection
-	bastionClient, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
+	bastionClient, err := dialBastionForTransfer(bastionInfo.EndPoint, bastionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to dial bastion: %v", err)
+		return err
 	}
 	defer bastionClient.Close()
 
@@ -449,13 +464,21 @@ func DownloadFileFromInfraNode(nsId string, infraId string, nodeId string, sourc
 
 // downloadFileFromNodeViaBastion downloads a file from a specific VM via Bastion Host using SCP
 func downloadFileFromNodeViaBastion(nsId string, infraId string, nodeId string, targetSshInfo model.SshInfo, sourcePath string) ([]byte, string, error) {
-
-	bastionNodes, err := GetUsableBastionNodes(nsId, infraId, nodeId)
+	var fileData []byte
+	var fileName string
+	err := withBastionFailover(nsId, infraId, nodeId, func(bastionNode model.BastionNode) error {
+		var dlErr error
+		fileData, fileName, dlErr = downloadFileFromNodeVia(nsId, infraId, nodeId, bastionNode, targetSshInfo, sourcePath)
+		return dlErr
+	})
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get bastion nodes: %w", err)
+		return nil, "", err
 	}
+	return fileData, fileName, nil
+}
 
-	bastionNode := pickBastion(bastionNodes, nsId, infraId, nodeId)
+func downloadFileFromNodeVia(nsId string, infraId string, nodeId string, bastionNode model.BastionNode, targetSshInfo model.SshInfo, sourcePath string) ([]byte, string, error) {
+	var err error
 	bastionNsId := bastionNode.NsId
 	if bastionNsId == "" {
 		bastionNsId = nsId
@@ -498,7 +521,7 @@ func downloadFileFromNodeViaBastion(nsId string, infraId string, nodeId string, 
 
 	fileData, fileName, err := runSCPDownloadWithBastion(bastionSshInfo, targetSshInfo, sourcePath, bastionCtx, targetCtx)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to download file from VM via bastion: %v", err)
+		return nil, "", fmt.Errorf("failed to download file from VM via bastion: %w", err)
 	}
 
 	return fileData, fileName, nil
@@ -555,9 +578,9 @@ func runSCPDownloadWithBastion(bastionInfo model.SshInfo, targetInfo model.SshIn
 	}
 
 	// Setup the bastion host connection
-	bastionClient, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
+	bastionClient, err := dialBastionForTransfer(bastionInfo.EndPoint, bastionConfig)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to dial bastion: %v", err)
+		return nil, "", err
 	}
 	defer bastionClient.Close()
 

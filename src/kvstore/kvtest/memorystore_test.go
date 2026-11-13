@@ -63,3 +63,34 @@ func TestMemoryStore(t *testing.T) {
 		t.Fatalf("expected 0 items after prefix delete, got %d", len(list))
 	}
 }
+
+func TestMemoryStoreChildList(t *testing.T) {
+	m := NewMemoryStore()
+	for _, k := range []string{
+		"/ns/x/infra/a", "/ns/x/infra/a/node/n1", "/ns/x/infra/a/nlb/l1",
+		"/ns/x/infra/a-b", "/ns/x/infra/a-b/node/n1",
+		"/ns/x/infra/orphan/nlb/l9",
+		"/ns/x/infra/zz",
+		"/ns/x/infrax/other", "/ns/x/resources/vNet/v1",
+	} {
+		if err := m.Put(k, "v"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := m.GetChildList("/ns/x/infra/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []kvstore.ChildKey{{Name: "a", HasRecord: true}, {Name: "a-b", HasRecord: true}, {Name: "orphan"}, {Name: "zz", HasRecord: true}}
+	if len(got) != len(want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("child %d: got %v want %v", i, got[i], want[i])
+		}
+	}
+	if none, _ := m.GetChildList("/ns/x/k8scluster/"); len(none) != 0 {
+		t.Fatalf("expected no children, got %v", none)
+	}
+}

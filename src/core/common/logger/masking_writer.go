@@ -55,6 +55,13 @@ var kvSensitivePattern = regexp.MustCompile(
 	`(?i)((?:password|passwd|secret|token|private_?key|credential|auth)[=:]\s*)([^\s,;&"'\\}\]\)]+)`,
 )
 
+// quotedKvSensitivePattern matches assignments whose value is quoted, as in shell exports: TOKEN='value' or
+// key=\"value\" inside a JSON string. Unescaped double quotes are left alone: in a JSON log line they are
+// structural, and consuming one would break the line.
+var quotedKvSensitivePattern = regexp.MustCompile(
+	`(?i)((?:password|passwd|secret|token|private_?key|credential|auth)[=:]\s*)(?:'[^']*'|\\"[^"\\]*\\")`,
+)
+
 // MaskingWriter intercepts the log output stream and masks sensitive data.
 type MaskingWriter struct {
 	w io.Writer
@@ -109,6 +116,7 @@ func MaskSensitiveData(data []byte) []byte {
 	res = escapedJsonSensitivePattern.ReplaceAll(res, []byte(`$1:\"********\"`))
 	res = jsonSensitivePattern.ReplaceAll(res, []byte(`${1}${2}:"********"`))
 	res = textSensitivePattern.ReplaceAll(res, []byte(`${1}********`))
+	res = quotedKvSensitivePattern.ReplaceAll(res, []byte(`${1}********`))
 	res = kvSensitivePattern.ReplaceAll(res, []byte(`${1}********`))
 	return res
 }
