@@ -1,0 +1,2728 @@
+{
+ "uid": "tb-vllm",
+ "title": "TB vLLM",
+ "description": "vLLM serving at a glance: load, throughput, latency and cache per server and model. The node agent finds a local vLLM server and scrapes its metrics endpoint; an agent installed before discovery existed needs OTEL_SCRAPE_TARGETS or a re-run.",
+ "tags": [
+  "cb-tumblebug"
+ ],
+ "editable": true,
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "fiscalYearStartMonth": 0,
+ "weekStart": "",
+ "annotations": {
+  "list": []
+ },
+ "links": [
+  {
+   "type": "dashboards",
+   "tags": [
+    "cb-tumblebug"
+   ],
+   "asDropdown": true,
+   "title": "TB dashboards",
+   "includeVars": true,
+   "keepTime": true,
+   "icon": "external link",
+   "tooltip": "",
+   "url": ""
+  }
+ ],
+ "templating": {
+  "list": [
+   {
+    "name": "ns",
+    "label": "Namespace",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "label_values(vllm:num_requests_running, tb_ns)",
+    "query": "label_values(vllm:num_requests_running, tb_ns)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "infra",
+    "label": "Infra",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "label_values(vllm:num_requests_running{tb_ns=~\"$ns\"}, tb_infra)",
+    "query": "label_values(vllm:num_requests_running{tb_ns=~\"$ns\"}, tb_infra)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "node",
+    "label": "Node",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "label_values(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_node)",
+    "query": "label_values(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\"}, tb_node)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   },
+   {
+    "name": "model",
+    "label": "Model",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "tb-prom"
+    },
+    "definition": "label_values(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}, model_name)",
+    "query": "label_values(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\"}, model_name)",
+    "refresh": 2,
+    "sort": 1,
+    "multi": true,
+    "includeAll": true,
+    "hide": 0,
+    "allValue": ".+",
+    "current": {
+     "text": "All",
+     "value": "$__all",
+     "selected": true
+    }
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "At a glance",
+   "collapsed": false,
+   "panels": [],
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Servers reporting",
+   "description": "vLLM engines whose metrics endpoint is scraped",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "count(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Requests running",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 3,
+   "gridPos": {
+    "x": 3,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Requests waiting",
+   "description": "Requests queued because the engine is at capacity",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       },
+       {
+        "color": "#fab219",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(vllm:num_requests_waiting{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 4,
+   "gridPos": {
+    "x": 6,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Requests per second",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "reqps",
+     "decimals": 2
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_success_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 5,
+   "gridPos": {
+    "x": 9,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Output tokens per second",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short",
+     "decimals": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:generation_tokens_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 6,
+   "gridPos": {
+    "x": 12,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "First token, p95",
+   "description": "Time to the first token, 95th percentile over five minutes",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "s"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 7,
+   "gridPos": {
+    "x": 15,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "KV cache in use",
+   "description": "Fullest KV cache; a full cache makes requests wait or be preempted",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       },
+       {
+        "color": "#fab219",
+        "value": 0.9
+       },
+       {
+        "color": "#d03b3b",
+        "value": 0.98
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max({__name__=~\"vllm:(kv|gpu)_cache_usage_perc\",tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 8,
+   "gridPos": {
+    "x": 18,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Failed requests",
+   "description": "Requests that ended with an error in the time range",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#0ca30c",
+        "value": null
+       },
+       {
+        "color": "#d03b3b",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short",
+     "decimals": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "wideLayout": true,
+    "showPercentChange": false
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(increase(vllm:request_success_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\",finished_reason=\"error\"}[$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 9,
+   "gridPos": {
+    "x": 21,
+    "y": 1,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "type": "row",
+   "title": "Servers",
+   "collapsed": false,
+   "panels": [],
+   "id": 10,
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "table",
+   "title": "Last values per server and model",
+   "description": "One row per node and served model. The node name links to the node dashboards.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "transformations": [
+    {
+     "id": "merge",
+     "options": {}
+    },
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true
+      },
+      "renameByName": {
+       "tb_ns": "ns",
+       "tb_infra": "infra",
+       "tb_node": "node",
+       "model_name": "model",
+       "Value #B": "Running",
+       "Value #C": "Waiting",
+       "Value #D": "Requests/s",
+       "Value #E": "Output tokens/s",
+       "Value #F": "First token p95",
+       "Value #G": "KV cache",
+       "Value #H": "Last seen"
+      },
+      "indexByName": {
+       "Time": 0,
+       "tb_ns": 1,
+       "tb_infra": 2,
+       "tb_node": 3,
+       "model_name": 4,
+       "Value #B": 5,
+       "Value #C": 6,
+       "Value #D": 7,
+       "Value #E": 8,
+       "Value #F": 9,
+       "Value #G": 10,
+       "Value #H": 11
+      }
+     }
+    }
+   ],
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    },
+    "sortBy": [
+     {
+      "displayName": "Requests/s",
+      "desc": true
+     }
+    ]
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      },
+      "filterable": true
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "ns"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 130
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "infra"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 150
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "node"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 110
+       },
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Node detail",
+          "url": "/d/tb-node-detail?var-ns=${__data.fields.ns}&var-infra=${__data.fields.infra}&var-node=${__data.fields.node}&${__url_time_range}"
+         },
+         {
+          "title": "Node logs",
+          "url": "/d/tb-node-logs?var-ns=${__data.fields.ns}&var-infra=${__data.fields.infra}&var-node=${__data.fields.node}&${__url_time_range}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Running"
+      },
+      "properties": [
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.width",
+        "value": 90
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Waiting"
+      },
+      "properties": [
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.width",
+        "value": 90
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Requests/s"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "reqps"
+       },
+       {
+        "id": "decimals",
+        "value": 2
+       },
+       {
+        "id": "custom.width",
+        "value": 110
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Output tokens/s"
+      },
+      "properties": [
+       {
+        "id": "decimals",
+        "value": 1
+       },
+       {
+        "id": "custom.width",
+        "value": 140
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "First token p95"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "s"
+       },
+       {
+        "id": "custom.width",
+        "value": 130
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "KV cache"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percentunit"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "min",
+        "value": 0
+       },
+       {
+        "id": "max",
+        "value": 1
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "gauge",
+         "mode": "basic",
+         "valueDisplayMode": "text"
+        }
+       },
+       {
+        "id": "color",
+        "value": {
+         "mode": "thresholds"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "#3987e5",
+           "value": null
+          },
+          {
+           "color": "#fab219",
+           "value": 0.9
+          },
+          {
+           "color": "#d03b3b",
+           "value": 0.98
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Last seen"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "dateTimeFromNow"
+       },
+       {
+        "id": "custom.width",
+        "value": 140
+       }
+      ]
+     }
+    ]
+   },
+   "targets": [
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum by (tb_ns,tb_infra,tb_node,model_name) (last_over_time(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": false,
+     "instant": true,
+     "format": "table"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum by (tb_ns,tb_infra,tb_node,model_name) (last_over_time(vllm:num_requests_waiting{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": false,
+     "instant": true,
+     "format": "table"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum by (tb_ns,tb_infra,tb_node,model_name) (rate(vllm:request_success_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": false,
+     "instant": true,
+     "format": "table"
+    },
+    {
+     "refId": "E",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum by (tb_ns,tb_infra,tb_node,model_name) (rate(vllm:generation_tokens_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": false,
+     "instant": true,
+     "format": "table"
+    },
+    {
+     "refId": "F",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.95, sum by (tb_ns,tb_infra,tb_node,model_name, le) (rate(vllm:time_to_first_token_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": false,
+     "instant": true,
+     "format": "table"
+    },
+    {
+     "refId": "G",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,model_name) (last_over_time({__name__=~\"vllm:(kv|gpu)_cache_usage_perc\",tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[$__range]))",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": false,
+     "instant": true,
+     "format": "table"
+    },
+    {
+     "refId": "H",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max by (tb_ns,tb_infra,tb_node,model_name) (max_over_time(timestamp(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})[$__range:1m])) * 1000",
+     "legendFormat": "",
+     "editorMode": "code",
+     "range": false,
+     "instant": true,
+     "format": "table"
+    }
+   ],
+   "id": 11,
+   "gridPos": {
+    "x": 0,
+    "y": 6,
+    "w": 24,
+    "h": 6
+   }
+  },
+  {
+   "type": "row",
+   "title": "Traffic",
+   "collapsed": false,
+   "panels": [],
+   "id": 12,
+   "gridPos": {
+    "x": 0,
+    "y": 12,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Requests",
+   "description": "Finished requests per second; failed or aborted ones are those ending with error or abort",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "reqps",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Completed"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Failed or aborted"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d03b3b"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_success_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\",finished_reason!~\"error|abort\"}[5m]))",
+     "legendFormat": "Completed",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_success_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\",finished_reason=~\"error|abort\"}[5m]))",
+     "legendFormat": "Failed or aborted",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 13,
+   "gridPos": {
+    "x": 0,
+    "y": 13,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Tokens per second",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Prompt"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Output"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:prompt_tokens_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Prompt",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:generation_tokens_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Output",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 14,
+   "gridPos": {
+    "x": 12,
+    "y": 13,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Requests in flight",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0,
+     "decimals": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Running"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Waiting"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(vllm:num_requests_running{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})",
+     "legendFormat": "Running",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(vllm:num_requests_waiting{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})",
+     "legendFormat": "Waiting",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 15,
+   "gridPos": {
+    "x": 0,
+    "y": 21,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "KV cache in use",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Fullest cache"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "max({__name__=~\"vllm:(kv|gpu)_cache_usage_perc\",tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"})",
+     "legendFormat": "Fullest cache",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 16,
+   "gridPos": {
+    "x": 8,
+    "y": 21,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Prefix cache hit rate",
+   "description": "Share of prompt tokens served from the prefix cache",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hit rate"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 12
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:prefix_cache_hits_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])) / sum(rate(vllm:prefix_cache_queries_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Hit rate",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 17,
+   "gridPos": {
+    "x": 16,
+    "y": 21,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "Latency",
+   "collapsed": false,
+   "panels": [],
+   "id": 18,
+   "gridPos": {
+    "x": 0,
+    "y": 28,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Time to first token",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "s",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p50"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p95"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p99"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#199e70"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.5, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p50",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p95",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p99",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 19,
+   "gridPos": {
+    "x": 0,
+    "y": 29,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Request time, end to end",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "s",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p50"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p95"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p99"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#199e70"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.5, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p50",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p95",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p99",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 20,
+   "gridPos": {
+    "x": 8,
+    "y": 29,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Time between tokens",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "s",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p50"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p95"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p99"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#199e70"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.5, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p50",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p95",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])))",
+     "legendFormat": "p99",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 21,
+   "gridPos": {
+    "x": 16,
+    "y": 29,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Where the time goes",
+   "description": "Average seconds per request spent waiting in the queue, processing the prompt and generating",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "s",
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Queue"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 45
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Prefill"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 45
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Decode"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#199e70"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 45
+       },
+       {
+        "id": "custom.lineWidth",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_queue_time_seconds_sum{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])) / sum(rate(vllm:request_queue_time_seconds_count{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Queue",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_prefill_time_seconds_sum{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])) / sum(rate(vllm:request_prefill_time_seconds_count{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Prefill",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_decode_time_seconds_sum{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])) / sum(rate(vllm:request_decode_time_seconds_count{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Decode",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 22,
+   "gridPos": {
+    "x": 0,
+    "y": 37,
+    "w": 12,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Tokens per request",
+   "description": "Average per finished request",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "tb-prom"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisPlacement": "auto",
+      "drawStyle": "line",
+      "stacking": {
+       "mode": "none",
+       "group": "A"
+      }
+     },
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3987e5"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3987e5",
+        "value": null
+       }
+      ]
+     },
+     "unit": "short",
+     "min": 0,
+     "decimals": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Prompt"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3987e5"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Output"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#d95926"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true,
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_prompt_tokens_sum{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])) / sum(rate(vllm:request_prompt_tokens_count{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Prompt",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "expr": "sum(rate(vllm:request_generation_tokens_sum{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m])) / sum(rate(vllm:request_generation_tokens_count{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+     "legendFormat": "Output",
+     "editorMode": "code",
+     "range": true,
+     "instant": false
+    }
+   ],
+   "id": 23,
+   "gridPos": {
+    "x": 12,
+    "y": 37,
+    "w": 12,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "Details",
+   "collapsed": true,
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Preemptions",
+     "description": "Requests pushed back because the KV cache ran out",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "short",
+       "min": 0
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Preemptions per second"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#3987e5"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "sum(rate(vllm:num_preemptions_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+       "legendFormat": "Preemptions per second",
+       "editorMode": "code",
+       "range": true,
+       "instant": false
+      }
+     ],
+     "id": 24,
+     "gridPos": {
+      "x": 0,
+      "y": 45,
+      "w": 8,
+      "h": 7
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Admission rejections",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "short",
+       "min": 0
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Rejections per second"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#d03b3b"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "sum(rate(vllm:admission_rejections_total{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\"}[5m]))",
+       "legendFormat": "Rejections per second",
+       "editorMode": "code",
+       "range": true,
+       "instant": false
+      }
+     ],
+     "id": 25,
+     "gridPos": {
+      "x": 8,
+      "y": 45,
+      "w": 8,
+      "h": 7
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Waiting, by reason",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "tb-prom"
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "lineWidth": 2,
+        "fillOpacity": 0,
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "stacking": {
+         "mode": "none",
+         "group": "A"
+        }
+       },
+       "color": {
+        "mode": "fixed",
+        "fixedColor": "#3987e5"
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "#3987e5",
+          "value": null
+         }
+        ]
+       },
+       "unit": "short",
+       "min": 0,
+       "decimals": 0
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Capacity"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#3987e5"
+          }
+         }
+        ]
+       },
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Deferred"
+        },
+        "properties": [
+         {
+          "id": "color",
+          "value": {
+           "mode": "fixed",
+           "fixedColor": "#d95926"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true,
+       "calcs": [
+        "lastNotNull",
+        "max"
+       ]
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "none"
+      }
+     },
+     "targets": [
+      {
+       "refId": "A",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "sum(vllm:num_requests_waiting_by_reason{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\",reason=\"capacity\"})",
+       "legendFormat": "Capacity",
+       "editorMode": "code",
+       "range": true,
+       "instant": false
+      },
+      {
+       "refId": "B",
+       "datasource": {
+        "type": "prometheus",
+        "uid": "tb-prom"
+       },
+       "expr": "sum(vllm:num_requests_waiting_by_reason{tb_ns=~\"$ns\",tb_infra=~\"$infra\",tb_node=~\"$node\",model_name=~\"$model\",reason=\"deferred\"})",
+       "legendFormat": "Deferred",
+       "editorMode": "code",
+       "range": true,
+       "instant": false
+      }
+     ],
+     "id": 26,
+     "gridPos": {
+      "x": 16,
+      "y": 45,
+      "w": 8,
+      "h": 7
+     }
+    }
+   ],
+   "id": 27,
+   "gridPos": {
+    "x": 0,
+    "y": 44,
+    "w": 24,
+    "h": 1
+   }
+  }
+ ]
+}

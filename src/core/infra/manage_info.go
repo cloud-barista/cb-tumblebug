@@ -44,24 +44,16 @@ func ListInfraId(nsId string) ([]string, error) {
 
 	var infraList []string
 
-	// Check Infra exists
-	key := common.GenInfraKey(nsId, "", "")
-	key += "/"
-
-	keys, err := kvstore.GetKeyList(key)
-
+	// Infra ids are the names directly under /ns/{nsId}/infra/ that have a record; Nodes and everything
+	// else below each Infra are not read
+	children, err := kvstore.GetChildList(common.GenInfraKey(nsId, "", "") + "/" + model.StrInfra + "/")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-
-	for _, k := range keys {
-		if strings.Contains(k, "/infra/") {
-			trimmedString := strings.TrimPrefix(k, (key + "infra/"))
-			// prevent malformed key (if key for infra id includes '/', the key does not represent Infra ID)
-			if !strings.Contains(trimmedString, "/") {
-				infraList = append(infraList, trimmedString)
-			}
+	for _, c := range children {
+		if c.HasRecord {
+			infraList = append(infraList, c.Name)
 		}
 	}
 
@@ -175,9 +167,8 @@ func ListNodeId(nsId string, infraId string) ([]string, error) {
 		return nodeList, err
 	}
 
-	// WithKeysOnly: etcd returns only key bytes, not values.
-	// For large infras this avoids transferring 10,000+ NodeInfo JSON objects
-	// (~50 MB) that would exceed the gRPC default MaxCallRecvMsgSize (2 MB).
+	// WithKeysOnly: etcd returns only key bytes, not values, so a large Infra does not
+	// transfer 10,000+ NodeInfo JSON objects (~50 MB) just to list ids.
 	keys, err := kvstore.GetKeyList(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -484,7 +475,6 @@ func nodeSummaryFromEntry(e StatusEntry) model.NodeSummary {
 		PrivateIP:        e.PrivateIP,
 		SSHPort:          e.SSHPort,
 		Location:         e.Location,
-		MonAgentStatus:   e.MonAgentStatus,
 		CreatedTime:      e.CreatedTime,
 		SystemMessage:    e.SystemMessage,
 	}
@@ -510,6 +500,13 @@ func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfoSummary, er
 		return nil, err
 	}
 
+	briefStart := time.Now()
+	defer func() {
+		if d := time.Since(briefStart); d > slowViewThreshold {
+			log.Warn().Str("infraId", infraId).Int("nodes", len(summary.Node)).Dur("total", d).Msg("slow infra list view")
+		}
+	}()
+
 	if status, serr := GetInfraStatus(nsId, infraId); serr == nil {
 		summary.Status = status.Status
 		summary.StatusCount = status.StatusCount
@@ -522,11 +519,13 @@ func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfoSummary, er
 	}
 
 	var nodes []model.NodeSummary
+	seen := make(map[string]struct{}, len(nodeIds))
 	for _, e := range globalStatusStore.Snapshot() {
 		if e.NsId == nsId && e.InfraId == infraId {
 			if len(nodeIdSet) > 0 {
 				if _, exists := nodeIdSet[e.NodeId]; exists {
 					nodes = append(nodes, nodeSummaryFromEntry(e))
+					seen[e.NodeId] = struct{}{}
 				} else {
 					// Node no longer exists in etcd; prune orphan entry from memory store
 					globalStatusStore.Delete(nsId, infraId, e.NodeId)
@@ -534,6 +533,23 @@ func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfoSummary, er
 			} else {
 				nodes = append(nodes, nodeSummaryFromEntry(e))
 			}
+		}
+	}
+	// Nodes in etcd but not in the store are read through. Only settled ones (which the status agent never
+	// polls) are kept in the store; storing a Node that still waits for its create call would get it polled.
+	if len(seen) < len(nodeIds) {
+		missing := make([]string, 0, len(nodeIds)-len(seen))
+		for _, id := range nodeIds {
+			if _, ok := seen[id]; !ok {
+				missing = append(missing, id)
+			}
+		}
+		for id, nodeInfo := range readNodeObjects(nsId, infraId, missing) {
+			entry := buildStatusEntry(nsId, infraId, nodeInfo)
+			if entry.Priority == PollSkip {
+				globalStatusStore.Set(nsId, infraId, id, entry)
+			}
+			nodes = append(nodes, nodeSummaryFromEntry(entry))
 		}
 	}
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Id < nodes[j].Id })
@@ -683,13 +699,12 @@ func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.In
 	}
 
 	infraDynamicReq := &model.InfraDynamicReq{
-		Name:            infraInfo.Name,
-		InstallMonAgent: infraInfo.InstallMonAgent,
-		Label:           filterOutSystemLabels(infraInfo.Label),
-		SystemLabel:     infraInfo.SystemLabel,
-		Description:     infraInfo.Description,
-		NodeGroups:      nodeGroups,
-		PostCommands:    infraInfo.PostCommands,
+		Name:         infraInfo.Name,
+		Label:        filterOutSystemLabels(infraInfo.Label),
+		SystemLabel:  infraInfo.SystemLabel,
+		Description:  infraInfo.Description,
+		NodeGroups:   nodeGroups,
+		PostCommands: infraInfo.PostCommands,
 	}
 
 	return infraDynamicReq, nil

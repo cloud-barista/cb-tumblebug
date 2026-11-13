@@ -1,0 +1,14 @@
+{
+  "resourceType": "initScript",
+  "name": "initscript-swap",
+  "description": "Add a swap file so a Node with less than 1 GiB of memory survives package installs next to running services (for example the telemetry agent). Env: SWAP_MB (default 1024). Its step runs before the request's own scripts",
+  "scripts": [
+    {
+      "name": "swap",
+      "script": "#!/bin/bash\n# Adds a swap file unless swap is already on, so a small Node survives package installs next to running services.\n# SWAP_MB sets the size (default 1024). Put this step before the ones that install packages.\nset -e\nSIZE=\"${SWAP_MB:-1024}\"\nFILE=/swapfile\nif [ \"$(swapon --noheadings --show | wc -l)\" -gt 0 ]; then\n  echo \"swap already enabled\"; exit 0\nfi\nAVAIL=$(df -Pm / | awk 'NR==2 {print $4}')\nif [ \"$AVAIL\" -lt $((SIZE + 1024)) ]; then\n  echo \"skipped: ${AVAIL} MiB free on /, need ${SIZE} MiB plus 1024 MiB spare\"; exit 0\nfi\n# dd rather than fallocate: some filesystems refuse swap on preallocated extents\ndd if=/dev/zero of=\"$FILE\" bs=1M count=\"$SIZE\" status=none\nchmod 600 \"$FILE\"\nmkswap \"$FILE\" >/dev/null\nswapon \"$FILE\"\ngrep -q \"^$FILE \" /etc/fstab || echo \"$FILE none swap sw 0 0\" >> /etc/fstab\necho \"swap enabled: ${SIZE} MiB\"\n"
+    }
+  ],
+  "env": {
+    "SWAP_MB": "1024"
+  }
+}

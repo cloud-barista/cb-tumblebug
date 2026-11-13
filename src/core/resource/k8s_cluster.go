@@ -1413,21 +1413,17 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 		return nil, err
 	}
 
-	k := fmt.Sprintf("/ns/%s/", nsId)
-
-	kv, err := kvstore.GetKvList(k)
-
+	// cluster ids are the names directly under /ns/{nsId}/k8scluster/ that have a record
+	children, err := kvstore.GetChildList(fmt.Sprintf("/ns/%s/k8scluster/", nsId))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to Get K8sClusterId List")
 		return nil, err
 	}
 
 	var k8sClusterIds []string
-	for _, v := range kv {
-		trimmed := strings.TrimPrefix(v.Key, (k + "k8scluster/"))
-		// prevent malformed key (if key for K8sCluster ID includes '/', the key does not represent K8sCluster ID)
-		if !strings.Contains(trimmed, "/") {
-			k8sClusterIds = append(k8sClusterIds, trimmed)
+	for _, c := range children {
+		if c.HasRecord {
+			k8sClusterIds = append(k8sClusterIds, c.Name)
 		}
 	}
 

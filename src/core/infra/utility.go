@@ -69,8 +69,6 @@ func init() {
 	// validate.RegisterStructValidation(TbBenchmarkReqStructLevelValidation, BenchmarkReq{})
 	// validate.RegisterStructValidation(TbMultihostBenchmarkReqStructLevelValidation, MultihostBenchmarkReq{})
 
-	validate.RegisterStructValidation(DFMonAgentInstallReqStructLevelValidation, model.MonAgentInstallReq{})
-
 }
 
 // CheckInfra func is to check given infraId is duplicated with existing
@@ -1272,9 +1270,8 @@ func registerSharedDependenciesForConnection(ctx context.Context, nsId string, c
 				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, shortCspId(r.CspResourceId)))
 				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, shortCspId(r.CspResourceId)))
 				infraReq := model.InfraReq{
-					Name:            perVmInfraName,
-					Description:     "Infra for CSP-native orphaned dependency node",
-					InstallMonAgent: "no",
+					Name:        perVmInfraName,
+					Description: "Infra for CSP-native orphaned dependency node",
 					NodeGroups: []model.CreateNodeGroupReq{{
 						ConnectionName:   connName,
 						CspResourceId:    r.CspResourceId,
@@ -1344,9 +1341,8 @@ func registerSharedDependenciesForConnection(ctx context.Context, nsId string, c
 				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, shortCspId(spInfo.CspResourceId)))
 				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, shortCspId(spInfo.CspResourceId)))
 				infraReq := model.InfraReq{
-					Name:            perVmInfraName,
-					Description:     "Infra for Spider-registered orphaned dependency node",
-					InstallMonAgent: "no",
+					Name:        perVmInfraName,
+					Description: "Infra for Spider-registered orphaned dependency node",
 					NodeGroups: []model.CreateNodeGroupReq{{
 						ConnectionName:   connName,
 						CspResourceId:    spInfo.CspResourceId,
@@ -1732,7 +1728,6 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 				} else {
 					// Create new Infra (either first Node in single Infra mode, or each Node in separate Infra mode)
 					req := model.InfraReq{
-						Name: infraName, Description: "Infra for CSP managed Nodes", InstallMonAgent: "no",
 						NodeGroups: []model.CreateNodeGroupReq{{
 							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempNodeGroupName,
 							Description: "Ref name: " + r.RefNameOrId + ". CSP managed Node (registered to CB-TB)",

@@ -2425,12 +2425,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.NotifierInfo'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+        "204":
+          description: no notifier is registered
+          content: {}
     put:
       tags:
       - "[Admin] System Configuration"
@@ -4243,7 +4240,6 @@ paths:
         - Multi-cloud node deployment with heterogeneous configurations
         - Automatic resource dependency management (VPC → Security Group → node)
         - Built-in failure handling with configurable policies (continue/rollback/refine)
-        - Optional CB-Dragonfly monitoring agent installation
         - Post-deployment command execution support
         - Real-time status updates and progress tracking
 
@@ -5207,6 +5203,7 @@ paths:
           - ok
           - fail
           - pending
+          - noReport
           - notApplicable
       - name: x-request-id
         in: header
@@ -8854,7 +8851,6 @@ paths:
         - Built-in rate limiting prevents CSP API throttling
 
         **Monitoring and Post-Deployment:**
-        - Optional CB-Dragonfly monitoring agent installation
         - Custom post-deployment command execution
         - Real-time status tracking and progress updates
         - Automatic resource labeling and metadata management
@@ -10880,187 +10876,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/monitoring/infra/{infraId}/metric/{metric}:
-    get:
-      tags:
-      - "[MC-Infra] Infra Resource Monitor (for developer)"
-      summary: "Get monitoring data of specified Infra for specified monitoring metric\
-        \ (cpu, memory, disk, network)"
-      description: "Get monitoring data of specified Infra for specified monitoring\
-        \ metric (cpu, memory, disk, network)"
-      operationId: GetMonitorData
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: metric
-        in: path
-        description: "Metric type: cpu, memory, disk, network"
-        required: true
-        schema:
-          type: string
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.MonResultSimpleResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/monitoring/install/infra/{infraId}:
-    post:
-      tags:
-      - "[MC-Infra] Infra Resource Monitor (for developer)"
-      summary: Install monitoring agent (CB-Dragonfly agent) to Infra
-      description: Install monitoring agent (CB-Dragonfly agent) to Infra
-      operationId: PostInstallMonitorAgentToInfra
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      requestBody:
-        description: Details for an Infra object
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.InfraCmdReq'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.AgentInstallContentWrapper'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: infraInfo
-  /ns/{nsId}/monitoring/status/infra/{infraId}/node/{nodeId}:
-    put:
-      tags:
-      - "[MC-Infra] Infra Resource Monitor (for developer)"
-      summary: Set monitoring agent (CB-Dragonfly agent) installation status installed
-        (for Windows node only)
-      description: Set monitoring agent (CB-Dragonfly agent) installation status installed
-        (for Windows node only)
-      operationId: PutMonitorAgentStatusInstalled
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: nodeId
-        in: path
-        description: Node ID
-        required: true
-        schema:
-          type: string
-          default: node01
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.NodeInfo'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/policy/infra:
     get:
       tags:
@@ -11329,7 +11144,6 @@ paths:
 
         **Post-Registration Capabilities:**
         - Standard CB-Tumblebug node lifecycle operations (start, stop, terminate)
-        - Monitoring agent installation (if CB-Dragonfly is configured)
         - Command execution and automation
         - Integration with other CB-Tumblebug Infras
 
@@ -18856,6 +18670,214 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /observability:
+    get:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Get the registered observability stack
+      description: |-
+        The OpenTelemetry endpoint (and Grafana) that Nodes send metrics and logs to. Secrets are masked
+        unless showSecrets=true. CB-Tumblebug exports it to init scripts as TB_OTEL_ENDPOINT/TB_OTEL_TOKEN/TB_OTEL_CA_B64;
+        the `initscript-otel-agent` template installs the agent on a Node.
+      operationId: GetObservability
+      parameters:
+      - name: showSecrets
+        in: query
+        description: Return the write token and Grafana admin password unmasked
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObservabilityInfo'
+        "204":
+          description: no observability stack is registered
+          content: {}
+    put:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Register an existing OTLP endpoint
+      description: |-
+        Register an OTLP/HTTP endpoint (for example an existing OTel Collector or a hosted service) and,
+        optionally, the Grafana in front of it. grafanaAdminUser/Password enable the round-trip test and
+        viewer accounts. `otlpEndpoint` and `grafanaUrl` must be `http(s)://host[:port][/path]` without
+        credentials, query or fragment; link-local and metadata addresses are rejected.
+      operationId: PutObservability
+      requestBody:
+        description: Endpoint to register
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ObservabilityRegisterReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObservabilityInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: req
+    delete:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Unregister the observability stack
+      description: |-
+        Removes the registration; Nodes created afterwards get no TB_OTEL_* variables. With
+        deleteInfra=true a stack provisioned by CB-Tumblebug is terminated together with its resources.
+      operationId: DeleteObservability
+      parameters:
+      - name: deleteInfra
+        in: query
+        description: Also delete the managed Infra (default false)
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /observability/reader:
+    get:
+      tags:
+      - "[Admin] System Configuration"
+      summary: List Grafana viewer accounts created through this API
+      operationId: GetObservabilityReaders
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    post:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Create a Grafana viewer account
+      description: Creates a read-only Grafana user on the stack. The password is
+        returned once.
+      operationId: PostObservabilityReader
+      requestBody:
+        description: Account to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ObservabilityReaderReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObservabilityReaderInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: req
+  /observability/reader/{name}:
+    delete:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Delete a Grafana viewer account
+      operationId: DeleteObservabilityReader
+      parameters:
+      - name: name
+        in: path
+        description: Account name
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /observability/stack:
+    post:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Provision an observability stack and register it
+      description: |-
+        Creates one VM from an Infra template (default `infra-obs`, namespace `system`), installs nginx (TLS),
+        an OTel Collector gateway, Prometheus, Loki and Grafana with CB-Tumblebug dashboards, mirrors the agent
+        packages, and registers the stack. With `domainName` (a Route53 hosted zone) the stack gets a DNS name
+        and a Let's Encrypt certificate; otherwise a self-signed certificate is used and its CA is stored.
+        Takes several minutes.
+      operationId: PostObservabilityStack
+      requestBody:
+        description: Options (all optional)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ObservabilityStackReq'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObservabilityInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: req
+  /observability/test:
+    post:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Send a test metric and log line through the stack
+      description: |-
+        Sends one metric and one log line to the OTLP endpoint and, when Grafana admin access is configured,
+        waits until both can be queried back through Grafana.
+      operationId: PostObservabilityTest
+      parameters:
+      - name: timeoutSec
+        in: query
+        description: Seconds to wait for the data to become queryable (default 60)
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObservabilityTestResult'
   /provider:
     get:
       tags:
@@ -21653,24 +21675,6 @@ components:
             If specified, subnet will be created in this zone for resources like GPU Nodes
             that may only be available in specific zones. If empty, auto-selection applies.
           example: ap-northeast-2a
-    model.AgentInstallContent:
-      type: object
-      properties:
-        infraId:
-          type: string
-        nodeId:
-          type: string
-        nodeIp:
-          type: string
-        result:
-          type: string
-    model.AgentInstallContentWrapper:
-      type: object
-      properties:
-        resultArray:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.AgentInstallContent'
     model.AlibabaSpecificProperty:
       type: object
       properties:
@@ -24283,9 +24287,6 @@ components:
       properties:
         description:
           type: string
-        installMonAgent:
-          type: string
-          example: "no"
         label:
           type: object
           additionalProperties:
@@ -24336,15 +24337,6 @@ components:
           type: string
           description: Id is unique identifier for the object
           example: aws-ap-southeast-1
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:no)"
-          example: "no"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
         label:
           type: object
           additionalProperties:
@@ -24517,18 +24509,36 @@ components:
           items:
             $ref: '#/components/schemas/model.InfraClusterInfo'
     model.InfraCmdReq:
-      required:
-      - command
       type: object
       properties:
         command:
           type: array
-          description: Command is the list of commands to execute
+          description: Command is the list of commands to execute (not needed when
+            TemplateId or Scripts is given)
           example:
           - "client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP\
             \ is: $client_ip"
           items:
             type: string
+        env:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Env is exported to Command, TemplateId and Scripts"
+          example:
+            ROLE: web
+        scripts:
+          type: array
+          description: "Scripts runs these steps over SSH (same runner as TemplateId),\
+            \ appended after the template's steps"
+          items:
+            $ref: '#/components/schemas/model.InitScriptStep'
+        templateId:
+          type: string
+          description: |-
+            TemplateId runs an init script template over SSH instead of Command: its steps run in order as root with
+            the Node identity (TB_*) and Env exported, exactly like a first-boot init script
+          example: initscript-nginx
         timeoutMinutes:
           type: integer
           description: |-
@@ -24596,15 +24606,6 @@ components:
             per NodeGroup)
           allOf:
           - $ref: '#/components/schemas/model.InitScriptReq'
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:no)"
-          example: "no"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
         label:
           type: object
           additionalProperties:
@@ -24816,15 +24817,6 @@ components:
           type: string
           description: Id is unique identifier for the object
           example: aws-ap-southeast-1
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:no)"
-          example: "no"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
         label:
           type: object
           additionalProperties:
@@ -24910,8 +24902,6 @@ components:
           type: string
         id:
           type: string
-        installMonAgent:
-          type: string
         label:
           type: object
           additionalProperties:
@@ -24952,10 +24942,16 @@ components:
         initializing:
           type: integer
           example: 0
+        noReport:
+          type: integer
+          description: |-
+            NoReport are Running Nodes that sent nothing within TB_INIT_SCRIPT_NO_REPORT_TIMEOUT (user data not run,
+            or the Notifier unreachable from the Node); a late report still replaces it
+          example: 0
         nodes:
           type: array
           description: "Nodes lists every Node unless option=summary; status is initializing,\
-            \ ok, fail, pending or notApplicable"
+            \ ok, fail, pending, noReport or notApplicable"
           items:
             $ref: '#/components/schemas/model.NodeInitScriptStatus'
         notApplicable:
@@ -24966,8 +24962,8 @@ components:
           example: 97
         pending:
           type: integer
-          description: "Pending are applicable Nodes that have not reported yet (still\
-            \ booting, no notifier, or report lost)"
+          description: Pending are applicable Nodes that have not reported yet (still
+            booting or being created)
           example: 2
         reported:
           type: integer
@@ -25046,15 +25042,6 @@ components:
         description:
           type: string
           example: Made in CB-TB
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:yes)"
-          example: "no"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
         label:
           type: object
           additionalProperties:
@@ -25135,11 +25122,6 @@ components:
       properties:
         id:
           type: string
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:yes)"
-          example: "[yes, no]"
         label:
           type: object
           additionalProperties:
@@ -25223,6 +25205,16 @@ components:
     model.InitScriptStep:
       type: object
       properties:
+        continueOnError:
+          type: boolean
+          description: ContinueOnError keeps running the next steps when this one
+            fails; the Node then reports ok with a note
+          example: false
+        labelSelector:
+          type: string
+          description: LabelSelector runs the step only on Nodes whose labels match
+            (e.g. "role=gpu"); empty runs everywhere
+          example: role=gpu
         name:
           type: string
           example: install-agent
@@ -25231,6 +25223,11 @@ components:
           example: |-
             #!/bin/bash
             apt-get install -y -qq jq
+        timeoutSec:
+          type: integer
+          description: "TimeoutSec stops the step after this many seconds (0: no limit);\
+            \ a timeout counts as a failure"
+          example: 600
     model.InitScriptStepResult:
       type: object
       properties:
@@ -26715,28 +26712,6 @@ components:
           $ref: '#/components/schemas/model.InfraAccessInfo'
         mcNlbHostInfo:
           $ref: '#/components/schemas/model.InfraInfo'
-    model.MonResultSimple:
-      type: object
-      properties:
-        err:
-          type: string
-        metric:
-          type: string
-        nodeId:
-          type: string
-        value:
-          type: string
-    model.MonResultSimpleResponse:
-      type: object
-      properties:
-        infraId:
-          type: string
-        infraMonitoring:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.MonResultSimple'
-        nsId:
-          type: string
     model.NLBAddRemoveNodeReq:
       type: object
       properties:
@@ -27200,10 +27175,6 @@ components:
             type: string
         location:
           $ref: '#/components/schemas/model.Location'
-        monAgentStatus:
-          type: string
-          description: Montoring agent status
-          example: "[installed, notInstalled, failed]"
         name:
           type: string
           description: Name is human-readable string to represent the object
@@ -27369,10 +27340,6 @@ components:
             type: string
         location:
           $ref: '#/components/schemas/model.Location'
-        monAgentStatus:
-          type: string
-          description: Montoring agent status
-          example: "[installed, notInstalled, failed]"
         name:
           type: string
           description: Name is human-readable string to represent the object
@@ -27636,10 +27603,6 @@ components:
           example: aws-ap-southeast-1
         location:
           $ref: '#/components/schemas/model.Location'
-        monAgentStatus:
-          type: string
-          description: Montoring agent status
-          example: "[installed, notInstalled, failed]"
         name:
           type: string
           description: Name is human-readable string to represent the object
@@ -27727,8 +27690,6 @@ components:
             type: string
         location:
           $ref: '#/components/schemas/model.Location'
-        monAgentStatus:
-          type: string
         name:
           type: string
         networkInterface:
@@ -28277,6 +28238,164 @@ components:
         versionId:
           type: string
           example: 3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC
+    model.ObservabilityInfo:
+      type: object
+      properties:
+        caCert:
+          type: string
+          description: CaCert is the PEM certificate agents must trust (empty for
+            a publicly trusted certificate)
+        grafanaAdminPassword:
+          type: string
+        grafanaAdminUser:
+          type: string
+          example: admin
+        grafanaUrl:
+          type: string
+          example: https://obs.example.com
+        managedDnsDomain:
+          type: string
+          example: example.com
+        managedDnsRecord:
+          type: string
+          example: obs-a1b.example.com
+        managedInfraId:
+          type: string
+          example: obs
+        managedNsId:
+          type: string
+          example: system
+        managedSecurityGroupIds:
+          type: array
+          items:
+            type: string
+        managedSshKeyId:
+          type: string
+        managedVNetId:
+          type: string
+        otlpEndpoint:
+          type: string
+          description: OtlpEndpoint is the OTLP/HTTP base URL agents export to (paths
+            /v1/metrics and /v1/logs are appended)
+          example: https://obs.example.com
+        readers:
+          type: array
+          description: Readers are the Grafana viewer accounts created through the
+            reader API
+          items:
+            type: string
+        registeredAt:
+          type: string
+        retentionDays:
+          type: integer
+          example: 15
+        source:
+          type: string
+          example: managed
+          enum:
+          - external
+          - managed
+        status:
+          type: string
+          example: Active
+          enum:
+          - Active
+          - Error
+        statusMessage:
+          type: string
+        writeToken:
+          type: string
+          description: WriteToken is the bearer token agents send; masked unless showSecrets=true
+          example: tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    model.ObservabilityReaderInfo:
+      type: object
+      properties:
+        grafanaUrl:
+          type: string
+          example: https://obs.example.com
+        name:
+          type: string
+          example: shson
+        note:
+          type: string
+        password:
+          type: string
+    model.ObservabilityReaderReq:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          example: shson
+        password:
+          type: string
+          example: generated when empty
+    model.ObservabilityRegisterReq:
+      required:
+      - otlpEndpoint
+      type: object
+      properties:
+        caCert:
+          type: string
+        grafanaAdminPassword:
+          type: string
+        grafanaAdminUser:
+          type: string
+          example: admin
+        grafanaUrl:
+          type: string
+          example: https://grafana.example.com
+        otlpEndpoint:
+          type: string
+          example: https://obs.example.com
+        writeToken:
+          type: string
+          example: tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    model.ObservabilityStackReq:
+      type: object
+      properties:
+        description:
+          type: string
+          example: observability stack for CB-Tumblebug nodes
+        domainName:
+          type: string
+          description: DomainName is a Route53 hosted zone; set to get a DNS name
+            and a Let's Encrypt certificate
+          example: example.com
+        name:
+          type: string
+          example: obs
+          default: obs
+        nsId:
+          type: string
+          example: system
+          default: system
+        recordName:
+          type: string
+          description: RecordName under DomainName; default obs-<3 random chars>
+          example: obs-a1b
+        retentionDays:
+          type: integer
+          description: RetentionDays for metrics and logs (default 15)
+          example: 15
+        templateId:
+          type: string
+          example: infra-obs
+          default: infra-obs
+    model.ObservabilityTestResult:
+      type: object
+      properties:
+        elapsedMs:
+          type: integer
+        logsOk:
+          type: boolean
+        message:
+          type: string
+        metricsOk:
+          type: boolean
+        success:
+          type: boolean
     model.OpenBaoStatusInfo:
       type: object
       properties:
@@ -28488,13 +28607,12 @@ components:
           description: Target echoes the scope this phase ran against
           example: nodeGroupId=control
     model.PostCommandReq:
-      required:
-      - command
       type: object
       properties:
         command:
           type: array
-          description: Command is the list of commands to execute
+          description: Command is the list of commands to execute (not needed when
+            TemplateId or Scripts is given)
           example:
           - "client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP\
             \ is: $client_ip"
@@ -28505,6 +28623,13 @@ components:
           description: "ContinueOnError keeps running the remaining phases when this\
             \ phase fails (default: false)"
           example: false
+        env:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Env is exported to Command, TemplateId and Scripts"
+          example:
+            ROLE: web
         labelSelector:
           type: string
           description: LabelSelector limits execution to nodes matching the selector
@@ -28518,6 +28643,18 @@ components:
           type: string
           description: NodeId limits execution to a single node
           example: g1-1
+        scripts:
+          type: array
+          description: "Scripts runs these steps over SSH (same runner as TemplateId),\
+            \ appended after the template's steps"
+          items:
+            $ref: '#/components/schemas/model.InitScriptStep'
+        templateId:
+          type: string
+          description: |-
+            TemplateId runs an init script template over SSH instead of Command: its steps run in order as root with
+            the Node identity (TB_*) and Env exported, exactly like a first-boot init script
+          example: initscript-nginx
         timeoutMinutes:
           type: integer
           description: |-

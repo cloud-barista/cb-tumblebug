@@ -187,6 +187,46 @@ func shouldTruncateBody(body []byte) bool {
 // split one log entry across several lines and break line-based collectors (e.g. Loki's
 // per-line JSON parsing). Valid JSON is compacted; non-JSON is encoded as a JSON string so
 // the log line always stays single-line and parseable.
+// logRedactedFields are request fields whose content never belongs in a log. VM user data carries the init
+// script with its report token and user-provided env values, and is several KB per VM.
+var logRedactedFields = [][]byte{[]byte(`"UserData":"`)}
+
+// redactBodyForLog replaces the string value of every logRedactedFields entry in a JSON body with its length.
+func redactBodyForLog(body []byte) []byte {
+	for _, field := range logRedactedFields {
+		from := 0
+		for {
+			i := bytes.Index(body[from:], field)
+			if i < 0 {
+				break
+			}
+			valStart := from + i + len(field)
+			valEnd := valStart
+			for valEnd < len(body) && body[valEnd] != '"' {
+				if body[valEnd] == '\\' {
+					valEnd++ // the escaped byte belongs to the value
+				}
+				valEnd++
+			}
+			if valEnd >= len(body) || valEnd == valStart {
+				from = valStart // unterminated or empty value: leave it
+				if valEnd >= len(body) {
+					break
+				}
+				continue
+			}
+			note := []byte(fmt.Sprintf("[%d bytes redacted]", valEnd-valStart))
+			redacted := make([]byte, 0, len(body)-(valEnd-valStart)+len(note))
+			redacted = append(redacted, body[:valStart]...)
+			redacted = append(redacted, note...)
+			redacted = append(redacted, body[valEnd:]...)
+			body = redacted
+			from = valStart + len(note)
+		}
+	}
+	return body
+}
+
 func singleLineJSON(body []byte) []byte {
 	var buf bytes.Buffer
 	if json.Compact(&buf, body) == nil {
@@ -376,7 +416,7 @@ func ExecuteHttpRequest[B any, T any](
 				Str("URI", url)
 			if useBody && body != nil {
 				if bodyBytes, err := json.Marshal(body); err == nil {
-					requestLogEvent = requestLogEvent.RawJSON("requestBody", singleLineJSON(bodyBytes))
+					requestLogEvent = requestLogEvent.RawJSON("requestBody", singleLineJSON(redactBodyForLog(bodyBytes)))
 				}
 			}
 			requestLogEvent.Msg("Internal Call Start")
@@ -386,7 +426,7 @@ func ExecuteHttpRequest[B any, T any](
 				Str("URI", url)
 			if useBody && body != nil {
 				if bodyBytes, err := json.Marshal(body); err == nil {
-					requestLogEvent = requestLogEvent.RawJSON("requestBody", singleLineJSON(bodyBytes))
+					requestLogEvent = requestLogEvent.RawJSON("requestBody", singleLineJSON(redactBodyForLog(bodyBytes)))
 				}
 			}
 			requestLogEvent.Msg("Internal Call Start")

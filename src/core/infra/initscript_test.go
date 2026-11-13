@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -193,19 +194,19 @@ func TestInitScriptWrapperRuns(t *testing.T) {
 
 func TestReviewInitScript(t *testing.T) {
 	fakeTemplates(t)
-	info, warnings, errs := reviewInitScript("ns1", "infra1", "g1", &model.InitScriptReq{TemplateId: "base"})
+	info, warnings, errs := reviewInitScript("ns1", "infra1", "g1", &model.InitScriptReq{TemplateId: "base"}, 0)
 	if len(errs) != 0 || len(info) != 1 || !strings.Contains(info[0], "1 step(s) [base]") || len(warnings) != 1 {
 		t.Fatalf("info=%v warnings=%v errs=%v", info, warnings, errs)
 	}
 	big := &model.InitScriptReq{Script: strings.Repeat("x", model.InitScriptMaxBytes)}
-	if _, _, errs := reviewInitScript("ns1", "infra1", "g1", big); len(errs) != 1 || !strings.Contains(errs[0], "limit") {
+	if _, _, errs := reviewInitScript("ns1", "infra1", "g1", big, 0); len(errs) != 1 || !strings.Contains(errs[0], "limit") {
 		t.Fatalf("oversized script must be an error: %v", errs)
 	}
-	if _, _, errs := reviewInitScript("ns1", "infra1", "g1", &model.InitScriptReq{TemplateId: "missing"}); len(errs) != 1 {
+	if _, _, errs := reviewInitScript("ns1", "infra1", "g1", &model.InitScriptReq{TemplateId: "missing"}, 0); len(errs) != 1 {
 		t.Fatalf("missing template must be an error: %v", errs)
 	}
 	review := model.ReviewNodeGroupDynamicReqInfo{Status: "Ready", CanCreate: true}
-	if viable, _ := applyInitScriptReview("ns1", "infra1", &model.CreateNodeGroupDynamicReq{Name: "g1"}, big, &review); viable || review.Status != "Error" || review.CanCreate {
+	if viable, _ := applyInitScriptReview("ns1", "infra1", &model.CreateNodeGroupDynamicReq{Name: "g1"}, big, 0, &review); viable || review.Status != "Error" || review.CanCreate {
 		t.Fatalf("review must turn into Error: %+v", review)
 	}
 }
@@ -252,8 +253,26 @@ func TestDefaultInitScriptAndNotify(t *testing.T) {
 	if !strings.Contains(renderInitScript(map[string]string{}, &model.InitScriptReq{Mode: "custom"}), "export TB_NOTIFY_URL=") {
 		t.Fatal("notify unset must export the notifier")
 	}
-	if _, w, _ := reviewInitScript("ns1", "i", "g1", &model.InitScriptReq{Notify: &off, Mode: "custom"}); len(w) != 0 {
+	if _, w, _ := reviewInitScript("ns1", "i", "g1", &model.InitScriptReq{Notify: &off, Mode: "custom"}, 0); len(w) != 0 {
 		t.Fatalf("no notifier warning expected with notify=false: %v", w)
+	}
+}
+
+func TestUnreportedInitScriptStatus(t *testing.T) {
+	old := time.Now().UTC().Add(-10 * time.Minute).Format("2006-01-02 15:04:05")
+	fresh := time.Now().UTC().Format("2006-01-02 15:04:05")
+	cases := []struct{ node, created, want string }{
+		{model.StatusFailed, old, model.InitScriptStatusNotApplicable},
+		{model.StatusTerminated, "", model.InitScriptStatusNotApplicable},
+		{model.StatusRunning, old, model.InitScriptStatusNoReport},
+		{model.StatusRunning, fresh, model.InitScriptStatusPending},
+		{model.StatusRunning, "", model.InitScriptStatusPending},
+		{model.StatusCreating, old, model.InitScriptStatusPending},
+	}
+	for _, c := range cases {
+		if got, _ := unreportedInitScriptStatus(c.node, c.created); got != c.want {
+			t.Errorf("%s/%q: got %s want %s", c.node, c.created, got, c.want)
+		}
 	}
 }
 
@@ -356,5 +375,169 @@ func TestInitScriptResultStore(t *testing.T) {
 	attachInitScriptResult(ns, infraId, &none)
 	if none.InitScriptStatus != "" {
 		t.Fatalf("without a notifier the status must stay empty, got %q", none.InitScriptStatus)
+	}
+}
+
+func TestMergeGroupInitScriptAndSelectors(t *testing.T) {
+	fakeTemplates(t)
+	infraReq := &model.InitScriptReq{Mode: "default", Scripts: []model.InitScriptStep{{Name: "agent", Script: "a"}}, Env: map[string]string{"ROLE": "base", "X": "1"}}
+	add := &model.InitScriptReq{TemplateId: "base", Scripts: []model.InitScriptStep{{Name: "web", Script: "w", LabelSelector: "role=web"}}, Env: map[string]string{"ROLE": "web"}}
+	m, err := mergeGroupInitScript("ns1", infraReq, add)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Scripts) != 3 || m.Scripts[0].Name != "agent" || m.Scripts[1].Name != "base" || m.Scripts[2].Name != "web" || m.Env["ROLE"] != "web" || m.Env["X"] != "1" || m.Env["TIER"] != "t1" || m.Mode != "default" {
+		t.Fatalf("addition must extend the infra script: %+v", m)
+	}
+	if len(infraReq.Scripts) != 1 || infraReq.Env["ROLE"] != "base" {
+		t.Fatal("merge must not modify the infra request")
+	}
+	replace := &model.InitScriptReq{Mode: "custom", Scripts: []model.InitScriptStep{{Name: "only", Script: "o"}}}
+	if r, _ := mergeGroupInitScript("ns1", infraReq, replace); len(r.Scripts) != 1 || r.Scripts[0].Name != "only" || r.Mode != "custom" {
+		t.Fatalf("a group with mode must replace the infra script: %+v", r)
+	}
+	if r, _ := mergeGroupInitScript("ns1", nil, add); len(r.Scripts) != 2 || r.Scripts[0].Name != "base" {
+		t.Fatalf("group alone when the infra has none: %+v", r)
+	}
+	if r, _ := mergeGroupInitScript("ns1", infraReq, nil); len(r.Scripts) != 1 {
+		t.Fatalf("infra alone when the group has none: %+v", r)
+	}
+	// label selector keeps a step only on matching nodes
+	web := stepsForNode(m, map[string]string{"role": "web"})
+	db := stepsForNode(m, map[string]string{"role": "db"})
+	none := stepsForNode(m, nil)
+	if len(web.Scripts) != 3 || len(db.Scripts) != 2 || db.Scripts[1].Name != "base" || len(none.Scripts) != 2 {
+		t.Fatalf("selector filtering wrong: web=%d db=%d none=%d", len(web.Scripts), len(db.Scripts), len(none.Scripts))
+	}
+}
+
+// TestInitScriptWrapperOptionalAndTimeout runs the rendered user data with a failing optional step and a
+// step that times out, and checks the reported statuses.
+func TestInitScriptWrapperOptionalAndTimeout(t *testing.T) {
+	for _, bin := range []string{"bash", "curl", "base64", "timeout"} {
+		if _, err := exec.LookPath(bin); err != nil {
+			t.Skipf("%s not available", bin)
+		}
+	}
+	var last map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var rep map[string]any
+		if json.Unmarshal(body, &rep) == nil {
+			last = rep
+		}
+	}))
+	defer srv.Close()
+	NotifierProvider = func() *model.NotifierInfo {
+		return &model.NotifierInfo{Status: model.NotifierStatusActive, Url: srv.URL, Topic: "tb-x", WriteToken: "tk_w"}
+	}
+	defer func() { NotifierProvider = nil }()
+	dir := t.TempDir()
+	node := &model.NodeInfo{Id: "g1-1", NodeGroupId: "g1", InitScript: &model.InitScriptReq{Mode: "custom", Scripts: []model.InitScriptStep{
+		{Name: "optional", Script: "exit 5\n", ContinueOnError: true},
+		{Name: "slow", Script: "sleep 30\n", TimeoutSec: 1, ContinueOnError: true},
+		{Name: "last", Script: "touch " + filepath.Join(dir, "last") + "\n"},
+	}}}
+	script, err := buildInitScript("ns1", "infra1", node, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Env = append(os.Environ(), "TB_DIR="+dir, "TB_LOG="+filepath.Join(dir, "log"))
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("wrapper failed: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "last")); err != nil {
+		logText, _ := os.ReadFile(filepath.Join(dir, "log"))
+		status, _ := os.ReadFile(filepath.Join(dir, "init-script.status"))
+		t.Fatalf("the required step after optional failures must still run\nstatus: %s\nlog:\n%s\nreport: %v", status, logText, last)
+	}
+	if last["status"] != "ok" {
+		t.Fatalf("overall status must be ok when only optional steps failed: %v", last)
+	}
+	steps := last["steps"].([]any)
+	if steps[0].(map[string]any)["status"] != "fail" || steps[1].(map[string]any)["status"] != "fail" || steps[1].(map[string]any)["exitCode"] != float64(124) || steps[2].(map[string]any)["status"] != "ok" {
+		t.Fatalf("steps = %v", steps)
+	}
+	var r model.InitScriptResult
+	b, _ := json.Marshal(last)
+	_ = json.Unmarshal(b, &r)
+	if r.Summary() != "optional step(s) failed: optional, slow" {
+		t.Fatalf("summary = %q", r.Summary())
+	}
+	// the SSH runner follows the same rules
+	runner := InitScriptRunnerCommand("ns1", "infra1", node, node.InitScript.Scripts, nil)
+	if !strings.HasPrefix(runner, "echo ") || !strings.HasSuffix(runner, " | base64 -d | sudo bash") {
+		t.Fatalf("runner command shape: %s", runner[:40])
+	}
+	payload := strings.TrimSuffix(strings.TrimPrefix(runner, "echo "), " | base64 -d | sudo bash")
+	raw, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	chk := exec.Command("bash", "-n")
+	chk.Stdin = strings.NewReader(string(raw))
+	if out, err := chk.CombinedOutput(); err != nil {
+		t.Fatalf("runner syntax: %v\n%s", err, out)
+	}
+	// the SSH runner follows the same rules and reports the same snapshot
+	if !strings.Contains(string(raw), "export TB_NODE_ID='g1-1'") || !strings.Contains(string(raw), "run_step 2 'slow'") {
+		t.Fatalf("runner content: %s", raw)
+	}
+	last = nil
+	run := exec.Command("bash", "-c", string(raw))
+	run.Env = append(os.Environ(), "TB_RUN_DIR="+dir)
+	if out, err := run.CombinedOutput(); err != nil {
+		t.Fatalf("runner failed: %v\n%s", err, out)
+	}
+	if last == nil || last["event"] != "done" || last["status"] != "ok" || last["message"] != "re-run over ssh" {
+		t.Fatalf("runner report = %v", last)
+	}
+	steps = last["steps"].([]any)
+	if len(steps) != 3 || steps[0].(map[string]any)["exitCode"] != float64(5) || steps[1].(map[string]any)["exitCode"] != float64(124) || steps[2].(map[string]any)["status"] != "ok" {
+		t.Fatalf("runner steps = %v", steps)
+	}
+	// a required failure stops the run, leaves the rest pending and reports fail with the step name
+	node.InitScript.Scripts = []model.InitScriptStep{{Name: "boom", Script: "exit 3\n"}, {Name: "never", Script: "true\n"}}
+	raw, _ = base64.StdEncoding.DecodeString(strings.TrimSuffix(strings.TrimPrefix(InitScriptRunnerCommand("ns1", "infra1", node, node.InitScript.Scripts, nil), "echo "), " | base64 -d | sudo bash"))
+	last = nil
+	run = exec.Command("bash", "-c", string(raw))
+	run.Env = append(os.Environ(), "TB_RUN_DIR="+dir)
+	if err := run.Run(); err == nil {
+		t.Fatal("runner must exit non-zero on a required failure")
+	}
+	steps = last["steps"].([]any)
+	if last["status"] != "fail" || last["step"] != "boom" || last["exitCode"] != float64(3) || steps[1].(map[string]any)["status"] != "pending" {
+		t.Fatalf("runner failure report = %v", last)
+	}
+}
+
+func TestLowMemoryInitScriptNote(t *testing.T) {
+	agent := model.InitScriptStep{Name: "otel-agent", Script: "curl -o /var/lib/tb/i.sh \"$TB_OTEL_ENDPOINT/dl/install-agent.sh\"\nbash /var/lib/tb/i.sh"}
+	nginx := model.InitScriptStep{Name: "nginx", Script: "export DEBIAN_FRONTEND=noninteractive\napt-get update -qq\napt-get install -y -qq nginx >/dev/null"}
+	hello := model.InitScriptStep{Name: "hello", Script: "echo hello # apt-get install is only mentioned here"}
+
+	for _, tc := range []struct {
+		name   string
+		mem    float32
+		steps  []model.InitScriptStep
+		warn   bool
+		hasMsg bool
+	}{
+		{"install after the agent on a small Node", 0.5, []model.InitScriptStep{agent, nginx}, true, true},
+		{"install before the agent", 0.5, []model.InitScriptStep{nginx, agent}, false, true},
+		{"agent only", 0.5, []model.InitScriptStep{agent, hello}, false, true},
+		{"no agent", 0.5, []model.InitScriptStep{nginx}, false, false},
+		{"swap added first", 0.5, []model.InitScriptStep{{Name: "swap", Script: "mkswap /swapfile\nswapon /swapfile"}, agent, nginx}, false, false},
+		{"enough memory", 1, []model.InitScriptStep{agent, nginx}, false, false},
+		{"unknown memory", 0, []model.InitScriptStep{agent, nginx}, false, false},
+	} {
+		note, warn := lowMemoryInitScriptNote(tc.mem, tc.steps)
+		if warn != tc.warn || (note != "") != tc.hasMsg {
+			t.Errorf("%s: note=%q warn=%v", tc.name, note, warn)
+		}
+	}
+	if note, _ := lowMemoryInitScriptNote(0.5, []model.InitScriptStep{agent, nginx}); !strings.Contains(note, `"nginx"`) || !strings.Contains(note, `"otel-agent"`) {
+		t.Errorf("the warning should name both steps: %s", note)
 	}
 }

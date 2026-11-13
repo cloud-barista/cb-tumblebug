@@ -39,9 +39,10 @@ PORT="8000"
 # On by default, because that is what the common client expects.
 ENABLE_TOOLS="true"
 TOOL_PARSER=""
+USER_SET_TOOL_PARSER="false"
 HF_TOKEN="${HF_TOKEN:-}"  # inherit from env if already set (avoids CLI arg exposure)
 GPU_UTIL=""               # empty = vLLM default (~0.9)
-CTX_LEN=""                # empty = model default
+CTX_LEN=""                # empty = auto-fit to GPU VRAM (or model default on older vLLM)
 API_KEY=""
 TP_SIZE=""                # empty = use every GPU on the VM
 CHECK_ONLY="false"
@@ -57,7 +58,7 @@ usage() {
   echo "  --port PORT         Server port (default: 8000)"
   echo "  --hf-token TOKEN    HuggingFace token for gated models"
   echo "  --gpu-util FLOAT    GPU memory utilization 0.0-1.0 (default: vLLM default)"
-  echo "  --ctx-len N         Max context length / max-model-len (default: model default)"
+  echo "  --ctx-len N         Max context length / max-model-len (default: auto-fit to GPU VRAM)"
   echo "  --api-key KEY       API key for the vLLM server (default: none)"
   echo "  --tp N              Tensor parallel size / GPUs to use (default: all GPUs on the VM)"
   echo "  --tool-parser NAME  Tool-call parser (default: guessed from the model name)"
@@ -65,9 +66,9 @@ usage() {
   echo "  --check-access      Only verify the model is reachable on HuggingFace, then exit"
   echo ""
   echo "Recommended models:"
-  echo "  Qwen/Qwen2.5-1.5B-Instruct       (~3GB VRAM)"
-  echo "  meta-llama/Llama-3.2-3B-Instruct  (~7GB VRAM)"
-  echo "  mistralai/Mistral-7B-Instruct-v0.3 (~15GB VRAM)"
+  echo "  Qwen/Qwen2.5-1.5B-Instruct         (~3GB VRAM, ungated)"
+  echo "  Qwen/Qwen2.5-7B-Instruct           (~15GB VRAM, ungated)"
+  echo "  meta-llama/Llama-3.2-3B-Instruct   (~7GB VRAM, requires --hf-token)"
   exit "${1:-1}"
 }
 
@@ -81,7 +82,7 @@ while [[ "$#" -gt 0 ]]; do
     --ctx-len)  CTX_LEN="${2?Error: --ctx-len requires an argument}";   shift 2 ;;
     --api-key)  API_KEY="${2?Error: --api-key requires an argument}";   shift 2 ;;
     --tp)       TP_SIZE="${2:?Error: --tp requires a value}";           shift 2 ;;
-    --tool-parser) TOOL_PARSER="${2?Error: --tool-parser requires an argument}"; shift 2 ;;
+    --tool-parser) TOOL_PARSER="${2?Error: --tool-parser requires an argument}"; USER_SET_TOOL_PARSER="true"; shift 2 ;;
     --no-tools) ENABLE_TOOLS="false";                                   shift 1 ;;
     --check-access) CHECK_ONLY="true";                                  shift 1 ;;
     -h|--help)  usage 0 ;;
@@ -188,14 +189,14 @@ echo "Activating virtual environment..."
 if [ "$GPU_TYPE" = "nvidia" ] && [ -z "$CUDA_HOME" ]; then
   if [ -x /usr/local/cuda/bin/nvcc ]; then
     export CUDA_HOME=/usr/local/cuda
-  elif command -v nvcc &>/dev/null; then
-    export CUDA_HOME="$(dirname "$(dirname "$(command -v nvcc)")")"
   else
-    # cuda-nvcc-12-X doesn't create /usr/local/cuda symlink or update PATH.
-    # Find the versioned directory directly.
+    # Prefer versioned /usr/local/cuda-X.Y over system /usr/bin/nvcc (which may be
+    # an older Ubuntu nvidia-cuda-toolkit build lacking matching headers).
     _nvcc_bin=$(ls /usr/local/cuda-*/bin/nvcc 2>/dev/null | sort -V | tail -1)
     if [ -x "$_nvcc_bin" ]; then
       export CUDA_HOME="$(dirname "$(dirname "$_nvcc_bin")")"
+    elif command -v nvcc &>/dev/null; then
+      export CUDA_HOME="$(dirname "$(dirname "$(command -v nvcc)")")"
     fi
   fi
   # Always add CUDA_HOME/bin to PATH regardless of which branch set it.
@@ -233,31 +234,35 @@ get_running_model() {
 stop_vllm_server() {
   echo "Stopping existing vLLM server..."
 
-  # Try PID file first
+  # Try PID file first (including child EngineCore/Worker processes)
   if [ -f "$PID_FILE" ]; then
-    local pid
+    local pid children
     pid=$(cat "$PID_FILE" 2>/dev/null)
     if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
       echo "Stopping process $pid..."
-      kill "$pid" 2>/dev/null
+      children=$(pgrep -P "$pid" 2>/dev/null || true)
+      kill "$pid" $children 2>/dev/null || true
       sleep 2
       # Force kill if still running
-      if kill -0 "$pid" 2>/dev/null; then
-        kill -9 "$pid" 2>/dev/null
+      if kill -0 "$pid" 2>/dev/null || [ -n "$children" ]; then
+        kill -9 "$pid" $children 2>/dev/null || true
         sleep 1
       fi
     fi
     rm -f "$PID_FILE"
   fi
 
-  # Also try to find and kill any vllm processes on the same port
-  local vllm_pids
-  vllm_pids=$(pgrep -f "vllm.entrypoints.openai.api_server.*--port $PORT" 2>/dev/null || true)
+  # Also try to find and kill any vllm processes on the same port (both 'vllm serve' and legacy api_server)
+  local vllm_pids vllm_children=""
+  vllm_pids=$(pgrep -f "(vllm serve|vllm\.entrypoints\.openai\.api_server).*--port $PORT" 2>/dev/null || true)
   if [ -n "$vllm_pids" ]; then
     echo "Found additional vLLM processes: $vllm_pids"
-    echo "$vllm_pids" | xargs kill 2>/dev/null || true
+    for p in $vllm_pids; do
+      vllm_children="$vllm_children $(pgrep -P "$p" 2>/dev/null || true)"
+    done
+    echo "$vllm_pids $vllm_children" | xargs -r kill 2>/dev/null || true
     sleep 2
-    echo "$vllm_pids" | xargs kill -9 2>/dev/null || true
+    echo "$vllm_pids $vllm_children" | xargs -r kill -9 2>/dev/null || true
   fi
 
   # Kill vLLM/Python/Ray processes still holding the port — catches orphaned
@@ -273,12 +278,23 @@ stop_vllm_server() {
   local killed=0
   for pid in $port_pids; do
     if ps -p "$pid" -o args= 2>/dev/null | grep -qiE 'python|vllm|ray'; then
-      kill -9 "$pid" 2>/dev/null || true
+      local p_children
+      p_children=$(pgrep -P "$pid" 2>/dev/null || true)
+      kill -9 "$pid" $p_children 2>/dev/null || true
       killed=1
     else
       echo "Warning: port $PORT also used by unrelated process (PID $pid) — not killed."
     fi
   done
+
+  # If no vLLM API server remains on any port, clean up orphaned VLLM::EngineCore / Worker
+  # subprocesses so GPU VRAM is fully released before launching the next model.
+  if ! pgrep -f "(vllm serve|vllm\.entrypoints\.openai\.api_server)" >/dev/null 2>&1; then
+    if pgrep -f "VLLM::(EngineCore|Worker)" >/dev/null 2>&1; then
+      pkill -9 -f "VLLM::(EngineCore|Worker)" 2>/dev/null || true
+      killed=1
+    fi
+  fi
   [ "$killed" = "1" ] && sleep 1 || true
 
   rm -f "$MODEL_FILE"
@@ -351,6 +367,9 @@ if [ "$RUNNING_MODEL" = "$MODEL_NAME" ]; then
 elif [ -n "$RUNNING_MODEL" ]; then
   echo "Different model '$RUNNING_MODEL' is currently running."
   stop_vllm_server
+elif pgrep -f "(vllm serve|vllm\.entrypoints\.openai\.api_server).*--port $PORT" >/dev/null 2>&1; then
+  echo "Found existing vLLM process on port $PORT without PID tracking."
+  stop_vllm_server
 fi
 
 # Export HuggingFace token for gated model downloads
@@ -367,16 +386,37 @@ echo "Log file: $LOG_FILE"
 # Clear old log file
 > "$LOG_FILE"
 
-# Build vLLM command dynamically to support optional arguments
-VLLM_CMD_ARGS=(
-  python -m vllm.entrypoints.openai.api_server
-  --model "$MODEL_NAME"
-  --host "$HOST"
-  --port "$PORT"
-  --trust-remote-code
-)
+# Build vLLM command dynamically using 'vllm serve' when available (with fallback to legacy module).
+# Cache full CLI help once (--help=all is required on vLLM 0.30+ where --help prints a compact index).
+if command -v vllm >/dev/null 2>&1; then
+  VLLM_CMD_ARGS=(
+    vllm serve "$MODEL_NAME"
+    --host "$HOST"
+    --port "$PORT"
+    --trust-remote-code
+  )
+  VLLM_HELP_OUT="$(vllm serve --help=all 2>/dev/null || vllm serve --help 2>/dev/null || true)"
+else
+  VLLM_CMD_ARGS=(
+    python -m vllm.entrypoints.openai.api_server
+    --model "$MODEL_NAME"
+    --host "$HOST"
+    --port "$PORT"
+    --trust-remote-code
+  )
+  VLLM_HELP_OUT="$(python -m vllm.entrypoints.openai.api_server --help 2>/dev/null || true)"
+fi
+
 [ -n "$GPU_UTIL" ] && VLLM_CMD_ARGS+=(--gpu-memory-utilization "$GPU_UTIL")
-[ -n "$CTX_LEN" ]  && VLLM_CMD_ARGS+=(--max-model-len "$CTX_LEN")
+if [ -n "$CTX_LEN" ]; then
+  VLLM_CMD_ARGS+=(--max-model-len "$CTX_LEN")
+  echo "Context length: $CTX_LEN"
+elif echo "$VLLM_HELP_OUT" | grep -qE "'-1' or 'auto'|-1 or 'auto'"; then
+  # Automatically uses the model's max context length if it fits in VRAM, or clamps to
+  # the largest context length that fits (prevents 128K default KV-cache OOM on 24GB GPUs).
+  VLLM_CMD_ARGS+=(--max-model-len auto)
+  echo "Context length: auto (fits available GPU VRAM up to model max)"
+fi
 [ -n "$API_KEY" ]  && VLLM_CMD_ARGS+=(--api-key "$API_KEY")
 [ -n "$HF_TOKEN" ] && VLLM_CMD_ARGS+=(--hf-token "$HF_TOKEN")
 # Use every GPU on the VM unless --tp narrows it; a benchmark should reflect the whole VM.
@@ -398,22 +438,36 @@ fi
 # offering tools at all.
 if [ "$ENABLE_TOOLS" = "true" ]; then
   if [ -z "$TOOL_PARSER" ]; then
-    case "$(echo "$MODEL_NAME" | tr 'A-Z' 'a-z')" in
-      *qwen*)                              TOOL_PARSER="hermes" ;;
+    case "$(echo "$MODEL_NAME" | tr '[:upper:]' '[:lower:]')" in
+      *deepseek-r1-distill*)               TOOL_PARSER="" ;;
+      *phi-4-mini*|*phi4-mini*)            TOOL_PARSER="phi4_mini_json" ;;
+      *qwen3-coder*|*qwen3_coder*)         TOOL_PARSER="qwen3_coder" ;;
+      *qwen*|*hermes*)                     TOOL_PARSER="hermes" ;;
       *llama-3.1*|*llama-3.2*|*llama-3.3*) TOOL_PARSER="llama3_json" ;;
       *llama-4*)                           TOOL_PARSER="llama4_json" ;;
-      *mistral*|*mixtral*)                 TOOL_PARSER="mistral" ;;
-      *deepseek-v3*)                       TOOL_PARSER="deepseek_v3" ;;
+      *mistral*|*mixtral*|*ministral*|*devstral*) TOOL_PARSER="mistral" ;;
+      *deepseek-v3*|*deepseek-r1-0528*)    TOOL_PARSER="deepseek_v3" ;;
+      *functiongemma*)                     TOOL_PARSER="functiongemma" ;;
+      *gemma-4*|*gemma4*)                  TOOL_PARSER="gemma4" ;;
+      *granite-4*|*granite4*)              TOOL_PARSER="granite4" ;;
       *granite*)                           TOOL_PARSER="granite" ;;
+      *glm-4.7*|*glm47*)                   TOOL_PARSER="glm47" ;;
+      *glm-4.5*|*glm45*)                   TOOL_PARSER="glm45" ;;
+      *internlm*)                          TOOL_PARSER="internlm" ;;
+      *jamba*)                             TOOL_PARSER="jamba" ;;
+      *olmo-3*|*olmo3*)                    TOOL_PARSER="olmo3" ;;
+      *kimi-k2*)                           TOOL_PARSER="kimi_k2" ;;
       *)                                   TOOL_PARSER="" ;;
     esac
   fi
-  if [ -n "$TOOL_PARSER" ] && python -m vllm.entrypoints.openai.api_server --help 2>/dev/null | grep -q -- '--enable-auto-tool-choice'; then
+  if [ -n "$TOOL_PARSER" ] \
+    && echo "$VLLM_HELP_OUT" | grep -q -- '--enable-auto-tool-choice' \
+    && { [ "$USER_SET_TOOL_PARSER" = "true" ] || echo "$VLLM_HELP_OUT" | grep -qw "$TOOL_PARSER"; }; then
     VLLM_CMD_ARGS+=(--enable-auto-tool-choice --tool-call-parser "$TOOL_PARSER")
     echo "Tool calling enabled (parser: $TOOL_PARSER)"
   else
-    echo "Tool calling stays off (no parser known for '$MODEL_NAME', or this vLLM build lacks the flag)."
-    echo "  Open WebUI will report an error on chat unless you pass --tool-parser NAME."
+    echo "Tool calling stays off (no built-in parser matched '$MODEL_NAME', or unsupported by this vLLM version)."
+    echo "  Tip: pass --tool-parser NAME to force one, --no-tools to silence this notice, or set Function Calling = Default in Open WebUI."
   fi
 fi
 
@@ -423,8 +477,8 @@ if [ "$GPU_TYPE" = "nvidia" ]; then
   # first use; this can take several minutes, causing the engine-core startup
   # timeout to expire.  --enforce-eager skips CUDA graph / Triton compilation so
   # the server starts reliably.  Inference throughput is lower but correct.
-  # Guard with --help to stay compatible with older pinned vLLM versions.
-  if python -m vllm.entrypoints.openai.api_server --help 2>/dev/null | grep -q -- '--enforce-eager'; then
+  # Guard with cached --help output to stay compatible with older pinned vLLM versions.
+  if echo "$VLLM_HELP_OUT" | grep -q -- '--enforce-eager'; then
     VLLM_CMD_ARGS+=(--enforce-eager)
   fi
 fi
@@ -435,7 +489,8 @@ fi
 for pid in $(fuser "${PORT}/tcp" 2>/dev/null | tr -s ' ' '\n' | grep -E '^[0-9]+$' \
              || lsof -ti:"${PORT}" 2>/dev/null || true); do
   if ps -p "$pid" -o args= 2>/dev/null | grep -qiE 'python|vllm|ray'; then
-    kill -9 "$pid" 2>/dev/null || true
+    p_children=$(pgrep -P "$pid" 2>/dev/null || true)
+    kill -9 "$pid" $p_children 2>/dev/null || true
   else
     echo "Warning: port $PORT in use by unrelated process (PID $pid) — not killed."
   fi

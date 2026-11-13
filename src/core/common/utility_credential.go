@@ -15,6 +15,7 @@ limitations under the License.
 package common
 
 import (
+	"bytes"
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
@@ -32,6 +33,7 @@ import (
 	"time"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	modelcsp "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -158,14 +160,65 @@ func LookupKeyValueList(kvl []model.KeyValue, key string) string {
 	return ""
 }
 
-// PrintJsonPretty is func to print JSON pretty with indent
+// PrintJsonPretty prints v as indented JSON for debugging. This output bypasses the logger, so script bodies,
+// env values and VM user data are replaced by placeholders and the log masking is applied here.
 func PrintJsonPretty(v any) {
-	prettyJSON, err := json.MarshalIndent(v, "", "  ")
+	prettyJSON, err := redactedPrettyJSON(v)
 	if err != nil {
 		fmt.Printf("%+v\n", v)
 	} else {
 		fmt.Printf("%s\n", string(prettyJSON))
 	}
+}
+
+func redactedPrettyJSON(v any) ([]byte, error) {
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var tree any
+	if err := dec.Decode(&tree); err != nil {
+		return nil, err
+	}
+	pretty, err := json.MarshalIndent(redactForPrint(tree), "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return logger.MaskSensitiveData(pretty), nil
+}
+
+// redactForPrint walks a decoded JSON value and hides script bodies, env values and VM user data, which can
+// carry tokens and user secrets under any key name.
+func redactForPrint(v any) any {
+	switch t := v.(type) {
+	case map[string]any:
+		for k, val := range t {
+			switch strings.ToLower(k) {
+			case "script", "userdata":
+				if str, ok := val.(string); ok && str != "" {
+					t[k] = fmt.Sprintf("[%d bytes redacted]", len(str))
+					continue
+				}
+			case "env":
+				if env, ok := val.(map[string]any); ok {
+					for name := range env {
+						env[name] = "********"
+					}
+					continue
+				}
+			}
+			t[k] = redactForPrint(val)
+		}
+		return t
+	case []any:
+		for i := range t {
+			t[i] = redactForPrint(t[i])
+		}
+		return t
+	}
+	return v
 }
 
 // GenResourceKey is func to generate a key from resource type and id

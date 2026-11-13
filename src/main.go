@@ -20,7 +20,10 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,6 +41,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/notifier"
+	"github.com/cloud-barista/cb-tumblebug/src/core/observability"
 
 	restServer "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server"
 
@@ -52,7 +56,6 @@ func init() {
 
 	model.SelfEndpoint = common.NVL(os.Getenv("TB_SELF_ENDPOINT"), "localhost:1323")
 	model.SpiderRestUrl = common.NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
-	model.DragonflyRestUrl = common.NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 	model.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8055/terrarium")
 	model.APIUsername = common.NVL(os.Getenv("TB_API_USERNAME"), "default")
 	model.APIPassword = common.NVL(os.Getenv("TB_API_PASSWORD"), "default")
@@ -76,6 +79,16 @@ func init() {
 		CaCertFile: os.Getenv("TB_NOTIFIER_NTFY_CA_CERT_FILE"),
 	}
 
+	// Observability (optional): registers an existing OTLP endpoint at startup when none is stored
+	model.ObservabilityEnvConfig = model.ObservabilityEnv{
+		OtlpEndpoint:         os.Getenv("TB_OBSERVABILITY_OTLP_ENDPOINT"),
+		WriteToken:           os.Getenv("TB_OBSERVABILITY_WRITE_TOKEN"),
+		CaCertFile:           os.Getenv("TB_OBSERVABILITY_CA_CERT_FILE"),
+		GrafanaUrl:           os.Getenv("TB_OBSERVABILITY_GRAFANA_URL"),
+		GrafanaAdminUser:     os.Getenv("TB_OBSERVABILITY_GRAFANA_ADMIN_USER"),
+		GrafanaAdminPassword: os.Getenv("TB_OBSERVABILITY_GRAFANA_ADMIN_PASSWORD"),
+	}
+
 	// Etcd
 	model.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
 
@@ -86,7 +99,6 @@ func init() {
 	// load the latest configuration from DB (if exist)
 
 	log.Info().Msg("init: updating system environment")
-	common.UpdateGlobalVariable(model.StrDragonflyRestUrl)
 	common.UpdateGlobalVariable(model.StrSpiderRestUrl)
 	common.UpdateGlobalVariable(model.StrTerrariumRestUrl)
 	common.UpdateGlobalVariable(model.StrAutocontrolDurationMs)
@@ -860,6 +872,18 @@ func addIndexes() error {
 
 func main() {
 
+	// Optional profiling endpoint for diagnosing slow requests under load (e.g. TB_PPROF_ADDR=127.0.0.1:6060)
+	if addr := os.Getenv("TB_PPROF_ADDR"); addr != "" {
+		runtime.SetMutexProfileFraction(100)
+		runtime.SetBlockProfileRate(int(time.Millisecond))
+		go func() {
+			log.Info().Str("addr", addr).Msg("pprof endpoint enabled")
+			if err := http.ListenAndServe(addr, nil); err != nil {
+				log.Warn().Err(err).Msg("pprof endpoint stopped")
+			}
+		}()
+	}
+
 	//Ticker for Infra Orchestration Policy
 	log.Info().Msg("main: initiating multi-cloud orchestration")
 	autoControlDuration, _ := strconv.Atoi(model.AutocontrolDurationMs) //ms
@@ -882,6 +906,8 @@ func main() {
 
 	// Start notifier subscription if a notifier is registered (stored or from TB_NOTIFIER_* env)
 	go notifier.Init()
+	// Load the observability stack (stored or from TB_OBSERVABILITY_* env) so init scripts get TB_OTEL_*
+	go observability.Init()
 
 	// Reload cloud_conf.yaml on change; keep the last good config on reload errors
 	go func() {

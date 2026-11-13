@@ -75,10 +75,15 @@ DISK_AVAIL=$(df -BG / | awk 'NR==2 {gsub("G","",$4); print $4}')
 df -h / | awk '$NF=="/" {print "Disk - Total: "$2, "Available: "$4}'
 free -h | awk '/Mem:/ {print "Memory - Total: "$2, "Available: "$7}'
 
-# Warn if disk space is low (vLLM + models can require 20GB+)
-if [ "$DISK_AVAIL" -lt 20 ] 2>/dev/null; then
-  echo "Warning: Low disk space (${DISK_AVAIL}GB available). vLLM and models may require 20GB+."
-  echo "Continuing installation (non-interactive mode)..."
+# Fail fast if disk space cannot even hold vLLM + PyTorch/CUDA runtime (~10GB),
+# and warn if space is tight for 7B-8B BF16 model weights (~15-25GB).
+if [ "$DISK_AVAIL" -lt 12 ] 2>/dev/null; then
+  echo "Error: Insufficient disk space (${DISK_AVAIL}GB available)."
+  echo "  vLLM + GPU runtime libraries require at least 12GB free (rootDiskSize >= 100GB recommended for LLM weights)."
+  exit 1
+elif [ "$DISK_AVAIL" -lt 35 ] 2>/dev/null; then
+  echo "Warning: Low disk space (${DISK_AVAIL}GB available). vLLM installs with --no-cache (~10GB), so 7B-8B BF16 models (~15-25GB) may fill the disk."
+  echo "  Recommended VM rootDiskSize: 100GB+."
 fi
 
 # Install system dependencies
@@ -89,8 +94,9 @@ sudo apt-get -o DPkg::Lock::Timeout=600 update -qq
 # Use Python 3.12 for both NVIDIA and AMD:
 #   - AMD pre-built ROCm wheels are Python 3.12 only (cp312)
 #   - vLLM 0.23+ docs quickstart recommends Python 3.12 for NVIDIA too
+#   - build-essential provides gcc/g++ needed by Triton and FlashInfer JIT compilation
 # Ubuntu 22.04 ships Python 3.10 by default; add deadsnakes PPA when needed.
-sudo apt-get -o DPkg::Lock::Timeout=600 install -y python3-pip curl jq > /dev/null 2>&1
+sudo apt-get -o DPkg::Lock::Timeout=600 install -y python3-pip build-essential curl jq > /dev/null 2>&1
 if ! apt-cache show python3.12 > /dev/null 2>&1; then
   echo "  Adding deadsnakes PPA for python3.12..."
   sudo apt-get -o DPkg::Lock::Timeout=600 install -y software-properties-common > /dev/null 2>&1
@@ -143,9 +149,9 @@ if [ "$GPU_TYPE" = "nvidia" ]; then
     pip install uv >> "$LOG_FILE" 2>&1
   fi
   # --torch-backend=auto: lets uv select the correct CUDA wheel for the installed driver.
-  # Required for vLLM 0.23+; the old bare pip install no longer reliably picks CUDA wheels.
-  echo "Installing vLLM with CUDA backend (uv --torch-backend=auto)..."
-  uv pip install "$VLLM_SPEC" --torch-backend=auto >> "$LOG_FILE" 2>&1
+  # --no-cache: avoids leaving ~5-6GB of duplicate PyTorch/CUDA wheel archives in ~/.cache/uv.
+  echo "Installing vLLM with CUDA backend (uv --no-cache --torch-backend=auto)..."
+  uv pip install --no-cache "$VLLM_SPEC" --torch-backend=auto >> "$LOG_FILE" 2>&1
   INSTALL_RESULT=$?
 else
   # === AMD ROCm: install pre-built ROCm vllm wheel via uv ===
@@ -214,10 +220,10 @@ else
         _reinstall="--reinstall"
       fi
       echo "Installing vllm ${ROCM_VLLM_VERSION}+${ROCM_VLLM_VARIANT} from $ROCM_WHEEL_INDEX/${ROCM_VLLM_VERSION}/${ROCM_VLLM_VARIANT}/ ..."
-      uv pip install $_reinstall "vllm==${ROCM_VLLM_VERSION}" --extra-index-url "$ROCM_WHEEL_INDEX/${ROCM_VLLM_VERSION}/${ROCM_VLLM_VARIANT}/" >> "$LOG_FILE" 2>&1
+      uv pip install --no-cache $_reinstall "vllm==${ROCM_VLLM_VERSION}" --extra-index-url "$ROCM_WHEEL_INDEX/${ROCM_VLLM_VERSION}/${ROCM_VLLM_VARIANT}/" >> "$LOG_FILE" 2>&1
     else
       echo "Installing pre-built ROCm vllm wheel from $ROCM_WHEEL_INDEX/ ..."
-      uv pip install vllm --extra-index-url "$ROCM_WHEEL_INDEX/" >> "$LOG_FILE" 2>&1
+      uv pip install --no-cache vllm --extra-index-url "$ROCM_WHEEL_INDEX/" >> "$LOG_FILE" 2>&1
     fi
     INSTALL_RESULT=$?
   fi
@@ -242,71 +248,136 @@ fi
 set -e
 
 if [ $INSTALL_RESULT -ne 0 ]; then
-  echo "vLLM installation failed. See $LOG_FILE for detailed error messages."
+  echo "vLLM installation failed (exit code: $INSTALL_RESULT)."
+  echo "--- Last 40 lines of $LOG_FILE ---"
+  tail -n 40 "$LOG_FILE" 2>/dev/null || true
+  echo "----------------------------------"
   exit 1
 fi
 
 # FlashInfer (bundled with vLLM 0.23+) JIT-compiles CUDA sampling kernels at startup.
-# This requires 'nvcc' — NOT included in cuda-drivers-* (driver-only packages).
-# Without it the server crashes: "Could not find nvcc and cuda_home doesn't exist"
-# vLLM prerequisites explicitly require CUDA Toolkit (not just the driver).
-if [ "$GPU_TYPE" = "nvidia" ] && ! command -v nvcc &>/dev/null && ! [ -x /usr/local/cuda/bin/nvcc ]; then
-  echo "Installing cuda-nvcc (required for FlashInfer JIT compilation)..."
-  # Add the CUDA apt repo if no cuda-nvcc packages are visible yet.
-  # Use apt-cache search (not show) so versioned names like cuda-nvcc-12-9 are also matched.
-  if ! apt-cache search --names-only '^cuda-nvcc' 2>/dev/null | grep -q .; then
-    echo "  CUDA apt repo not found — adding keyring..."
-    _ubuntu_ver=$(. /etc/os-release 2>/dev/null && echo "${VERSION_ID//./}" || echo "2204")
-    [[ "$_ubuntu_ver" == "2404" ]] && _cuda_repo="ubuntu2404" || _cuda_repo="ubuntu2204"
-    _kring=$(mktemp)
-    curl -fsSL "https://developer.download.nvidia.com/compute/cuda/repos/${_cuda_repo}/x86_64/cuda-keyring_1.1-1_all.deb" \
-      -o "$_kring" 2>/dev/null && \
-      sudo dpkg -i --force-confdef --force-confold "$_kring" 2>/dev/null || true
-    rm -f "$_kring"
-    sudo apt-get -o DPkg::Lock::Timeout=600 update -qq
-  fi
-  # Pick the latest available cuda-nvcc package.
-  # NVIDIA repo uses versioned names (cuda-nvcc-12-9) not just "cuda-nvcc".
-  _nvcc_pkg=$(apt-cache search --names-only '^cuda-nvcc' 2>/dev/null \
-    | awk '{print $1}' | sort -t- -k3,3n -k4,4n | tail -1)
-  [ -z "$_nvcc_pkg" ] && _nvcc_pkg="cuda-nvcc"  # last-resort fallback
-  echo "  Installing $_nvcc_pkg..."
-  set +e
-  sudo apt-get -o DPkg::Lock::Timeout=600 install -y --no-install-recommends "$_nvcc_pkg" 2>&1 | tail -5
-  _nvcc_exit=${PIPESTATUS[0]}
-  set -e
-  if [ $_nvcc_exit -ne 0 ]; then
-    echo "  Warning: $_nvcc_pkg install failed — FlashInfer JIT will fail at runtime."
-  fi
+# This requires BOTH a compatible 'nvcc' AND 'curand.h' (libcurand-dev), matched to the
+# installed PyTorch CUDA version rather than blindly installing a newer experimental toolkit.
+if [ "$GPU_TYPE" = "nvidia" ]; then
+  _torch_cuda=$(python -c "import torch; print(torch.version.cuda or '')" 2>/dev/null || true)
+  _drv_cuda=$(nvidia-smi 2>/dev/null | sed -n 's/.*CUDA Version: \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1 || true)
+  _target_cuda="${_torch_cuda:-$_drv_cuda}"
+  _target_dash="${_target_cuda//./-}"
 
-  # FlashInfer sampling.cuh #includes curand.h which is NOT part of cuda-nvcc.
-  # Install the matching libcurand-dev for the same CUDA version.
-  _cuda_ver_suffix=$(echo "$_nvcc_pkg" | grep -oE '[0-9]+-[0-9]+$' 2>/dev/null || true)
-  _curand_pkg=""
-  if [ -n "$_cuda_ver_suffix" ] && apt-cache show "libcurand-dev-${_cuda_ver_suffix}" &>/dev/null 2>/dev/null; then
-    _curand_pkg="libcurand-dev-${_cuda_ver_suffix}"
+  _cuda_ver_num() {
+    echo "$1" | awk -F'[.-]' 'NF>=2 {print $1*100 + $2}'
+  }
+
+  _existing_nvcc=""
+  if [ -x /usr/local/cuda/bin/nvcc ]; then
+    _existing_nvcc="/usr/local/cuda/bin/nvcc"
   else
-    _curand_pkg=$(apt-cache search --names-only '^libcurand-dev' 2>/dev/null \
-      | awk '{print $1}' | sort -t- -k4,4n -k5,5n | tail -1)
-    [ -z "$_curand_pkg" ] && _curand_pkg="libcurand-dev"
-  fi
-  echo "  Installing $_curand_pkg (curand.h required by FlashInfer sampling JIT)..."
-  set +e
-  sudo apt-get -o DPkg::Lock::Timeout=600 install -y --no-install-recommends "$_curand_pkg" 2>&1 | tail -3
-  _curand_exit=$?
-  set -e
-  if [ $_curand_exit -ne 0 ]; then
-    echo "  Warning: $_curand_pkg install failed — FlashInfer sampling JIT will fail at runtime."
+    _existing_nvcc=$(ls /usr/local/cuda-*/bin/nvcc 2>/dev/null | sort -V | tail -1 || true)
+    [ -z "$_existing_nvcc" ] && command -v nvcc &>/dev/null && _existing_nvcc="$(command -v nvcc)"
   fi
 
-  # cuda-nvcc-12-X installs to /usr/local/cuda-12.X/ but does NOT create the
-  # /usr/local/cuda symlink that many tools (including FlashInfer) look for by default.
-  # Create it here so FlashInfer's default cuda_home lookup succeeds.
-  if ! [ -e /usr/local/cuda ]; then
-    _cuda_ver_dir=$(ls -d /usr/local/cuda-*/ 2>/dev/null | sort -V | tail -1 | sed 's|/$||')
-    if [ -n "$_cuda_ver_dir" ]; then
-      sudo ln -sf "$_cuda_ver_dir" /usr/local/cuda
-      echo "  Created /usr/local/cuda → $_cuda_ver_dir"
+  _need_nvcc=false
+  if [ -z "$_existing_nvcc" ]; then
+    _need_nvcc=true
+  else
+    # Ubuntu universe's /usr/bin/nvcc (CUDA 11.5) fails FlashInfer FP8/FP4 JIT flags (needs CUDA >= 12.8 when torch >= 12.8)
+    _nvcc_rel=$("$_existing_nvcc" --version 2>/dev/null | sed -n 's/.*release \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1 || true)
+    _nvcc_num=$(_cuda_ver_num "${_nvcc_rel:-0.0}")
+    _torch_num=$(_cuda_ver_num "${_torch_cuda:-0.0}")
+    if [ "${_torch_num:-0}" -ge 1208 ] && [ "${_nvcc_num:-0}" -gt 0 ] && [ "${_nvcc_num:-0}" -lt 1208 ]; then
+      echo "Existing nvcc ($_existing_nvcc, release $_nvcc_rel) is older than required for PyTorch CUDA $_torch_cuda; installing matching cuda-nvcc..."
+      _need_nvcc=true
+    fi
+  fi
+
+  ensure_cuda_apt_repo() {
+    if ! apt-cache search --names-only '^cuda-nvcc-' 2>/dev/null | grep -q .; then
+      echo "  CUDA apt repo not found — adding keyring..."
+      _ubuntu_ver=$(. /etc/os-release 2>/dev/null && echo "${VERSION_ID//./}" || echo "2204")
+      [[ "$_ubuntu_ver" == "2404" ]] && _cuda_repo="ubuntu2404" || _cuda_repo="ubuntu2204"
+      _kring=$(mktemp)
+      curl -fsSL "https://developer.download.nvidia.com/compute/cuda/repos/${_cuda_repo}/x86_64/cuda-keyring_1.1-1_all.deb" \
+        -o "$_kring" 2>/dev/null && \
+        sudo dpkg -i --force-confdef --force-confold "$_kring" 2>/dev/null || true
+      rm -f "$_kring"
+      sudo apt-get -o DPkg::Lock::Timeout=600 update -qq
+    fi
+  }
+
+  _chosen_cuda_dash=""
+  if [ "$_need_nvcc" = true ]; then
+    echo "Installing cuda-nvcc (required for FlashInfer JIT compilation; target CUDA: ${_target_cuda:-latest})..."
+    ensure_cuda_apt_repo
+    _nvcc_pkg=""
+    if [ -n "$_target_dash" ] && apt-cache show "cuda-nvcc-${_target_dash}" &>/dev/null; then
+      _nvcc_pkg="cuda-nvcc-${_target_dash}"
+    elif [ -n "$_target_cuda" ]; then
+      _tgt_num=$(_cuda_ver_num "$_target_cuda")
+      _nvcc_pkg=$(apt-cache search --names-only '^cuda-nvcc-[0-9]+-[0-9]+$' 2>/dev/null \
+        | awk '{print $1}' | sort -V | awk -F'-' -v tgt="${_tgt_num:-9999}" '
+          NF>=4 { n = $3*100 + $4; if (n <= tgt) best = $0 }
+          END { print best }')
+    fi
+    if [ -z "$_nvcc_pkg" ]; then
+      _nvcc_pkg=$(apt-cache search --names-only '^cuda-nvcc-[0-9]+-[0-9]+$' 2>/dev/null \
+        | awk '{print $1}' | sort -V | tail -1)
+    fi
+    [ -z "$_nvcc_pkg" ] && _nvcc_pkg="cuda-nvcc"
+    echo "  Installing $_nvcc_pkg..."
+    set +e
+    sudo apt-get -o DPkg::Lock::Timeout=600 install -y --no-install-recommends "$_nvcc_pkg" 2>&1 | tail -5
+    _nvcc_exit=${PIPESTATUS[0]}
+    set -e
+    if [ $_nvcc_exit -ne 0 ]; then
+      echo "  Warning: $_nvcc_pkg install failed — FlashInfer JIT will fail at runtime."
+    fi
+    _chosen_cuda_dash=$(echo "$_nvcc_pkg" | grep -oE '[0-9]+-[0-9]+$' 2>/dev/null || true)
+  else
+    _real_nvcc=$(readlink -f "$_existing_nvcc" 2>/dev/null || echo "$_existing_nvcc")
+    _chosen_cuda_dash=$(echo "$_real_nvcc" | sed -n 's|.*/cuda-\([0-9]\+\)\.\([0-9]\+\)/.*|\1-\2|p' | head -1)
+    if [ -z "$_chosen_cuda_dash" ]; then
+      _nvcc_rel=$("$_existing_nvcc" --version 2>/dev/null | sed -n 's/.*release \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1 || true)
+      _chosen_cuda_dash="${_nvcc_rel//./-}"
+    fi
+    [ -z "$_chosen_cuda_dash" ] && _chosen_cuda_dash="$_target_dash"
+    echo "Found compatible nvcc: $_existing_nvcc (CUDA ${_chosen_cuda_dash/-/.})"
+  fi
+
+  # Ensure /usr/local/cuda points to a valid CUDA toolkit containing bin/nvcc
+  _preferred_cuda_dir=""
+  if [ -n "$_chosen_cuda_dash" ] && [ -x "/usr/local/cuda-${_chosen_cuda_dash/-/.}/bin/nvcc" ]; then
+    _preferred_cuda_dir="/usr/local/cuda-${_chosen_cuda_dash/-/.}"
+  fi
+  if [ ! -x /usr/local/cuda/bin/nvcc ] || [ "$_need_nvcc" = true ]; then
+    [ -z "$_preferred_cuda_dir" ] && _preferred_cuda_dir=$(ls -d /usr/local/cuda-*/ 2>/dev/null | sort -V | tail -1 | sed 's|/$||')
+    if [ -n "$_preferred_cuda_dir" ] && [ -x "$_preferred_cuda_dir/bin/nvcc" ]; then
+      sudo ln -sfn "$_preferred_cuda_dir" /usr/local/cuda
+      echo "  Configured /usr/local/cuda -> $_preferred_cuda_dir"
+    fi
+  fi
+
+  # FlashInfer sampling.cuh #includes <curand.h>, which is NOT part of cuda-nvcc and may
+  # also be missing on images where nvcc was pre-installed without full dev headers.
+  _cuda_check_dir="${_preferred_cuda_dir:-/usr/local/cuda}"
+  if ! [ -f "$_cuda_check_dir/include/curand.h" ] && \
+     ! ls "$_cuda_check_dir"/targets/*/include/curand.h &>/dev/null && \
+     ! [ -f /usr/include/curand.h ]; then
+    ensure_cuda_apt_repo
+    _curand_pkg=""
+    if [ -n "$_chosen_cuda_dash" ] && apt-cache show "libcurand-dev-${_chosen_cuda_dash}" &>/dev/null; then
+      _curand_pkg="libcurand-dev-${_chosen_cuda_dash}"
+    else
+      _curand_pkg=$(apt-cache search --names-only '^libcurand-dev-[0-9]+-[0-9]+$' 2>/dev/null \
+        | awk '{print $1}' | sort -V | tail -1)
+      [ -z "$_curand_pkg" ] && _curand_pkg="libcurand-dev"
+    fi
+    echo "  Installing $_curand_pkg (curand.h required by FlashInfer sampling JIT)..."
+    set +e
+    sudo apt-get -o DPkg::Lock::Timeout=600 install -y --no-install-recommends "$_curand_pkg" 2>&1 | tail -3
+    _curand_exit=${PIPESTATUS[0]}
+    set -e
+    if [ $_curand_exit -ne 0 ]; then
+      echo "  Warning: $_curand_pkg install failed — FlashInfer sampling JIT will fail at runtime."
     fi
   fi
 fi
@@ -322,7 +393,7 @@ fi
 
 # Install additional useful packages
 echo "Installing additional packages..."
-uv pip install openai huggingface_hub >> "$LOG_FILE" 2>&1 || pip install openai huggingface_hub > /dev/null 2>&1
+uv pip install --no-cache openai huggingface_hub >> "$LOG_FILE" 2>&1 || pip install --no-cache-dir openai huggingface_hub > /dev/null 2>&1
 
 # Patch prometheus_fastapi_instrumentator routing.py:
 # All known versions have an unfixed bug — '_IncludedRouter' (Starlette ≥0.40,
@@ -348,11 +419,11 @@ echo "  curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/
 echo ""
 echo "Or manually:"
 echo "  source ~/venv_vllm/bin/activate"
-echo "  python -m vllm.entrypoints.openai.api_server --model <model_name> --host 0.0.0.0 --port 8000"
+echo "  vllm serve <model_name> --host 0.0.0.0 --port 8000"
 echo ""
-echo "Recommended models:"
-echo "  - Qwen/Qwen2.5-1.5B-Instruct (small, fast, ~3GB VRAM)"
-echo "  - meta-llama/Llama-3.2-3B-Instruct (~7GB VRAM)"
-echo "  - mistralai/Mistral-7B-Instruct-v0.3 (~15GB VRAM)"
-echo "  - deepseek-ai/DeepSeek-R1-Distill-Qwen-7B (~15GB VRAM)"
+echo "Recommended models (24GB GPU such as NVIDIA L4):"
+echo "  - Qwen/Qwen2.5-7B-Instruct           (~14GB VRAM, ungated)"
+echo "  - microsoft/Phi-4-mini-instruct      (~8GB VRAM, ungated)"
+echo "  - Qwen/Qwen2.5-1.5B-Instruct         (~3GB VRAM, ungated)"
+echo "  - meta-llama/Llama-3.1-8B-Instruct   (~16GB VRAM, gated — requires --hf-token)"
 echo ""

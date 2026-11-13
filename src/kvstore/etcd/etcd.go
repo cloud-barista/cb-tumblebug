@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -146,22 +147,60 @@ func (s *EtcdStore) GetKvList(keyPrefix string) ([]kvstore.KeyValue, error) {
 	return s.GetKvListWith(s.ctx, keyPrefix)
 }
 
-// GetKvListWith retrieves multiple key-value pairs with the given keyPrefix from etcd using the provided context.
+// GetKvListWith retrieves multiple key-value pairs with the given keyPrefix from etcd using the provided context,
+// ascending by key.
 func (s *EtcdStore) GetKvListWith(ctx context.Context, keyPrefix string) ([]kvstore.KeyValue, error) {
-	// ascending by key as a default sort order
-	optAscendByKey := clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend)
-
-	// Get all key-value pairs with the given keyPrefix
-	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey, clientv3.WithSerializable())
+	raw, err := s.rangePaged(ctx, keyPrefix, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
-
-	kvs := make([]kvstore.KeyValue, 0, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
+	kvs := make([]kvstore.KeyValue, 0, len(raw))
+	for _, kv := range raw {
 		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
 	}
 	return kvs, nil
+}
+
+// rangePageSize bounds one Get so a prefix holding tens of thousands of multi-KB values (an Infra's Node
+// records or init results) arrives as a series of modest responses instead of one of tens of MB.
+const rangePageSize = 1000
+
+// rangePaged reads every key under keyPrefix in pages pinned to one revision, so the pages form a consistent
+// snapshot. keysOnly skips the values.
+func (s *EtcdStore) rangePaged(ctx context.Context, keyPrefix string, keysOnly bool) ([]*mvccpb.KeyValue, error) {
+	start, end := keyPrefix, clientv3.GetPrefixRangeEnd(keyPrefix)
+	if keyPrefix == "" {
+		start, end = "\x00", "\x00"
+	}
+	key, rev := start, int64(0)
+	var out []*mvccpb.KeyValue
+	for {
+		opts := []clientv3.OpOption{clientv3.WithRange(end), clientv3.WithLimit(rangePageSize),
+			clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend), clientv3.WithSerializable()}
+		if keysOnly {
+			opts = append(opts, clientv3.WithKeysOnly())
+		}
+		if rev > 0 {
+			opts = append(opts, clientv3.WithRev(rev))
+		}
+		resp, err := s.cli.Get(ctx, key, opts...)
+		if err != nil {
+			if rev > 0 && errors.Is(err, rpctypes.ErrCompacted) {
+				// the pinned revision was compacted mid-read: start over on the current one
+				key, rev, out = start, 0, nil
+				continue
+			}
+			return nil, err
+		}
+		if rev == 0 {
+			rev = resp.Header.Revision
+		}
+		out = append(out, resp.Kvs...)
+		if !resp.More || len(resp.Kvs) == 0 {
+			return out, nil
+		}
+		key = string(resp.Kvs[len(resp.Kvs)-1].Key) + "\x00"
+	}
 }
 
 // GetKeyList retrieves only keys (no values) with the given keyPrefix from etcd.
@@ -170,18 +209,66 @@ func (s *EtcdStore) GetKeyList(keyPrefix string) ([]string, error) {
 }
 
 // GetKeyListWith retrieves only keys with the given keyPrefix from etcd using the provided context.
-// Using WithKeysOnly() avoids transferring value bytes, keeping the gRPC response small
-// even for prefixes with thousands of large values.
 func (s *EtcdStore) GetKeyListWith(ctx context.Context, keyPrefix string) ([]string, error) {
-	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable())
+	raw, err := s.rangePaged(ctx, keyPrefix, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get key list with keyPrefix: %w", err)
 	}
-	keys := make([]string, 0, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
+	keys := make([]string, 0, len(raw))
+	for _, kv := range raw {
 		keys = append(keys, string(kv.Key))
 	}
 	return keys, nil
+}
+
+// childPageSize is how many keys one step of GetChildListWith reads. A prefix with fewer keys is listed in a
+// single request; a child with more keys below it costs one page before the rest of its subtree is skipped.
+const childPageSize = 500
+
+// GetChildList returns the names directly under keyPrefix.
+func (s *EtcdStore) GetChildList(keyPrefix string) ([]kvstore.ChildKey, error) {
+	return s.GetChildListWith(s.ctx, keyPrefix)
+}
+
+// GetChildListWith returns the names directly under keyPrefix. It reads keys in pages and, when a page ends
+// inside a child's subtree, continues right after that subtree instead of reading through it. etcd has no
+// "list one level" request, and scanning a whole subtree to find its top-level names costs as much as the
+// subtree is large (tens of MB for an Infra with thousands of Nodes).
+func (s *EtcdStore) GetChildListWith(ctx context.Context, keyPrefix string) ([]kvstore.ChildKey, error) {
+	end := clientv3.GetPrefixRangeEnd(keyPrefix)
+	cur, rev := keyPrefix, int64(0)
+	collector := kvstore.NewChildCollector(keyPrefix)
+	for {
+		opts := []clientv3.OpOption{clientv3.WithRange(end), clientv3.WithLimit(childPageSize),
+			clientv3.WithKeysOnly(), clientv3.WithSerializable()}
+		if rev > 0 {
+			opts = append(opts, clientv3.WithRev(rev))
+		}
+		resp, err := s.cli.Get(ctx, cur, opts...)
+		if err != nil {
+			if rev > 0 && errors.Is(err, rpctypes.ErrCompacted) {
+				// the pinned revision was compacted mid-read: start over on the current one
+				cur, rev, collector = keyPrefix, 0, kvstore.NewChildCollector(keyPrefix)
+				continue
+			}
+			return nil, fmt.Errorf("failed to list children of keyPrefix: %w", err)
+		}
+		if rev == 0 {
+			rev = resp.Header.Revision
+		}
+		name, below := "", false
+		for _, kv := range resp.Kvs {
+			name, below = collector.Add(string(kv.Key))
+		}
+		if !resp.More || len(resp.Kvs) == 0 {
+			return collector.Children(), nil
+		}
+		if below {
+			cur = keyPrefix + name + "0" // "/" + 1: the first key after this child's subtree
+		} else {
+			cur = string(resp.Kvs[len(resp.Kvs)-1].Key) + "\x00"
+		}
+	}
 }
 
 // GetSortedKvList retrieves multiple values for keys with the given keyPrefix, sortBy, and order from etcd.

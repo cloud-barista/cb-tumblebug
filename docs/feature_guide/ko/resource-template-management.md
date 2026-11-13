@@ -256,7 +256,6 @@ sequenceDiagram
   "createdAt": "2026-03-10T09:00:00Z",
   "updatedAt": "2026-03-10T09:00:00Z",
   "infraDynamicReq": {
-    "installMonAgent": "no",
     "nodeGroups": [
       {
         "name": "nvidial4",
@@ -403,7 +402,6 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/template/infra" \
     "name": "my-web-server",
     "description": "Simple web server template",
     "infraDynamicReq": {
-      "installMonAgent": "no",
       "nodeGroups": [{
         "name": "web",
         "nodeGroupSize": 1,

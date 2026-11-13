@@ -87,6 +87,14 @@ tumblebug:
     topic: ""
     writeToken: ""
     readToken: ""
+  # Optional observability stack (OTLP endpoint + Grafana) registered at startup when none is stored.
+  # Leave otlpEndpoint empty to skip; register later with PUT /tumblebug/observability or POST /tumblebug/observability/stack.
+  observability:
+    otlpEndpoint: ""
+    writeToken: ""
+    grafanaUrl: ""
+    grafanaAdminUser: ""
+    grafanaAdminPassword: ""
   # Memory limit contains request-history/status-cache growth on large infras
   resources:
     requests:

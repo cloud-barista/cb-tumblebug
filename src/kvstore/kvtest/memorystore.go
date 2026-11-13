@@ -121,6 +121,22 @@ func (m *MemoryStore) GetKeyListWith(ctx context.Context, keyPrefix string) ([]s
 	return keys, nil
 }
 
+func (m *MemoryStore) GetChildList(keyPrefix string) ([]kvstore.ChildKey, error) {
+	return m.GetChildListWith(context.Background(), keyPrefix)
+}
+
+func (m *MemoryStore) GetChildListWith(ctx context.Context, keyPrefix string) ([]kvstore.ChildKey, error) {
+	keys, err := m.GetKeyListWith(ctx, keyPrefix)
+	if err != nil {
+		return nil, err
+	}
+	collector := kvstore.NewChildCollector(keyPrefix)
+	for _, k := range keys {
+		collector.Add(k)
+	}
+	return collector.Children(), nil
+}
+
 func (m *MemoryStore) GetSortedKvList(keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]kvstore.KeyValue, error) {
 	return m.GetSortedKvListWith(context.Background(), keyPrefix, sortBy, order)
 }

@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/labstack/echo/v4"
@@ -77,4 +78,32 @@ func Zerologger(skipRules []logfilter.SkipRule) echo.MiddlewareFunc {
 			return nil
 		},
 	})
+}
+
+// SlowRequestLogger logs requests that the request logger skips (high-frequency polling GETs) once they take
+// threshold or longer, so a stalled poll still leaves a trace. The latency includes writing the response.
+func SlowRequestLogger(skipRules []logfilter.SkipRule, threshold time.Duration) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			start := time.Now()
+			err := next(c)
+			if d := time.Since(start); d >= threshold {
+				url := c.Request().URL.Path
+				if q := c.Request().URL.RawQuery; q != "" {
+					url += "?" + q
+				}
+				if logfilter.ShouldSkip(skipRules, c.Request().Method, url) {
+					log.Warn().
+						Str("Method", c.Request().Method).
+						Str("URI", url).
+						Str("clientIP", c.RealIP()).
+						Int("status", c.Response().Status).
+						Int64("bytesOut", c.Response().Size).
+						Str("latency", d.String()).
+						Msg("slow request")
+				}
+			}
+			return err
+		}
+	}
 }

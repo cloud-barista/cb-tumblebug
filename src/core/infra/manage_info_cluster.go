@@ -174,4 +174,3 @@ func GetInfraClusterInfo(nsId string, infraId string, clusterId string) (*model.
 
 	return nil, fmt.Errorf("the cluster %s does not exist in infra %s", clusterId, infraId)
 }
-

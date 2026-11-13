@@ -75,6 +75,26 @@ func TestMaskSensitiveData(t *testing.T) {
 			input:    `New logger created with level=debug`,
 			expected: `New logger created with level=debug`,
 		},
+		{
+			name:     "Shell export with single-quoted token",
+			input:    `export TB_NOTIFY_TOKEN='tk_abcdefghijklmnopqrstuvwxyz12'\nexport TB_NS_ID='ns1'`,
+			expected: `export TB_NOTIFY_TOKEN=********\nexport TB_NS_ID='ns1'`,
+		},
+		{
+			name:     "Single-quoted password with separators and spaces",
+			input:    `export DB_PASSWORD='p@ss,word&x;y z' ROLE='web'`,
+			expected: `export DB_PASSWORD=******** ROLE='web'`,
+		},
+		{
+			name:     "Escaped double-quoted secret inside a JSON string",
+			input:    `{"script":"API_SECRET=\"s3cr3t value\" ./run.sh"}`,
+			expected: `{"script":"API_SECRET=******** ./run.sh"}`,
+		},
+		{
+			name:     "Empty token at the end of a JSON string keeps the line intact",
+			input:    `{"URI":"http://x/y?token=","next":"v"}`,
+			expected: `{"URI":"http://x/y?token=","next":"v"}`,
+		},
 	}
 
 	for _, tt := range tests {

@@ -3,6 +3,7 @@ package kvstore
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -30,6 +31,10 @@ type Store interface {
 	GetKvListWith(ctx context.Context, keyPrefix string) ([]KeyValue, error)
 	GetKeyList(keyPrefix string) ([]string, error)
 	GetKeyListWith(ctx context.Context, keyPrefix string) ([]string, error)
+	// GetChildList returns the names directly under keyPrefix (the part of each key between keyPrefix and
+	// the next "/"), ordered by their first key, without reading everything below each child.
+	GetChildList(keyPrefix string) ([]ChildKey, error)
+	GetChildListWith(ctx context.Context, keyPrefix string) ([]ChildKey, error)
 	GetSortedKvList(keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]KeyValue, error)
 	GetSortedKvListWith(ctx context.Context, keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]KeyValue, error)
 	GetKvMap(keyPrefix string) (KeyValueMap, error)
@@ -58,6 +63,49 @@ type KeyValue struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
+
+// ChildKey is a name directly under a key prefix. HasRecord tells whether the key "<prefix><name>" itself
+// exists, as opposed to only keys below "<prefix><name>/".
+type ChildKey struct {
+	Name      string
+	HasRecord bool
+}
+
+// ChildCollector gathers the ChildKey list of a prefix from its keys fed in ascending order.
+type ChildCollector struct {
+	prefixLen int
+	children  []ChildKey
+	index     map[string]int
+}
+
+// NewChildCollector returns a collector for keys that start with keyPrefix.
+func NewChildCollector(keyPrefix string) *ChildCollector {
+	return &ChildCollector{prefixLen: len(keyPrefix), index: map[string]int{}}
+}
+
+// Add records key and returns the child name it belongs to and whether the key lies below that child.
+func (c *ChildCollector) Add(key string) (name string, below bool) {
+	name = key[c.prefixLen:]
+	if i := strings.IndexByte(name, '/'); i >= 0 {
+		name, below = name[:i], true
+	}
+	if name == "" {
+		return name, below
+	}
+	i, seen := c.index[name]
+	if !seen {
+		i = len(c.children)
+		c.index[name] = i
+		c.children = append(c.children, ChildKey{Name: name})
+	}
+	if !below {
+		c.children[i].HasRecord = true
+	}
+	return name, below
+}
+
+// Children returns what has been collected so far.
+func (c *ChildCollector) Children() []ChildKey { return c.children }
 
 // KeyValueMap represents a key-value pair.
 type KeyValueMap map[string]string
@@ -236,6 +284,25 @@ func GetKeyListWith(ctx context.Context, keyPrefix string) ([]string, error) {
 		return nil, err
 	}
 	return store.GetKeyListWith(ctx, keyPrefix)
+}
+
+// GetChildList returns the names directly under keyPrefix. Use it to list ids at one level of the key
+// hierarchy: the cost follows the number of children, not the number of keys stored below them.
+func GetChildList(keyPrefix string) ([]ChildKey, error) {
+	store, err := getStore()
+	if err != nil {
+		return nil, err
+	}
+	return store.GetChildList(keyPrefix)
+}
+
+// GetChildListWith is GetChildList with the provided context.
+func GetChildListWith(ctx context.Context, keyPrefix string) ([]ChildKey, error) {
+	store, err := getStore()
+	if err != nil {
+		return nil, err
+	}
+	return store.GetChildListWith(ctx, keyPrefix)
 }
 
 // GetSortedKvList retrieves sorted key-value pairs with the given prefix

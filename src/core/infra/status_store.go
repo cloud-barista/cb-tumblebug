@@ -112,12 +112,11 @@ type StatusEntry struct {
 
 	// Node metadata — static fields from NodeInfo stored here so that
 	// fetchNodeStatusWithCache can serve cache hits without a KV round-trip.
-	Name           string
-	PrivateIP      string
-	SSHPort        int
-	CreatedTime    string
-	Location       model.Location
-	MonAgentStatus string
+	Name        string
+	PrivateIP   string
+	SSHPort     int
+	CreatedTime string
+	Location    model.Location
 
 	// Static config — set at node creation and immutable afterwards. Cached so the
 	// brief list view (GetInfraInfoBrief) can present full node config without a

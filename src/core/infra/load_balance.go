@@ -18,8 +18,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -117,7 +119,7 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 	labels := map[string]string{
 		model.LabelDescription: "Infra for Global-NLB",
 	}
-	infraDynamicReq := model.InfraDynamicReq{Name: nlbInfraId, InstallMonAgent: "no", Label: labels}
+	infraDynamicReq := model.InfraDynamicReq{Name: nlbInfraId, Label: labels}
 
 	// get node requst from cloud_conf.yaml
 	nodeGroupName := model.StrNLB
@@ -783,17 +785,69 @@ func splitNLBKey(key, nsPrefix string) (infraId, nlbId string, ok bool) {
 	return parts[0], parts[2], true
 }
 
+// readNLBKeysInNs returns the keys (and values when withValues is set) under every Infra's nlb/ prefix in the
+// namespace, in key order, together with the namespace's Infra prefix. NLBs are stored below their Infra,
+// next to its Nodes: reading the whole Infra subtree to find them costs tens of MB on a large Infra, so only
+// the nlb/ prefix of each Infra is read. Infras without a record of their own are included.
+func readNLBKeysInNs(nsId string, withValues bool) ([]kvstore.KeyValue, string, error) {
+	nsPrefix := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/", nsId)
+	infras, err := kvstore.GetChildList(nsPrefix)
+	if err != nil {
+		return nil, nsPrefix, err
+	}
+	var (
+		mu       sync.Mutex
+		wg       sync.WaitGroup
+		firstErr error
+		out      []kvstore.KeyValue
+	)
+	sem := make(chan struct{}, 16)
+	for _, infra := range infras {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(infraId string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			prefix := nsPrefix + infraId + "/" + model.StrNLB + "/"
+			var part []kvstore.KeyValue
+			var err error
+			if withValues {
+				part, err = kvstore.GetKvList(prefix)
+			} else {
+				var keys []string
+				keys, err = kvstore.GetKeyList(prefix)
+				for _, k := range keys {
+					part = append(part, kvstore.KeyValue{Key: k})
+				}
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
+			}
+			out = append(out, part...)
+		}(infra.Name)
+	}
+	wg.Wait()
+	if firstErr != nil {
+		return nil, nsPrefix, firstErr
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+	return out, nsPrefix, nil
+}
+
 // ListNLBAllInNs returns every NLB in the namespace, each tagged with the Infra it
-// belongs to. NLBs live under their Infra, so this scans the Infra subtree once
-// instead of listing Infras and querying each of them.
+// belongs to.
 func ListNLBAllInNs(nsId string, filterKey string, filterVal string) ([]model.NLBInfoInNs, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	nsPrefix := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/", nsId)
-	keyValue, err := kvstore.GetKvList(nsPrefix)
+	keyValue, nsPrefix, err := readNLBKeysInNs(nsId, true)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -830,8 +884,7 @@ func ListNLBIdAllInNs(nsId string) ([]string, error) {
 		return nil, err
 	}
 
-	nsPrefix := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/", nsId)
-	keyValue, err := kvstore.GetKvList(nsPrefix)
+	keyValue, nsPrefix, err := readNLBKeysInNs(nsId, false)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err

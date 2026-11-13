@@ -1,0 +1,17 @@
+{
+  "resourceType": "initScript",
+  "name": "initscript-otel-agent",
+  "description": "Install the OpenTelemetry Collector agent and start sending host metrics and logs (GPU metrics when a GPU is present) to the observability stack registered in CB-Tumblebug. A local vLLM server is found and scraped on its own. Env: OTEL_METRICS, OTEL_LOGS, OTEL_GPU (auto|on|off), OTEL_INTERVAL, OTEL_LOG_PATHS, OTEL_SCRAPE_TARGETS, OTEL_DISCOVER (auto|off)",
+  "scripts": [
+    {
+      "name": "otel-agent",
+      "script": "#!/bin/bash\n# Bootstraps the OTel agent from the observability stack registered in CB-Tumblebug (TB_OTEL_* exported by CB-Tumblebug).\nset -e\n: \"${TB_OTEL_ENDPOINT:?no observability stack is registered in CB-Tumblebug (TB_OTEL_ENDPOINT is empty)}\"\nCA_OPT=\"\"\nif [ -n \"${TB_OTEL_CA_B64:-}\" ]; then\n  echo \"$TB_OTEL_CA_B64\" | base64 -d > /var/lib/tb/otel-ca.pem\n  CA_OPT=\"--cacert /var/lib/tb/otel-ca.pem\"\nfi\n# the loop retries dropped connections, which curl --retry does not cover\nfor i in 1 2 3 4 5; do\n  # shellcheck disable=SC2086\n  curl -fsSL $CA_OPT --connect-timeout 15 --max-time 60 -o /var/lib/tb/install-otel-agent.sh \"$TB_OTEL_ENDPOINT/dl/install-agent.sh\" && break\n  [ \"$i\" = 5 ] && { echo \"cannot download the agent installer from $TB_OTEL_ENDPOINT\"; exit 1; }\n  sleep $((i * 5))\ndone\nbash /var/lib/tb/install-otel-agent.sh\n"
+    }
+  ],
+  "env": {
+    "OTEL_METRICS": "on",
+    "OTEL_LOGS": "on",
+    "OTEL_GPU": "auto",
+    "OTEL_INTERVAL": "60s"
+  }
+}

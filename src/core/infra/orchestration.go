@@ -99,21 +99,12 @@ func OrchestrationController() {
 						log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
 						log.Debug().Msg("[Infra is exist] " + infraPolicyTmp.Id)
-						content, err := GetMonitoringData(nsId, infraPolicyTmp.Id, infraPolicyTmp.Policy[policyIndex].AutoCondition.Metric)
+						averInfra, err := policyMetricAverage(nsId, infraPolicyTmp.Id, infraPolicyTmp.Policy[policyIndex].AutoCondition.Metric)
 						if err != nil {
 							log.Error().Err(err).Msg("")
 							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							break
 						}
-
-						//Statistic
-						sumInfra := 0.0
-						for _, monData := range content.InfraMonitoring {
-							monDataValue, _ := strconv.ParseFloat(monData.Value, 64)
-							sumInfra += monDataValue
-						}
-						averInfra := (sumInfra / float64(len(content.InfraMonitoring)))
-						fmt.Printf("[monData.Value] AverInfra: %f,  SumInfra: %f \n", averInfra, sumInfra)
 
 						// Before adding new value, ensure the list doesn't exceed evaluationPeriod length
 						evaluationPeriod := infraPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationPeriod
@@ -272,18 +263,18 @@ func OrchestrationController() {
 							// autoAction.NodeGroupDynamicReq.Label = model.LabelAutoGen
 						}
 
-						common.PrintJsonPretty(autoAction.NodeGroupDynamicReq)
+						// common.PrintJsonPretty(autoAction.NodeGroupDynamicReq)
 						log.Debug().Msg("[Action] " + autoAction.ActionType)
 
 						// ScaleOut Infra according to the Node requirement.
 						log.Debug().Msg("[Generating Node]")
-						result, nodeCreateErr := CreateInfraNodeGroupDynamic(common.NewDefaultContext(), nsId, infraPolicyTmp.Id,
+						_, nodeCreateErr := CreateInfraNodeGroupDynamic(common.NewDefaultContext(), nsId, infraPolicyTmp.Id,
 							&model.AddNodeGroupDynamicReq{CreateNodeGroupDynamicReq: autoAction.NodeGroupDynamicReq})
 						if nodeCreateErr != nil {
 							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 						}
-						common.PrintJsonPretty(result)
+						// common.PrintJsonPretty(result)
 
 						if len(autoAction.PostCommands) != 0 {
 
@@ -569,4 +560,11 @@ func DelAllInfraPolicy(nsId string) (string, error) {
 		}
 	}
 	return "All Infra Policies has been deleted", nil
+}
+
+// policyMetricAverage returns the Infra-wide average of a metric for the autoscaling policy. The
+// CB-Dragonfly source was removed and the observability stack is its planned replacement, so a policy
+// that needs a metric goes to Error until that source is wired in.
+func policyMetricAverage(nsId, infraId, metric string) (float64, error) {
+	return 0, fmt.Errorf("no metric source for %q on %s/%s: CB-Dragonfly monitoring was removed; connect the observability stack before using autoscaling policies", metric, nsId, infraId)
 }

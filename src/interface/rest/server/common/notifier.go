@@ -34,7 +34,7 @@ import (
 // @Produce  json
 // @Param showSecrets query boolean false "Return unmasked tokens" default(false)
 // @Success 200 {object} model.NotifierInfo
-// @Failure 404 {object} model.SimpleMsg
+// @Success 204 "no notifier is registered"
 // @Router /notifier [get]
 func RestGetNotifier(c echo.Context) error {
 	showSecrets, _ := strconv.ParseBool(c.QueryParam("showSecrets"))
@@ -43,7 +43,7 @@ func RestGetNotifier(c echo.Context) error {
 		info = notifier.Current()
 	}
 	if info == nil {
-		return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: "no notifier is registered"})
+		return c.NoContent(http.StatusNoContent) // nothing registered; 204 keeps browser consoles quiet
 	}
 	return c.JSON(http.StatusOK, info)
 }

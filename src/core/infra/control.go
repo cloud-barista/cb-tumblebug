@@ -1169,7 +1169,7 @@ func applyBulkTransitionalStatus(nsId, infraId string, be bulkControlEntry, acti
 		temp.TargetStatus = model.StatusTerminated
 		temp.Status = model.StatusTerminating
 		CancelActiveCommandsForNode(be.nodeId)
-		RemoveBastionNodes(nsId, infraId, "", "", be.nodeId) //nolint:errcheck
+		RemoveBastionNodes(nsId, infraId, nsId, infraId, be.nodeId) //nolint:errcheck
 	case model.ActionSuspend:
 		temp.TargetAction = model.ActionSuspend
 		temp.TargetStatus = model.StatusSuspended
@@ -1223,6 +1223,58 @@ func postBulkControlCleanup(nsId, infraId string, be bulkControlEntry, action st
 // asyncSpiderForceDeleteVM removes Spider's stale vm_iid_infos record for a VM already terminated
 // via the direct SDK, using Spider's unregister API (metadb-only, no CSP call or status polling).
 // Errors are non-fatal: the instance is already gone from the CSP, only Spider's DB record is stale.
+// locateNodeOnCsp looks a Node up on its CSP by uid through the direct SDK, for Nodes whose Spider record holds
+// no instance id. known is false when the lookup itself could not be done, so callers must not treat the Node
+// as gone.
+func locateNodeOnCsp(nodeInfo model.NodeInfo) (cspSystemId string, known bool) {
+	provider := strings.ToLower(nodeInfo.ConnectionConfig.ProviderName)
+	region := nodeInfo.ConnectionConfig.RegionDetail.RegionName
+	if nodeInfo.Uid == "" || provider == "" || region == "" {
+		return "", false
+	}
+	handler, ok := cspdirect.GetFindVMsByUIDHandler(provider)
+	if !ok {
+		return "", false
+	}
+	ctx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, nodeInfo.ConnectionConfig.CredentialHolder)
+	found, err := handler(ctx, region, []string{nodeInfo.Uid})
+	if err != nil {
+		log.Warn().Err(err).Str("nodeId", nodeInfo.Id).Msg("direct SDK lookup by uid failed; CSP state unknown")
+		return "", false
+	}
+	return found[nodeInfo.Uid], true
+}
+
+// unregisterSpiderVM drops Spider's record of a VM without touching the CSP.
+func unregisterSpiderVM(connectionName, cspResourceName string) error {
+	if cspResourceName == "" {
+		return nil
+	}
+	client := clientManager.NewHttpClient()
+	client.SetTimeout(1 * time.Minute)
+	requestBody := model.SpiderConnectionName{ConnectionName: connectionName}
+	var ignored struct{}
+	_, err := clientManager.ExecuteHttpRequest(client, "DELETE", model.SpiderRestUrl+"/regvm/"+cspResourceName, nil,
+		clientManager.SetUseBody(requestBody), &requestBody, &ignored, clientManager.MediumDuration)
+	return err
+}
+
+// adoptNodeFromCsp replaces Spider's id-less record of a Node with the instance found on the CSP and returns the
+// refreshed Node record, so the Node can be managed and terminated normally.
+func adoptNodeFromCsp(nsId, infraId string, nodeInfo model.NodeInfo, cspSystemId string) (model.NodeInfo, error) {
+	if err := unregisterSpiderVM(nodeInfo.ConnectionName, nodeInfo.CspResourceName); err != nil {
+		log.Debug().Err(err).Str("nodeId", nodeInfo.Id).Msg("no Spider record to unregister before adopting")
+	}
+	name := nodeInfo.CspResourceName
+	if name == "" {
+		name = nodeInfo.Uid
+	}
+	if err := importNodeFromCsp(nsId, infraId, nodeInfo.Id, nodeInfo.ConnectionName, name, cspSystemId); err != nil {
+		return nodeInfo, err
+	}
+	return GetNodeObject(nsId, infraId, nodeInfo.Id)
+}
+
 func asyncSpiderForceDeleteVM(connectionName, cspResourceName string) {
 	if cspResourceName == "" {
 		return
@@ -1356,6 +1408,22 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 		temp.Status = model.StatusTerminating
 
 		url = model.SpiderRestUrl + "/vm/" + cspResourceName
+		if temp.CspResourceId == "" {
+			// Spider holds no instance id: ask the CSP directly before deciding what this terminate means
+			if id, known := locateNodeOnCsp(temp); known && id != "" {
+				if refreshed, aerr := adoptNodeFromCsp(nsId, infraId, temp, id); aerr == nil {
+					temp = refreshed
+					cspResourceName = temp.CspResourceName
+					url = model.SpiderRestUrl + "/vm/" + cspResourceName
+					log.Info().Str("nodeId", nodeId).Str("cspSystemId", id).Msg("[ControlNode] adopted the instance found on the CSP before terminating")
+				} else {
+					log.Warn().Err(aerr).Str("nodeId", nodeId).Msg("[ControlNode] could not adopt the instance found on the CSP")
+				}
+			} else if known {
+				// the CSP confirms there is no instance: let Spider drop its record although its lookup fails
+				url += "?force=true"
+			}
+		}
 		method = "DELETE"
 		// Bare-metal instances (e.g. AWS m5.metal) can take significantly longer to terminate
 		timeout = 40 * time.Minute
@@ -1364,7 +1432,7 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 		CancelActiveCommandsForNode(nodeId)
 
 		// Remove Bastion Info from all vNets if the terminating VM is a Bastion
-		_, err := RemoveBastionNodes(nsId, infraId, "", "", nodeId)
+		_, err := RemoveBastionNodes(nsId, infraId, nsId, infraId, nodeId)
 		if err != nil {
 			log.Info().Msg(err.Error())
 		}

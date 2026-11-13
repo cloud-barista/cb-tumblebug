@@ -530,14 +530,13 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	var infraInfo *model.InfraInfo
 
 	// Base infra configuration used when creating the infra with the first NodeGroup.
-	// InstallMonAgent and PostCommands are intentionally withheld here: CreateInfraDynamic
-	// runs them at the end of the FIRST NodeGroup only (while all other NodeGroups are
-	// still blocked on infra creation), so nodes added afterwards would never receive
-	// them. Autopilot instead runs both once, after every NodeGroup has completed and
-	// excess NodeGroups have been terminated — see the deferred post-processing below.
+	// PostCommands are intentionally withheld here: CreateInfraDynamic runs them at the
+	// end of the FIRST NodeGroup only (while all other NodeGroups are still blocked on
+	// infra creation), so nodes added afterwards would never receive them. Autopilot
+	// instead runs them once, after every NodeGroup has completed and excess NodeGroups
+	// have been terminated — see the deferred post-processing below.
 	baseInfraReq := model.InfraDynamicReq{
 		Name:                   req.Name,
-		InstallMonAgent:        "no",
 		Description:            req.Description,
 		Label:                  req.Label,
 		PolicyOnPartialFailure: "continue",
@@ -771,16 +770,11 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	infraMu.Unlock()
 	if created && stats.Succeeded > 0 {
 		if infraObj, _, getErr := GetInfraObject(nsId, infraId); getErr == nil {
-			infraObj.InstallMonAgent = req.InstallMonAgent
 			if len(req.PostCommands) > 0 {
 				infraObj.PostCommands = req.PostCommands
 			}
 			UpdateInfraInfo(nsId, infraObj)
 
-			if err := handleMonitoringAgent(nsId, infraId, infraObj, ""); err != nil {
-				log.Error().Err(err).Msg("Failed to install monitoring agent, but continuing")
-				appendInfraSystemMessage(nsId, infraId, fmt.Sprintf("Monitoring agent installation failed: %s", err.Error()))
-			}
 			if err := handlePostCommands(nsId, infraId, infraObj); err != nil {
 				log.Error().Err(err).Msg("Failed to execute post-deployment commands, but continuing")
 				appendInfraSystemMessage(nsId, infraId, fmt.Sprintf("Post-deployment commands failed: %s", err.Error()))

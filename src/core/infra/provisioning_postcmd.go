@@ -16,6 +16,7 @@ package infra
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -40,6 +41,7 @@ func executePostCommands(nsId, infraId, defaultNodeGroupId string, phases []mode
 	// (cloud-init). Proceed early when reachable; on timeout run anyway so
 	// genuine auth/config errors are reported per node rather than hidden.
 	waitForSshReadiness(nsId, infraId, defaultNodeGroupId)
+	waitForInitScript(nsId, infraId, defaultNodeGroupId)
 
 	phaseResults := make([]model.PostCommandPhaseResult, 0, len(phases))
 	overall := model.PostCommandStatusCompleted
@@ -178,8 +180,8 @@ func ValidatePostCommandRequest(phases []model.PostCommandReq) error {
 		if targets > 1 {
 			return fmt.Errorf("postCommands[%d]: set at most one of nodeGroupId, nodeId, labelSelector", i)
 		}
-		if len(p.Command) == 0 {
-			return fmt.Errorf("postCommands[%d]: command is empty", i)
+		if len(p.Command) == 0 && p.TemplateId == "" && len(p.Scripts) == 0 {
+			return fmt.Errorf("postCommands[%d]: command is empty (give command, templateId or scripts)", i)
 		}
 		totalMinutes += p.GetEffectiveTimeout()
 	}
@@ -197,7 +199,7 @@ const postCommandTotalTimeoutBudgetMinutes = 120
 func normalizePostCommandPhases(phases []model.PostCommandReq) []model.PostCommandReq {
 	normalized := make([]model.PostCommandReq, 0, len(phases))
 	for _, p := range phases {
-		if len(p.Command) > 0 {
+		if len(p.Command) > 0 || p.TemplateId != "" || len(p.Scripts) > 0 {
 			normalized = append(normalized, p)
 		}
 	}
@@ -223,6 +225,58 @@ func mergePostCommandStatus(overall, phase model.PostCommandStatus) model.PostCo
 
 // waitForSshReadiness polls target nodes until SSH accepts a trivial command
 // (bounded); returns regardless so per-node failures are reported by the run.
+// initScriptWaitTimeout bounds how long post-deployment commands wait for the first-boot init script.
+const initScriptWaitTimeout = 10 * time.Minute
+
+// waitForInitScript holds post-deployment commands until the Nodes' first-boot init script has finished,
+// so the two do not run apt or systemd at the same time. SSH opens as soon as the wrapper has created the
+// account, which is before its steps have run. The wait reads the status marker on the Node itself, so it
+// works without a notifier; NodeGroups whose Nodes all have a final result recorded are not probed, and
+// on timeout the commands proceed anyway.
+func waitForInitScript(nsId, infraId, nodeGroupId string) {
+	ngMap := LoadInfraNodeGroupMap(nsId, infraId)
+	results, _ := listInitScriptResults(nsId, infraId)
+	nodeIds, _ := ListNodeId(nsId, infraId)
+	var groups []string
+	for id, ng := range ngMap {
+		if (nodeGroupId != "" && id != nodeGroupId) || !initScriptEnabled(ng.InitScript) {
+			continue
+		}
+		pending := false
+		for _, nodeId := range nodeIds {
+			if !strings.HasPrefix(nodeId, id+"-") {
+				continue
+			}
+			if r, ok := results[nodeId]; !ok || r.Status == model.InitScriptStatusInitializing {
+				pending = true
+				break
+			}
+		}
+		if pending {
+			groups = append(groups, id)
+		}
+	}
+	if len(groups) == 0 {
+		return
+	}
+	secs := int(initScriptWaitTimeout.Seconds())
+	cmd := fmt.Sprintf(`f=/var/lib/tb/init-script.status; w=0; while [ ! -f "$f" ] && [ $w -lt %d ]; do sleep 5; w=$((w+5)); done; `+
+		`if [ -f "$f" ]; then echo "init script: $(cat "$f")"; else echo "init script: not finished after %ds, continuing"; fi`, secs, secs)
+	req := model.InfraCmdReq{Command: []string{cmd}, TimeoutMinutes: int(initScriptWaitTimeout.Minutes()) + 1}
+	log.Info().Msgf("Post-deployment commands: waiting for the first-boot init script of NodeGroup(s) %v in %s/%s", groups, nsId, infraId)
+	var wg sync.WaitGroup
+	for _, id := range groups {
+		wg.Add(1)
+		go func(ngId string) {
+			defer wg.Done()
+			if _, err := RemoteCommandToInfra(nsId, infraId, ngId, "", "", &req, ""); err != nil {
+				log.Warn().Err(err).Msgf("Post-deployment commands: init script wait failed for NodeGroup %s; continuing", ngId)
+			}
+		}(id)
+	}
+	wg.Wait()
+}
+
 func waitForSshReadiness(nsId, infraId, nodeGroupId string) {
 	probe := model.InfraCmdReq{Command: []string{"true"}, TimeoutMinutes: 1}
 	deadline := time.Now().Add(sshReadinessTimeout)

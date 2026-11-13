@@ -8,6 +8,8 @@
 #   TB_INIT_SCRIPT_COUNT      number of user scripts, run in order; the first failure stops the run
 #   TB_INIT_SCRIPT_<i>_NAME   name of script i (1-based), echoed in the report
 #   TB_INIT_SCRIPT_<i>_B64    base64 of script i
+#   TB_INIT_SCRIPT_<i>_CONTINUE  1 to keep going when script i fails (reported as a failed optional step)
+#   TB_INIT_SCRIPT_<i>_TIMEOUT   seconds after which script i is stopped and counted as failed (0: no limit)
 #   TB_NS_ID, TB_INFRA_ID, TB_NODEGROUP_ID, TB_NODE_ID, TB_CSP, TB_REGION   node identity
 #   TB_NOTIFY_URL, TB_NOTIFY_TOPIC, TB_NOTIFY_TOKEN, TB_NOTIFY_CA_B64        optional ntfy report target
 #
@@ -62,15 +64,18 @@ steps_json() {
 # report <event> <status> <current step> <attempts>: sends a full snapshot so CB-Tumblebug can just store the latest one
 report() {
   [ -n "${TB_NOTIFY_URL:-}" ] || return 0
-  local msg body n=0
+  local msg body code n=0
   msg=$(tail -c 300 "$TB_LOG" 2>/dev/null | tr -d '\000-\037"\\' | tail -c 200)
   body=$(printf '{"kind":"initScript","nsId":"%s","infraId":"%s","nodeGroupId":"%s","nodeId":"%s","csp":"%s","region":"%s","event":"%s","status":"%s","step":"%s","exitCode":%s,"durationSec":%s,"hostname":"%s","steps":[%s],"message":"%s"}' \
     "${TB_NS_ID:-}" "${TB_INFRA_ID:-}" "${TB_NODEGROUP_ID:-}" "${TB_NODE_ID:-}" "${TB_CSP:-}" "${TB_REGION:-}" \
     "$1" "$2" "$3" "$TB_EXIT" "$(( $(date +%s) - TB_START ))" "$(hostname)" "$(steps_json)" "$msg")
   while [ "$n" -lt "$4" ]; do
     # shellcheck disable=SC2086
-    curl -fsS -m 10 $CA_OPT -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$TB_NOTIFY_URL/$TB_NOTIFY_TOPIC" >/dev/null 2>&1 && return 0
-    n=$((n+1)); [ "$n" -lt "$4" ] && sleep 5
+    code=$(curl -sS -m 10 $CA_OPT -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$TB_NOTIFY_URL/$TB_NOTIFY_TOPIC" 2>/dev/null)
+    n=$((n+1))
+    echo "report $1 http ${code:-000} attempt $n" >> "$TB_LOG"   # left for diagnosing lost reports
+    [ "$code" = 200 ] && return 0
+    [ "$n" -lt "$4" ] && sleep 5
   done
   return 0
 }
@@ -85,10 +90,25 @@ while [ "$i" -le "$COUNT" ]; do
   echo "== ${S_NAME[$i]} $(date -u +%FT%TZ)" >> "$TB_LOG"
   report step initializing "${S_NAME[$i]}" 1   # progress is best effort: one attempt, never delays the boot much
   STEP_START=$(date +%s); STEP_EXIT=0
-  bash "$TB_DIR/init-script-$i.sh" >> "$TB_LOG" 2>&1 || STEP_EXIT=$?
+  CONT_VAR="TB_INIT_SCRIPT_${i}_CONTINUE"; TMO_VAR="TB_INIT_SCRIPT_${i}_TIMEOUT"
+  STEP_TMO=${!TMO_VAR:-0}
+  if [ "$STEP_TMO" -gt 0 ] 2>/dev/null; then
+    timeout "$STEP_TMO" bash "$TB_DIR/init-script-$i.sh" >> "$TB_LOG" 2>&1 || STEP_EXIT=$?
+    [ "$STEP_EXIT" -eq 124 ] && echo "step ${S_NAME[$i]} stopped after ${STEP_TMO}s (timeout)" >> "$TB_LOG"
+  else
+    bash "$TB_DIR/init-script-$i.sh" >> "$TB_LOG" 2>&1 || STEP_EXIT=$?
+  fi
   S_EXIT[$i]=$STEP_EXIT; S_SEC[$i]=$(( $(date +%s) - STEP_START ))
-  if [ "$STEP_EXIT" -ne 0 ]; then S_STATUS[$i]=fail; TB_STATUS=fail; TB_EXIT=$STEP_EXIT; break; fi
-  S_STATUS[$i]=ok
+  if [ "$STEP_EXIT" -ne 0 ]; then
+    S_STATUS[$i]=fail
+    if [ "${!CONT_VAR:-0}" = 1 ]; then
+      echo "step ${S_NAME[$i]} failed (exit $STEP_EXIT), continuing" >> "$TB_LOG"
+    else
+      TB_STATUS=fail; TB_EXIT=$STEP_EXIT; break
+    fi
+  else
+    S_STATUS[$i]=ok
+  fi
   i=$((i+1))
 done
 echo "$TB_STATUS $TB_EXIT $(date -u +%FT%TZ)" > "$TB_DIR/init-script.status"

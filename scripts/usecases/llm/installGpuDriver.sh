@@ -74,8 +74,10 @@ sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock \
 # Configuration
 # ============================================================
 AUTO_REBOOT=true
-GPU_TYPE=""        # empty = auto-detect
-FORCE_VGPU=false   # --vgpu flag: force proprietary driver (for fractional/vGPU instances)
+NEED_REBOOT=true
+GPU_TYPE=""          # empty = auto-detect
+FORCE_VGPU=false     # --vgpu flag: force proprietary driver (for fractional/vGPU instances)
+FORCE_REINSTALL=false # --force flag: reinstall even if a working GPU driver is already active
 
 # NVIDIA config
 INSTALL_TOOLKIT=false
@@ -109,6 +111,10 @@ while [[ $# -gt 0 ]]; do
             FORCE_VGPU=true
             shift
             ;;
+        --force)
+            FORCE_REINSTALL=true
+            shift
+            ;;
         --with-toolkit)
             INSTALL_TOOLKIT=true
             shift
@@ -138,6 +144,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --gpu TYPE         GPU type: nvidia or amd (default: auto-detect)"
             echo "  --vgpu             Force proprietary driver for fractional/vGPU instances"
             echo "                     (e.g., AWS g6f, Azure NCas_T4_v3 fractional)"
+            echo "  --force            Reinstall driver even if a working GPU driver is already active"
             echo "  --no-reboot        Skip automatic reboot after installation"
             echo "  -h, --help         Show this help message"
             echo ""
@@ -209,9 +216,27 @@ echo "========== GPU Driver Installation (${GPU_TYPE^^}) =========="
 if [ "$GPU_TYPE" = "nvidia" ]; then
 
     # ----------------------------------------------------------
-    # Cleanup broken NVIDIA/CUDA packages from previous failures
+    # Fast-path: Skip driver purge/reinstall if a working NVIDIA driver is already active
+    # (e.g., AWS Deep Learning AMI, GCP Deep Learning VM, or idempotent re-run)
     # ----------------------------------------------------------
-    BROKEN_PKGS=$(dpkg -l 2>/dev/null | grep -E "nvidia|cuda|libnvidia" | grep -v "^ii " | grep -v "^un " | awk '{print $2}' || true)
+    SKIP_DRIVER_INSTALL=false
+    if [ "$FORCE_REINSTALL" != true ] && command -v nvidia-smi &>/dev/null && nvidia-smi -L &>/dev/null && nvidia-smi &>/dev/null; then
+        EXISTING_DRV_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1 || echo "unknown")
+        EXISTING_GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | paste -sd", " - || echo "NVIDIA GPU")
+        echo ""
+        echo "✓ Active NVIDIA driver already detected: ${EXISTING_DRV_VER} (${EXISTING_GPU_NAMES})"
+        echo "  Skipping driver purge/reinstall and reboot (pass --force to reinstall)."
+        SKIP_DRIVER_INSTALL=true
+        NEED_REBOOT=false
+    fi
+
+    if [ "$SKIP_DRIVER_INSTALL" != true ]; then
+
+    # ----------------------------------------------------------
+    # Cleanup broken NVIDIA/CUDA packages from previous failures
+    # Note: Exclude 'hi' (dpkg hold, used on DLAMI for libnvidia-nscq / fabricmanager)
+    # ----------------------------------------------------------
+    BROKEN_PKGS=$(dpkg -l 2>/dev/null | grep -E "nvidia|cuda|libnvidia" | grep -Ev "^(ii|hi|un) " | awk '{print $2}' || true)
     if [ -n "$BROKEN_PKGS" ]; then
         echo ""
         echo "Found broken NVIDIA/CUDA packages from previous failed install. Purging..."
@@ -247,15 +272,19 @@ if [ "$GPU_TYPE" = "nvidia" ]; then
     # This is critical for re-runs where a previously installed (incompatible) driver
     # would block the installation of a different version branch (e.g., 590.x blocks 550.x).
     # Must run BEFORE DKMS prerequisites because broken packages poison ALL apt-get installs.
+    # Exclude libnvidia-container* so nvidia-container-toolkit dependencies stay intact.
     # ----------------------------------------------------------
-    EXISTING_NV=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -E "^(cuda-drivers|nvidia-driver|nvidia-dkms|nvidia-kernel|nvidia-firmware|libnvidia-|nvidia-modprobe|nvidia-settings|nvidia-compute|xserver-xorg-video-nvidia)" || true)
+    EXISTING_NV=$(dpkg -l 2>/dev/null | grep -E "^(ii|hi) " | awk '{print $2}' | grep -E "^(cuda-drivers|nvidia-open|nvidia-driver|nvidia-dkms|nvidia-kernel|nvidia-firmware|libnvidia-|nvidia-modprobe|nvidia-settings|nvidia-compute|nvidia-fabricmanager|xserver-xorg-video-nvidia)" | grep -v "^libnvidia-container" || true)
     if [ -n "$EXISTING_NV" ]; then
         echo ""
         echo "========== Pre-cleanup: Removing Existing NVIDIA Packages =========="
         echo "  Packages to remove: $(echo $EXISTING_NV | wc -w) packages"
-        # Stop nvidia-persistenced to release module references
+        # Unhold any held NVIDIA packages before purging
+        sudo apt-mark unhold $EXISTING_NV >/dev/null 2>&1 || true
+        # Stop services to release module references
+        sudo systemctl stop nvidia-fabricmanager 2>/dev/null || true
         sudo systemctl stop nvidia-persistenced 2>/dev/null || true
-        # Purge all existing NVIDIA packages
+        # Purge all existing NVIDIA driver packages
         sudo dpkg --force-all --purge $EXISTING_NV 2>&1 | tail -5 || true
         sudo rm -rf /var/lib/dkms/nvidia 2>/dev/null || true
         sudo dpkg --configure -a 2>/dev/null || true
@@ -535,14 +564,14 @@ EOF
 
     # Helper: purge broken/leftover nvidia packages before retrying
     cleanup_nvidia_packages() {
-        LEFTOVER_PKGS=$(dpkg -l 2>/dev/null | grep -E "nvidia|cuda|libnvidia" | grep -v "^ii " | grep -v "^un " | awk '{print $2}' || true)
+        LEFTOVER_PKGS=$(dpkg -l 2>/dev/null | grep -E "nvidia|cuda|libnvidia" | grep -Ev "^(ii|hi|un) " | awk '{print $2}' || true)
         if [ -n "$LEFTOVER_PKGS" ]; then
             echo "  Cleaning up leftover packages..."
             sudo dpkg --force-all --purge $LEFTOVER_PKGS 2>&1 | tail -5 || true
             sudo rm -rf /var/lib/dkms/nvidia 2>/dev/null || true
             sudo dpkg --configure -a 2>/dev/null || true
         fi
-        VERSIONLESS_PKGS=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -E "^libnvidia-|^nvidia-" | grep -v -- "-[0-9]" || true)
+        VERSIONLESS_PKGS=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -E "^libnvidia-|^nvidia-" | grep -v "^libnvidia-container" | grep -v "^nvidia-container" | grep -v -- "-[0-9]" || true)
         if [ -n "$VERSIONLESS_PKGS" ]; then
             sudo dpkg --force-all --purge $VERSIONLESS_PKGS 2>&1 | tail -3 || true
         fi
@@ -577,7 +606,7 @@ EOF
         if [ "$IS_VGPU" = true ]; then
             DRIVER_CANDIDATES=("cuda-drivers-580" "nvidia-driver-580" "cuda-drivers")
         else
-            DRIVER_CANDIDATES=("cuda-drivers-580-open" "cuda-drivers-open" "cuda-drivers-580" "nvidia-driver-580-open" "nvidia-driver-580" "cuda-drivers")
+            DRIVER_CANDIDATES=("nvidia-open-580" "cuda-drivers-580" "nvidia-driver-580-open" "nvidia-driver-580" "nvidia-open" "cuda-drivers")
         fi
 
         for CANDIDATE in "${DRIVER_CANDIDATES[@]}"; do
@@ -643,12 +672,24 @@ EOF
     echo ""
     echo "NVIDIA Driver installation completed."
 
+    fi # end SKIP_DRIVER_INSTALL != true
+
     # ----------------------------------------------------------
     # CUDA Toolkit (optional)
     # ----------------------------------------------------------
     if [ "$INSTALL_TOOLKIT" = true ]; then
         echo ""
         echo "========== CUDA Toolkit =========="
+
+        if ! apt-cache search --names-only '^cuda-toolkit' 2>/dev/null | grep -q .; then
+            _ubuntu_ver=$(. /etc/os-release 2>/dev/null && echo "${VERSION_ID//./}" || echo "2204")
+            [[ "$_ubuntu_ver" == "2404" ]] && _cuda_repo="ubuntu2404" || _cuda_repo="ubuntu2204"
+            _kring=$(mktemp)
+            curl -fsSL "https://developer.download.nvidia.com/compute/cuda/repos/${_cuda_repo}/x86_64/cuda-keyring_1.1-1_all.deb" \
+                -o "$_kring" 2>/dev/null && sudo dpkg -i --force-confdef --force-confold "$_kring" 2>/dev/null || true
+            rm -f "$_kring"
+            sudo apt-get -o DPkg::Lock::Timeout=600 update -qq
+        fi
 
         if [ -n "$CUDA_VERSION" ]; then
             TOOLKIT_PACKAGE="cuda-toolkit-${CUDA_VERSION}"
@@ -706,6 +747,10 @@ CUDA_ENV
     fi
 
     NVSWITCH_FOUND=$NEED_FABRIC_MANAGER
+    if [ "$NEED_FABRIC_MANAGER" = true ] && [ "$SKIP_DRIVER_INSTALL" = true ] && systemctl is-active --quiet nvidia-fabricmanager 2>/dev/null; then
+        echo "  ✓ Fabric Manager already active."
+        NEED_FABRIC_MANAGER=false
+    fi
     if [ "$NEED_FABRIC_MANAGER" = true ]; then
         DRIVER_MAJOR=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -oP "^nvidia-driver-\K[0-9]+" | sort -rn | head -1 || true)
         [ -z "$DRIVER_MAJOR" ] && command -v nvidia-smi &>/dev/null && \
@@ -761,33 +806,45 @@ CUDA_ENV
         echo ""
         echo "========== NVIDIA Container Toolkit =========="
 
-        curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \
-            sudo gpg --dearmor --yes -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-        curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-            sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-            sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list > /dev/null
-        sudo apt-get -o DPkg::Lock::Timeout=600 update -qq
+        if [ "$SKIP_DRIVER_INSTALL" = true ] && command -v nvidia-ctk &>/dev/null; then
+            echo "  ✓ nvidia-container-toolkit already installed."
+        else
+            curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \
+                sudo gpg --dearmor --yes -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+            curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+                sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+                sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list > /dev/null
+            sudo apt-get -o DPkg::Lock::Timeout=600 update -qq
 
-        echo "Installing nvidia-container-toolkit..."
-        set +e
-        "${APT_INSTALL[@]}" nvidia-container-toolkit 2>&1 | tail -10
-        CTK_EXIT=${PIPESTATUS[0]}
-        set -e
-        [ $CTK_EXIT -ne 0 ] && echo "WARNING: Container Toolkit installation failed." || echo "NVIDIA Container Toolkit installed."
+            echo "Installing nvidia-container-toolkit..."
+            set +e
+            "${APT_INSTALL[@]}" nvidia-container-toolkit 2>&1 | tail -10
+            CTK_EXIT=${PIPESTATUS[0]}
+            set -e
+            [ $CTK_EXIT -ne 0 ] && echo "WARNING: Container Toolkit installation failed." || echo "NVIDIA Container Toolkit installed."
+        fi
 
         echo ""
         echo "Configuring container runtimes..."
         if command -v containerd &>/dev/null; then
-            sudo nvidia-ctk runtime configure --runtime=containerd --set-as-default 2>/dev/null || true
-            systemctl is-active --quiet containerd && sudo systemctl restart containerd && \
-                echo "  ✓ containerd configured and restarted" || echo "  ✓ containerd configured"
+            if [ "$SKIP_DRIVER_INSTALL" = true ] && sudo grep -q "nvidia" /etc/containerd/config.toml 2>/dev/null; then
+                echo "  ✓ containerd already configured with nvidia runtime"
+            else
+                sudo nvidia-ctk runtime configure --runtime=containerd --set-as-default 2>/dev/null || true
+                systemctl is-active --quiet containerd && sudo systemctl restart containerd && \
+                    echo "  ✓ containerd configured and restarted" || echo "  ✓ containerd configured"
+            fi
         else
             echo "  - containerd not found"
         fi
         if command -v docker &>/dev/null; then
-            sudo nvidia-ctk runtime configure --runtime=docker 2>/dev/null || true
-            systemctl is-active --quiet docker && sudo systemctl restart docker && \
-                echo "  ✓ Docker configured and restarted" || echo "  ✓ Docker configured"
+            if [ "$SKIP_DRIVER_INSTALL" = true ] && sudo grep -q '"nvidia"' /etc/docker/daemon.json 2>/dev/null; then
+                echo "  ✓ Docker already configured with nvidia runtime"
+            else
+                sudo nvidia-ctk runtime configure --runtime=docker 2>/dev/null || true
+                systemctl is-active --quiet docker && sudo systemctl restart docker && \
+                    echo "  ✓ Docker configured and restarted" || echo "  ✓ Docker configured"
+            fi
         else
             echo "  - Docker not found (optional)"
         fi
@@ -802,8 +859,12 @@ CUDA_ENV
     [ "$INSTALL_CONTAINER_TOOLKIT" = true ] && COMPONENTS="$COMPONENTS, Container-Toolkit"
     [ "$INSTALL_TOOLKIT" = true ] && COMPONENTS="$COMPONENTS, CUDA-Toolkit"
     [ "$NEED_FABRIC_MANAGER" = true ] && COMPONENTS="$COMPONENTS, Fabric-Manager"
-    echo "  Installed: $COMPONENTS"
-    echo "  Verify after reboot: nvidia-smi"
+    echo "  Verified/Installed: $COMPONENTS"
+    if [ "$NEED_REBOOT" = true ]; then
+        echo "  Verify after reboot: nvidia-smi"
+    else
+        echo "  Status: GPU driver active (no reboot required)"
+    fi
     echo "\$\$CMD[Verify GPU](nvidia-smi)"
 
 # ============================================================
@@ -813,10 +874,20 @@ CUDA_ENV
 # ============================================================
 elif [ "$GPU_TYPE" = "amd" ]; then
 
+    if [ "$FORCE_REINSTALL" != true ] && command -v rocm-smi &>/dev/null && [ -e /dev/kfd ] && rocm-smi --showproductname &>/dev/null; then
+        TARGET_USER=${SUDO_USER:-$USER}
+        sudo usermod -a -G render,video "$TARGET_USER" 2>/dev/null || true
+        echo ""
+        echo "✓ Active AMD ROCm driver already detected."
+        rocm-smi --showproductname || true
+        echo "  Skipping driver purge/reinstall and reboot (pass --force to reinstall)."
+        NEED_REBOOT=false
+    else
+
     # ----------------------------------------------------------
     # Cleanup broken AMD/ROCm packages from previous failures
     # ----------------------------------------------------------
-    BROKEN_AMD=$(dpkg -l 2>/dev/null | grep -E "amdgpu|rocm" | grep -v "^ii " | grep -v "^un " | awk '{print $2}' || true)
+    BROKEN_AMD=$(dpkg -l 2>/dev/null | grep -E "amdgpu|rocm" | grep -Ev "^(ii|hi|un) " | awk '{print $2}' || true)
     if [ -n "$BROKEN_AMD" ]; then
         echo "Found broken AMD/ROCm packages. Purging..."
         echo "  Packages: $(echo $BROKEN_AMD | tr '\n' ' ')"
@@ -995,13 +1066,18 @@ elif [ "$GPU_TYPE" = "amd" ]; then
     echo "  Verify after reboot: rocm-smi"
     echo "\$\$CMD[Verify GPU](rocm-smi)"
 
+    fi # end AMD active check
+
 fi  # end GPU_TYPE
 
 # ============================================================
 # Reboot
 # ============================================================
 echo ""
-if [ "$AUTO_REBOOT" = true ]; then
+if [ "$NEED_REBOOT" != true ]; then
+    echo "No reboot needed — GPU driver is already active and ready."
+    exit 0
+elif [ "$AUTO_REBOOT" = true ]; then
     echo "Rebooting in 5 seconds... (SSH will disconnect, verify with ${GPU_TYPE}-smi after ~60s)"
     nohup bash -c 'sleep 5 && sudo reboot' > /dev/null 2>&1 &
     exit 0

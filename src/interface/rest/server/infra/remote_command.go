@@ -128,7 +128,7 @@ func RestPostCmdInfra(c echo.Context) error {
 	// Convert internal result to API-friendly format
 	result := convertSshCmdResultForAPI(output)
 
-	common.PrintJsonPretty(result)
+	// common.PrintJsonPretty(result)
 
 	return c.JSON(http.StatusOK, result)
 

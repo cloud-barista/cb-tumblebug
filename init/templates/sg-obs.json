@@ -1,0 +1,28 @@
+{
+  "nsId": "system",
+  "resourceType": "securityGroup",
+  "name": "sg-obs",
+  "description": "Observability stack: HTTPS (Grafana, OTLP/HTTP ingest, agent downloads), HTTP for Let's Encrypt validation, and SSH",
+  "securityGroupReq": {
+    "firewallRules": [
+      {
+        "ports": "443",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "80",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "22",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      }
+    ]
+  }
+}

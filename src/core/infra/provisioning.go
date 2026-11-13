@@ -471,7 +471,6 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 		Status:           initStatus,
 		TargetAction:     initTargetAction,
 		TargetStatus:     model.StatusRunning,
-		InstallMonAgent:  req.InstallMonAgent,
 		SystemLabel:      req.SystemLabel,
 		PostCommands:     req.PostCommands,
 		PostCommandAsync: req.PostCommandAsync,
@@ -499,42 +498,6 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 	maps.Copy(labels, req.Label)
 
 	return label.CreateOrUpdateLabel(ctx, model.StrInfra, uid, key, labels)
-}
-
-// handleMonitoringAgent handles CB-Dragonfly monitoring agent installation
-func handleMonitoringAgent(nsId, infraId string, infraTmp model.InfraInfo, option string) error {
-	if !strings.Contains(infraTmp.InstallMonAgent, "yes") || strings.EqualFold(option, model.ActionRegister) {
-		return nil
-	}
-
-	log.Info().Msg("Installing CB-Dragonfly monitoring agent")
-
-	if err := CheckDragonflyEndpoint(); err != nil {
-		log.Warn().Msg("CB-Dragonfly is not available, skipping agent installation")
-		return nil
-	}
-
-	reqToMon := &model.InfraCmdReq{
-		UserName: "cb-user", // TODO: Make this configurable
-	}
-
-	// Intelligent wait time based on Node count
-	waitTime := 30 * time.Second
-	if len(infraTmp.Node) > 5 {
-		waitTime = 60 * time.Second
-	}
-
-	log.Info().Msgf("Waiting %v for safe CB-Dragonfly Agent installation", waitTime)
-	time.Sleep(waitTime)
-
-	content, err := InstallMonitorAgentToInfra(nsId, infraId, model.StrInfra, reqToMon)
-	if err != nil {
-		return fmt.Errorf("failed to install monitoring agent: %w", err)
-	}
-
-	log.Info().Msg("CB-Dragonfly monitoring agent installed successfully")
-	common.PrintJsonPretty(content)
-	return nil
 }
 
 // Infra and Node Provisioning
@@ -910,32 +873,6 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 		log.Info().Msgf("Infra %s action completed, setting TargetAction/TargetStatus to Complete", infraId)
 	}
 	UpdateInfraInfo(nsId, infraTmp)
-
-	// Install CB-Dragonfly monitoring agent
-
-	if strings.Contains(infraTmp.InstallMonAgent, "yes") {
-
-		// Sleep for 60 seconds for a safe DF agent installation.
-		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
-		time.Sleep(60 * time.Second)
-
-		check := CheckDragonflyEndpoint()
-		if check != nil {
-			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
-		} else {
-			reqToMon := &model.InfraCmdReq{}
-			reqToMon.UserName = "cb-user" // this Infra user name is temporal code. Need to improve.
-
-			fmt.Printf("\n[InstallMonitorAgentToInfra]\n\n")
-			content, err := InstallMonitorAgentToInfra(nsId, infraId, model.StrInfra, reqToMon)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				//infraTmp.InstallMonAgent = "no"
-			}
-			common.PrintJsonPretty(content)
-			//infraTmp.InstallMonAgent = "yes"
-		}
-	}
 
 	// Only the Nodes added by this call: callers (and the registration flow) read this
 	// to identify what was just created, so the whole NodeGroup must not be reported
@@ -1444,18 +1381,6 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 	}
 
 	log.Info().Msgf("Infra '%s' has been successfully created with %d VMs", infraId, len(nodeConfigs))
-
-	// Install monitoring agent if requested
-	if err := handleMonitoringAgent(nsId, infraId, infraTmp, option); err != nil {
-		log.Error().Err(err).Msg("Failed to install monitoring agent, but continuing")
-		// Add monitoring agent error to SystemMessage
-		infraTmp, _, infraErr := GetInfraObject(nsId, infraId)
-		if infraErr == nil {
-			errorMsg := fmt.Sprintf("Monitoring agent installation failed: %s", err.Error())
-			infraTmp.SystemMessage = append(infraTmp.SystemMessage, errorMsg)
-			UpdateInfraInfo(nsId, infraTmp)
-		}
-	}
 
 	// Execute post-deployment commands
 	if err := handlePostCommands(nsId, infraId, infraTmp); err != nil {
