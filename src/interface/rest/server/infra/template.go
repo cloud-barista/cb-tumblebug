@@ -36,7 +36,7 @@ import (
 // @Description - node specifications (specId, imageId) for each nodegroup
 // @Description - NodeGroup sizing and naming
 // @Description - Network and disk configuration
-// @Description - Post-deployment commands
+// @Description - Post-deployment script (postScript)
 // @Description - Monitoring agent options
 // @Description
 // @Description Templates can be created manually or extracted from existing Infras.
@@ -223,6 +223,7 @@ func RestDeleteAllInfraDynamicTemplate(c echo.Context) error {
 // @Param templateId path string true "Template ID to apply"
 // @Param applyReq body model.TemplateApplyReq true "Template apply request with Infra name and optional description"
 // @Param option query string false "Deployment option: 'hold' to create Infra without immediate node provisioning" Enums(hold)
+// @Param postScriptAsync query string false "If true, return once the Nodes are provisioned and run postScript in the background; follow it with postScriptStatus and postScriptRequestId" default(false)
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Success 200 {object} model.InfraInfo "Successfully created Infra from template"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
@@ -243,6 +244,7 @@ func RestPostInfraDynamicFromTemplate(c echo.Context) error {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
+	req.PostScriptAsync = postScriptAsync(c)
 
 	result, err := infra.CreateInfraDynamicFromTemplate(ctx, nsId, templateId, req, option)
 	if err != nil {

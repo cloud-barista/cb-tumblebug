@@ -16,7 +16,7 @@ Comprehensive guide for automated CSP-agnostic custom image creation using CB-Tu
 
 ### What is Cloud-Agnostic Image?
 
-**Cloud-Agnostic Image** is a high-level workflow in CB-Tumblebug that automates the entire lifecycle of creating custom machine images (snapshots) across multiple cloud providers. It handles infrastructure provisioning, software installation (via post-commands), snapshot creation, and resource cleanup in a single API call.
+**Cloud-Agnostic Image** is a high-level workflow in CB-Tumblebug that automates the entire lifecycle of creating custom machine images (snapshots) across multiple cloud providers. It handles infrastructure provisioning, software installation (via the post-deployment script), snapshot creation, and resource cleanup in a single API call.
 
 ### Why Use Cloud-Agnostic Image?
 
@@ -47,7 +47,7 @@ Comprehensive guide for automated CSP-agnostic custom image creation using CB-Tu
 The system executes a strictly ordered sequence of operations:
 
 1. **Provisioning**: Creates a temporary Infra (Multi-Cloud Infrastructure) based on your specifications.
-2. **Configuration**: Executes post-deployment commands (e.g., `apt install nginx`) to set up the software environment.
+2. **Configuration**: Runs the post-deployment script (e.g., `apt install nginx`) to set up the software environment.
 3. **Snapshotting**: Triggers CSP-native snapshot mechanisms for each running Node.
 4. **Verification**: Actively polls image status until it transitions to `Available`.
 5. **Cleanup**: Terminates the temporary Infra to prevent unnecessary costs (optional but recommended).
@@ -269,21 +269,23 @@ Simply use the `imageId` returned from the build process in your standard Infra 
         "specId": "aws-t3-small"
       }
     ],
-    "postCommands": [
-      {
-        "command": [
-          "sudo apt-get update",
-          "sudo apt-get install -y nginx"
-        ]
-      }
-    ]
+    "postScript": {
+      "phases": [
+        {
+          "command": [
+            "sudo apt-get update",
+            "sudo apt-get install -y nginx"
+          ]
+        }
+      ]
+    }
   },
   "snapshotReq": {
     "name": "nginx-custom-image",
     "description": "Ubuntu 22.04 with Nginx pre-installed"
   },
   "cleanupInfraAfterSnapshot": true,
-  "policyOnPostCommandFailure": "abort"
+  "policyOnPostScriptFailure": "abort"
 }
 ```
 
@@ -291,29 +293,29 @@ Simply use the `imageId` returned from the build process in your standard Infra 
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `sourceInfraReq` | object | Yes | - | Standard Infra creation request with Node specs and post-commands |
+| `sourceInfraReq` | object | Yes | - | Standard Infra creation request with Node specs and `postScript` |
 | `snapshotReq` | object | Yes | - | Configuration for the resulting images (name, description) |
 | `cleanupInfraAfterSnapshot` | boolean | No | `true` | Whether to delete the Infra after successful image creation |
-| `policyOnPostCommandFailure` | string | No | `abort` | `abort`: fail the build when post-deployment commands did not complete cleanly. `proceed`: snapshot anyway |
+| `policyOnPostScriptFailure` | string | No | `abort` | `abort`: fail the build when the post-deployment script did not complete cleanly. `proceed`: snapshot anyway |
 
-### Post-deployment Commands in Image Building
+### Post-deployment Script in Image Building
 
-The commands in `sourceInfraReq` define **what the image contains**, so this workflow
-treats them as a build step rather than a side effect:
+The `postScript` in `sourceInfraReq` defines **what the image contains**, so this workflow
+treats it as a build step rather than a side effect:
 
-- **They always run synchronously.** A `postCommandAsync: true` in `sourceInfraReq` is
-  ignored (and logged) because the snapshot must not start before the bootstrap result
-  is known.
-- **A failed bootstrap aborts the build by default** (`policyOnPostCommandFailure: abort`):
-  no snapshot is taken, the reason is returned in `message`, `postCommandStatus` is echoed
+- **It always runs synchronously.** This API has no `postScriptAsync` option, because the
+  snapshot must not start before the bootstrap result is known (an old
+  `postCommandAsync` in `sourceInfraReq` is ignored and logged).
+- **A failed bootstrap aborts the build by default** (`policyOnPostScriptFailure: abort`):
+  no snapshot is taken, the reason is returned in `message`, `postScriptStatus` is echoed
   in the result, and `cleanupInfraAfterSnapshot` is still honored for teardown.
   Set `proceed` only when you knowingly want to bake the image regardless.
-- **Ordered phases are supported.** Use additional entries in `postCommands[]` to separate
+- **Ordered phases are supported.** Use additional entries in `postScript.phases[]` to separate
   install → configure → pre-snapshot cleanup (e.g. `cloud-init clean`,
   `waagent -deprovision`), and to target different NodeGroups when building several
   images at once.
 
-See [Infra Provisioning → Post-deployment Commands](infra-provisioning.md) for the full
+See [Infra Provisioning → Post-deployment Script](infra-provisioning.md) for the full
 semantics (targeting, timeouts, status values).
 
 **Response:** `200 OK`
@@ -349,13 +351,13 @@ semantics (targeting, timeouts, status values).
 ### 1. Golden Image Pipeline
 Create a standardized "Golden Image" with security patches and compliance tools pre-installed.
 - **Input**: Base OS image (e.g., Ubuntu 22.04)
-- **Post-Command**: Security hardening scripts, monitoring agent installation
+- **Post script**: Security hardening scripts, monitoring agent installation
 - **Output**: Hardened custom image ready for production deployment
 
 ### 2. Application Pre-baking
 Pre-install complex application stacks to reduce boot time for scaling groups.
 - **Input**: Base OS
-- **Post-Command**: `docker install`, `git clone app`, `npm install`
+- **Post script**: `docker install`, `git clone app`, `npm install`
 - **Output**: Application-ready image that starts serving traffic immediately upon boot
 
 ### 3. Cross-Cloud Replication

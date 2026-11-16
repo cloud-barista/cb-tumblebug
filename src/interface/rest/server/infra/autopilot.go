@@ -96,6 +96,7 @@ func RestPostInfraAutopilotReview(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraAutopilotReq body model.InfraAutopilotReq true "Autopilot infra creation request"
+// @Param postScriptAsync query string false "If true, return once the Nodes are provisioned and run postScript in the background; follow it with postScriptStatus and postScriptRequestId" default(false)
 // @Success 200 {object} model.InfraAutopilotResult "Created infra with autopilot metadata including per-NodeSpec results and attempt history"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or missing required fields"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found"
@@ -113,6 +114,7 @@ func RestPostInfraAutopilot(c echo.Context) error {
 		log.Warn().Err(err).Msg("invalid request for infra autopilot")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
+	req.PostScriptAsync = req.PostScriptAsync || postScriptAsync(c)
 
 	result, err := infra.CreateInfraAutopilot(ctx, nsId, req)
 	if err != nil {

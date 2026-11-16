@@ -16,7 +16,7 @@ CB-Tumblebug를 활용한 CSP 비종속적 자동화 커스텀 이미지 생성 
 
 ### Cloud-Agnostic Image란 무엇인가요?
 
-**Cloud-Agnostic Image**는 다중 클라우드 제공자(CSP) 환경에서 커스텀 머신 이미지(스냅샷)를 생성하는 전체 수명 주기를 자동화하는 CB-Tumblebug의 고수준 워크플로우입니다. 단 한 번의 API 호출로 인프라 프로비저닝, 소프트웨어 설치(배포 후 명령어 실행), 스냅샷 생성, 리소스 정리까지 모두 처리합니다.
+**Cloud-Agnostic Image**는 다중 클라우드 제공자(CSP) 환경에서 커스텀 머신 이미지(스냅샷)를 생성하는 전체 수명 주기를 자동화하는 CB-Tumblebug의 고수준 워크플로우입니다. 단 한 번의 API 호출로 인프라 프로비저닝, 소프트웨어 설치(배포 후 스크립트 실행), 스냅샷 생성, 리소스 정리까지 모두 처리합니다.
 
 ### 왜 Cloud-Agnostic Image를 사용해야 하나요?
 
@@ -47,7 +47,7 @@ CB-Tumblebug를 활용한 CSP 비종속적 자동화 커스텀 이미지 생성 
 시스템은 엄격하게 순서가 지정된 일련의 작업을 실행합니다:
 
 1. **프로비저닝(Provisioning)**: 사용자의 명세에 따라 임시 Infra(멀티클라우드 인프라)를 생성합니다.
-2. **구성(Configuration)**: 배포 후 명령어(예: `apt install nginx`)를 실행하여 소프트웨어 환경을 설정합니다.
+2. **구성(Configuration)**: 배포 후 스크립트(예: `apt install nginx`)를 실행하여 소프트웨어 환경을 설정합니다.
 3. **스냅샷 생성(Snapshotting)**: 실행 중인 각 Node에 대해 CSP 네이티브 스냅샷 메커니즘을 트리거합니다.
 4. **검증(Verification)**: 이미지 상태가 `Available`로 전환될 때까지 상태를 능동적으로 폴링합니다.
 5. **정리(Cleanup)**: 불필요한 비용 발생을 방지하기 위해 임시 Infra를 종료합니다(선택 사항이지만 권장됨).
@@ -269,21 +269,23 @@ flowchart TD
         "specId": "aws-t3-small"
       }
     ],
-    "postCommands": [
-      {
-        "command": [
-          "sudo apt-get update",
-          "sudo apt-get install -y nginx"
-        ]
-      }
-    ]
+    "postScript": {
+      "phases": [
+        {
+          "command": [
+            "sudo apt-get update",
+            "sudo apt-get install -y nginx"
+          ]
+        }
+      ]
+    }
   },
   "snapshotReq": {
     "name": "nginx-custom-image",
     "description": "Ubuntu 22.04 with Nginx pre-installed"
   },
   "cleanupInfraAfterSnapshot": true,
-  "policyOnPostCommandFailure": "abort"
+  "policyOnPostScriptFailure": "abort"
 }
 ```
 
@@ -291,22 +293,22 @@ flowchart TD
 
 | 파라미터 | 타입 | 필수 여부 | 기본값 | 설명 |
 |-----------|------|----------|---------|-------------|
-| `sourceInfraReq` | object | 예 | - | Node 스펙과 배포 후 명령어(post-commands)를 포함한 표준 Infra 생성 요청 |
+| `sourceInfraReq` | object | 예 | - | Node 스펙과 배포 후 스크립트(`postScript`)를 포함한 표준 Infra 생성 요청 |
 | `snapshotReq` | object | 예 | - | 생성될 이미지에 대한 구성 정보 (이름, 설명) |
 | `cleanupInfraAfterSnapshot` | boolean | 아니오 | `true` | 이미지 생성 성공 후 소스 Infra를 삭제할지 여부 |
-| `policyOnPostCommandFailure` | string | 아니오 | `abort` | `abort`: 배포 후 명령어가 정상적으로 완료되지 않으면 빌드를 실패 처리함. `proceed`: 실패와 무관하게 스냅샷 생성 진행 |
+| `policyOnPostScriptFailure` | string | 아니오 | `abort` | `abort`: 배포 후 스크립트가 정상적으로 완료되지 않으면 빌드를 실패 처리함. `proceed`: 실패와 무관하게 스냅샷 생성 진행 |
 
-### 이미지 빌드에서의 배포 후 명령어 (Post-deployment Commands)
+### 이미지 빌드에서의 배포 후 스크립트 (Post-deployment Script)
 
-`sourceInfraReq` 내의 명령어는 **이미지에 어떤 내용이 포함될지**를 정의하므로, 이 워크플로우는 이를 부수적인 작업이 아닌 핵심 빌드 단계로 취급합니다:
+`sourceInfraReq` 내의 `postScript`는 **이미지에 어떤 내용이 포함될지**를 정의하므로, 이 워크플로우는 이를 부수적인 작업이 아닌 핵심 빌드 단계로 취급합니다:
 
-- **항상 동기식(Synchronous)으로 실행됩니다.** 부트스트랩 결과가 확인되기 전에는 스냅샷이 시작되어서는 안 되므로, `sourceInfraReq`에 `postCommandAsync: true`가 설정되어 있더라도 무시되며 로그에 기록됩니다.
-- **부트스트랩 실패 시 기본적으로 빌드가 중단됩니다** (`policyOnPostCommandFailure: abort`):
-  스냅샷을 생성하지 않으며, 실패 원인이 `message`에 반환되고 `postCommandStatus`가 결과에 그대로 포함됩니다. 이때도 리소스 정리를 위해 `cleanupInfraAfterSnapshot` 설정은 그대로 준수됩니다.
+- **항상 동기식(Synchronous)으로 실행됩니다.** 부트스트랩 결과가 확인되기 전에는 스냅샷이 시작되어서는 안 되므로 이 API에는 `postScriptAsync` 옵션이 없습니다(`sourceInfraReq`에 예전 `postCommandAsync`가 있어도 무시하고 로그에 남깁니다).
+- **부트스트랩 실패 시 기본적으로 빌드가 중단됩니다** (`policyOnPostScriptFailure: abort`):
+  스냅샷을 생성하지 않으며, 실패 원인이 `message`에 반환되고 `postScriptStatus`가 결과에 그대로 포함됩니다. 이때도 리소스 정리를 위해 `cleanupInfraAfterSnapshot` 설정은 그대로 준수됩니다.
   명령어 실패 여부와 상관없이 의도적으로 이미지를 구우려는 경우에만 `proceed`로 설정하십시오.
-- **순차적 단계(Ordered phases)를 지원합니다.** `postCommands[]`에 여러 항목을 추가하여 설치 → 구성 → 스냅샷 생성 전 정리(예: `cloud-init clean`, `waagent -deprovision`) 단계를 분리할 수 있으며, 여러 이미지를 한 번에 빌드할 때 서로 다른 NodeGroup을 대상으로 지정할 수도 있습니다.
+- **순차적 단계(Ordered phases)를 지원합니다.** `postScript.phases[]`에 여러 항목을 추가하여 설치 → 구성 → 스냅샷 생성 전 정리(예: `cloud-init clean`, `waagent -deprovision`) 단계를 분리할 수 있으며, 여러 이미지를 한 번에 빌드할 때 서로 다른 NodeGroup을 대상으로 지정할 수도 있습니다.
 
-전체 동작 방식(대상 지정, 타임아웃, 상태 값 등)에 대한 자세한 내용은 [Infra 프로비저닝 → 배포 후 명령어 (Post-deployment Commands)](infra-provisioning.md)를 참조하십시오.
+전체 동작 방식(대상 지정, 타임아웃, 상태 값 등)에 대한 자세한 내용은 [Infra 프로비저닝 → 배포 후 스크립트 (Post-deployment Script)](infra-provisioning.md)를 참조하십시오.
 
 **응답 (Response):** `200 OK`
 ```json
@@ -341,13 +343,13 @@ flowchart TD
 ### 1. 골든 이미지 파이프라인 (Golden Image Pipeline)
 보안 패치와 컴플라이언스 도구가 사전 설치된 표준화된 "골든 이미지"를 생성합니다.
 - **입력**: 기본 OS 이미지 (예: Ubuntu 22.04)
-- **배포 후 명령어**: 보안 강화 스크립트, 모니터링 에이전트 설치
+- **배포 후 스크립트**: 보안 강화 스크립트, 모니터링 에이전트 설치
 - **출력**: 프로덕션 배포 준비가 완료된 보안 강화 커스텀 이미지
 
 ### 2. 애플리케이션 사전 베이킹 (Application Pre-baking)
 오토스케일링 그룹의 부팅 시간을 단축하기 위해 복잡한 애플리케이션 스택을 사전에 설치합니다.
 - **입력**: 기본 OS
-- **배포 후 명령어**: `docker install`, `git clone app`, `npm install`
+- **배포 후 스크립트**: `docker install`, `git clone app`, `npm install`
 - **출력**: 부팅 즉시 트래픽을 처리할 수 있는 애플리케이션 준비 완료 이미지
 
 ### 3. 크로스 클라우드 복제 (Cross-Cloud Replication)

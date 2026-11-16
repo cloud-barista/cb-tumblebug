@@ -1,6 +1,6 @@
 # 인프라 프로비저닝 (Infra Provisioning)
 
-이 문서는 CB-Tumblebug를 사용하여 **인프라를 생성**하는 전체 과정을 다루는 엔드투엔드(End-to-End) 가이드입니다. 프로비저닝 요청에 포함되는 내용, 자동으로 생성되는 리소스, 배포 후 명령어(Post-deployment commands)를 통해 노드를 부트스트랩하는 방법, 그리고 검증, 확장(Scale), 정리(Clean up)하는 방법을 설명합니다.
+이 문서는 CB-Tumblebug를 사용하여 **인프라를 생성**하는 전체 과정을 다루는 엔드투엔드(End-to-End) 가이드입니다. 프로비저닝 요청에 포함되는 내용, 자동으로 생성되는 리소스, 배포 후 스크립트(`postScript`)를 통해 노드를 부트스트랩하는 방법, 그리고 검증, 확장(Scale), 정리(Clean up)하는 방법을 설명합니다.
 
 이 문서는 다른 가이드에서 깊이 있게 다루는 주제들을 하나로 연결합니다:
 [Spec & Image 추천](spec-image-recommendation.md) (실행할 사양 및 이미지 선택),
@@ -9,7 +9,7 @@
 [Infra 리소스 모델 및 수명 주기](infra-resource-model-and-lifecycle-management.md)
 (생성 후 상태 및 제어), 그리고
 [원격 명령 및 파일 전송](remote-command-and-file-transfer.md)
-(배포 후 명령어에서 재사용하는 실행 엔진).
+(배포 후 스크립트에서 재사용하는 실행 엔진).
 
 ## 🗺️ 프로비저닝 흐름 (The Provisioning Flow)
 
@@ -26,9 +26,9 @@ flowchart TD
     F -->|refine| H[Remove failed nodes]
     F -->|rollback| I[Delete everything]
 
-    G --> J[4. Bootstrap<br/>postCommand / postCommands]
+    G --> J[4. Bootstrap<br/>postScript]
     H --> J
-    J --> K[5. Verify<br/>postCommandStatus + node status]
+    J --> K[5. Verify<br/>postScriptStatus + node status]
     K --> L[6. Scale<br/>add NodeGroup / add Nodes]
     K --> M[7. Clean up<br/>DELETE infra → release shared resources]
 
@@ -115,28 +115,32 @@ flowchart TD
 # Run a command only on workers
 POST /ns/{nsId}/cmd/infra/{infraId}?labelSelector=role=worker
 
-# Bootstrap only the control plane during creation (see postCommands below)
-"postCommands": [ { "command": ["..."], "labelSelector": "role=control" } ]
+# Bootstrap only the control plane during creation (see postScript below)
+"postScript": { "phases": [ { "command": ["..."], "labelSelector": "role=control" } ] }
 ```
 
 NodeGroup 전반에 걸쳐 레이블 체계(`role`, `tier`, `env`)를 일관되게 유지하세요 — 나중에 NodeGroup을 추가하거나 타겟팅된 작업을 실행할 때 큰 도움이 됩니다.
 
-## 🚀 배포 후 명령어 (부트스트랩 / Post-deployment Commands)
+## 🚀 배포 후 스크립트 (부트스트랩 / Post-deployment Script)
 
-배포 후 명령어는 프로비저닝된 노드를 실제로 동작하는 시스템으로 전환합니다. 이 명령어들은 [원격 명령](remote-command-and-file-transfer.md)과 동일한 엔진을 통해 실행되므로, 배스천(Bastion) 라우팅, TOFU 호스트 키 검증, 노드별 병렬 실행, `$$Func()` 플레이스홀더, 명령어 상태 이력이 모두 동일하게 적용됩니다.
+배포 후 스크립트(`postScript`)는 프로비저닝된 노드를 실제로 동작하는 시스템으로 전환합니다. 이 스크립트는 [원격 명령](remote-command-and-file-transfer.md)과 동일한 엔진을 통해 실행되므로, 배스천(Bastion) 라우팅, TOFU 호스트 키 검증, 노드별 병렬 실행, `$$Func()` 플레이스홀더, 명령어 상태 이력이 모두 동일하게 적용됩니다.
 
-`postCommands[]`는 단일 진입점 역할을 합니다: 각각 자체적인 실행 대상을 가지는 **단계**(Phases)들을 담고 있으며, 각 단계는 **순차적으로** 실행됩니다. "모든 노드에서 이 명령어들을 실행하라"는 단순한 요청은 단 하나의 단계로 표현됩니다.
+`postScript`가 단일 진입점 역할을 합니다: `phases[]`에 각각 자체적인 실행 대상을 가지는 **단계**(Phases)들을 담고 있으며, 각 단계는 **순차적으로** 실행됩니다. "모든 노드에서 이 명령어들을 실행하라"는 단순한 요청은 단 하나의 단계로 표현됩니다.
+
+> 이전 필드 이름은 요청에서 계속 받습니다. `postCommands`는 `postScript.phases`로, `postCommandAsync: true`는 쿼리 파라미터 `postScriptAsync=true`와 같게, 이미지 빌드의 `policyOnPostCommandFailure`는 `policyOnPostScriptFailure`로 읽습니다. 응답은 새 이름만 사용합니다.
 
 ### 단일 단계 (단순 케이스)
 
 ```jsonc
-"postCommands": [
-  {
-    "command": ["sudo apt-get update", "sudo apt-get install -y nginx"],
-    "timeoutMinutes": 10,
-    "labelSelector": "role=web"     // optional target; default = all nodes
-  }
-]
+"postScript": {
+  "phases": [
+    {
+      "command": ["sudo apt-get update", "sudo apt-get install -y nginx"],
+      "timeoutMinutes": 10,
+      "labelSelector": "role=web"     // optional target; default = all nodes
+    }
+  ]
+}
 ```
 
 ### 순차적 단계 (다단계 부트스트랩)
@@ -144,11 +148,13 @@ NodeGroup 전반에 걸쳐 레이블 체계(`role`, `tier`, `env`)를 일관되�
 여러 단계를 사용하면 컨트롤 플레인 설정 후 워커 노드를 조인하는 구조를 만들 수 있습니다:
 
 ```jsonc
-"postCommands": [
-  { "command": ["k8s-control-plane-setup.sh"], "nodeGroupId": "control", "timeoutMinutes": 15 },
-  { "command": ["k8s-worker-join.sh"],         "labelSelector": "role=worker",
-    "continueOnError": false }                  // default: a failed phase skips the rest
-]
+"postScript": {
+  "phases": [
+    { "command": ["k8s-control-plane-setup.sh"], "nodeGroupId": "control", "timeoutMinutes": 15 },
+    { "command": ["k8s-worker-join.sh"],         "labelSelector": "role=worker",
+      "continueOnError": false }                  // default: a failed phase skips the rest
+  ]
+}
 ```
 
 | 필드 | 의미 |
@@ -163,28 +169,32 @@ NodeGroup 전반에 걸쳐 레이블 체계(`role`, `tier`, `env`)를 일관되�
 
 ### 동기식 vs 비동기식 (Synchronous vs Asynchronous)
 
-노드는 `Running` 상태가 되는 순간부터 과금이 시작되며, 긴 부트스트랩 작업은 클라이언트나 프록시의 타임아웃을 초과할 수 있습니다. 따라서 **비동기식 실행을 권장합니다**:
+기본적으로 호출은 **배포 후 스크립트가 끝날 때까지 기다린 뒤** 최종 결과를 돌려줍니다. 다음 단계가 셋업 결과에 의존하는 호출에 맞는 방식입니다.
 
-```jsonc
-"postCommandAsync": true
+긴 부트스트랩은 클라이언트나 프록시의 타임아웃을 넘을 수 있고, 화면은 노드가 생기는 즉시 보여 주고 싶을 수 있습니다. 이런 경우 쿼리 파라미터 `postScriptAsync`를 붙입니다. 스크립트의 일부가 아니라 호출 옵션이므로 템플릿에는 저장되지 않습니다:
+
+```bash
+POST /tumblebug/ns/{nsId}/infraDynamic?postScriptAsync=true
 ```
 
-| | 동기식 (기본값) | 비동기식 |
+`infraDynamic`, `infra`, `infra/template/{templateId}`, `infra/{infraId}/nodeGroupDynamic`, `infraAutopilot`에서 쓸 수 있습니다. 이미지 빌드와 정책 스케일아웃은 항상 결과를 기다립니다.
+
+| | 동기식 (기본값) | 비동기식 (`postScriptAsync=true`) |
 |---|---|---|
 | 응답 반환 시점 | 부트스트랩이 완료된 후 | 노드가 프로비저닝되자마자 즉시 |
-| 응답 내 `postCommandStatus` | 종료 상태 (`Completed` / ...) | **`Running`** |
-| `postCommandResults` | 이미 채워져 있음 | 단계가 완료됨에 따라 채워짐 |
-| `postCommandRequestId` | 존재함 (이력/재조회용) | 존재함 (실시간 스트리밍용) |
+| 응답 내 `postScriptStatus` | 종료 상태 (`Completed` / ...) | **`Running`** |
+| `postScriptResults` | 이미 채워져 있음 | 단계가 완료됨에 따라 채워짐 |
+| `postScriptRequestId` | 존재함 (이력/재조회용) | 존재함 (실시간 스트리밍용) |
 
-응답 형태는 두 모드에서 모두 동일합니다 — `postCommandStatus`가 유일한 구분자이므로 클라이언트는 모드별 파싱 로직을 따로 구현할 필요가 없습니다.
+응답 형태는 두 모드에서 모두 동일합니다 — `postScriptStatus`가 유일한 구분자이므로 클라이언트는 모드별 파싱 로직을 따로 구현할 필요가 없습니다.
 
-백그라운드 실행은 요청 컨텍스트와 분리되어 있으므로, 클라이언트의 연결이 끊어지더라도 부트스트랩이 취소되지 않습니다.
+스크립트 실행은 두 모드 모두 HTTP 연결에 묶여 있지 않습니다. 동기식 호출 중에 클라이언트의 연결이 끊어져도 실행은 계속되고 결과는 Infra에 저장됩니다.
 
 ### 진행 상황 모니터링 (Watching progress)
 
 ```bash
 # Live stream (Server-Sent Events): CommandStatus → CommandLog → CommandDone
-GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postScriptRequestId}
 
 # Or poll the Infra object until the status becomes terminal
 GET /tumblebug/ns/{nsId}/infra/{infraId}
@@ -195,9 +205,9 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}
 ```jsonc
 {
   "status": "Running:3 (R:3/3)",              // node status — independent of bootstrap
-  "postCommandStatus": "CompletedWithErrors",
-  "postCommandRequestId": "pc-web-cluster-tb1a2b3c",
-  "postCommandResults": [
+  "postScriptStatus": "CompletedWithErrors",
+  "postScriptRequestId": "ps-web-cluster-tb1a2b3c",
+  "postScriptResults": [
     { "phase": 1, "target": "nodeGroupId=control", "status": "Completed", "results": { "results": [ ... ] } },
     { "phase": 2, "target": "labelSelector=role=worker", "status": "Failed",
       "results": { "results": [ { "nodeId": "worker-1", "error": "Process exited with status 7" } ] } },
@@ -206,13 +216,14 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}
 }
 ```
 
-| `postCommandStatus` | 의미 | 일반적인 조치 |
+| `postScriptStatus` | 의미 | 일반적인 조치 |
 |---|---|---|
-| `None` | 배포 후 명령어가 요청되지 않음 | — |
+| `None` | 배포 후 스크립트가 요청되지 않음 | — |
 | `Running` | 아직 실행 중 (비동기식) | 스트리밍 또는 폴링 |
 | `Completed` | 모든 대상 노드에서 성공함 | 다음 작업 진행 |
 | `CompletedWithErrors` | 일부 노드에서 실패함 | 노드별 `error`를 확인하고 해당 노드에 대해 재실행 |
 | `Failed` | 모든 대상 노드가 실패했거나 실행을 시작할 수 없었음 | SSH/사용자/이미지 가정 사항 확인 |
+| `Interrupted` | 스크립트 실행 중에 CB-Tumblebug이 재시작됨 | `postScriptResults`에서 끝난 단계를 확인하고 나머지를 다시 실행 |
 | `Skipped` (단계별) | `continueOnError: false`인 이전 단계가 실패함 | 이전 단계를 먼저 수정 |
 
 **Infra 생성 성공과 부트스트랩 성공은 별개의 신호입니다.** 부트스트랩이 실패하더라도 노드는 `Running` 상태일 수 있습니다. 바로 이 때문에 별도의 상태 필드가 존재하며, API 응답에 노드별 에러 문자열이 노출됩니다.
@@ -221,7 +232,7 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}
 
 - **SSH 준비 상태 게이트(SSH readiness gate).** 첫 번째 단계를 시작하기 전에 서버는 고정된 시간 동안 대기(sleep)하는 대신 SSH 연결 가능 여부를 (제한된 시간 내에서) 폴링합니다. 이를 통해 새로 생성된 노드에서 발생하는 대부분의 cloud-init 경합 상태(race condition)를 제거합니다. 실제 인증/설정 에러는 여전히 노드별로 보고됩니다.
 - **타임아웃은 단계별로 적용됩니다.** 더 세밀한 제어가 필요하면 작업을 더 많은 단계로 나누세요.
-- **실패는 기록됩니다.** 모든 실행은 노드별 명령어 상태 이력에 나타나며 `postCommandRequestId`를 통해 다시 조회할 수 있습니다.
+- **실패는 기록됩니다.** 모든 실행은 노드별 명령어 상태 이력에 나타나며 `postScriptRequestId`를 통해 다시 조회할 수 있습니다.
 - **재실행.** 부트스트랩은 자동으로 재시도되지 않습니다. 영향을 받은 노드를 대상으로 `POST /ns/{nsId}/cmd/infra/{infraId}`를 호출하여 실패한 부분을 다시 실행하세요.
 
 ## 📈 기존 Infra 확장하기 (Scaling an Existing Infra)
@@ -230,21 +241,23 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}
 
 | 목표 | API | 비고 |
 |---|---|---|
-| **새 NodeGroup 추가** (다른 스펙/이미지/레이블) | `POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic` | `label`, `postCommands` (기본적으로 새 그룹으로 범위가 지정됨), `postCommandAsync` 지원 |
+| **새 NodeGroup 추가** (다른 스펙/이미지/레이블) | `POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic` | `label`, `postScript` 지원 (단계는 기본적으로 새 그룹으로 범위가 지정됨), `?postScriptAsync=true` 사용 가능 |
 | **기존 NodeGroup에 노드 추가** | `POST /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}` (`{"numNodesToAdd": N}` 포함) | 그룹과 동일한 스펙/이미지 사용; 부트스트랩 필드 없음 |
 
 NodeGroup 추가에는 `infraDynamicReview`와 동일한 의미를 갖는 자체 검토 엔드포인트(`.../nodeGroupDynamicReview`)가 있습니다.
 
 ```jsonc
 // Add GPU workers and bootstrap only them
+// POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic?postScriptAsync=true
 {
   "name": "worker-gpu",
   "specId": "aws+us-east-1+g4dn.xlarge",
   "imageId": "ami-0abc...",
   "nodeGroupSize": 2,
   "label": { "role": "worker", "accelerator": "gpu" },
-  "postCommands": [ { "command": ["curl -fsSL https://.../worker-setup.sh | bash"] } ],
-  "postCommandAsync": true
+  "postScript": {
+    "phases": [ { "command": ["curl -fsSL https://.../worker-setup.sh | bash"] } ]
+  }
 }
 ```
 
@@ -274,7 +287,7 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}?option=status
 GET /tumblebug/ns/{nsId}/infra/{infraId}?option=accessinfo
 
 # Bootstrap outcome
-GET /tumblebug/ns/{nsId}/infra/{infraId}     # → postCommandStatus / postCommandResults
+GET /tumblebug/ns/{nsId}/infra/{infraId}     # → postScriptStatus / postScriptResults
 ```
 
 전체 상태 어휘 및 제어 작업(`suspend`, `resume`, `reboot`, `refine`, `terminate`)에 대해서는 [Infra 리소스 모델 및 수명 주기](infra-resource-model-and-lifecycle-management.md)를 참조하세요.
@@ -299,35 +312,38 @@ DELETE /tumblebug/ns/{nsId}/sharedResources
 
 ```jsonc
 // 1) create + bootstrap asynchronously
-POST /ns/default/infraDynamic
+POST /ns/default/infraDynamic?postScriptAsync=true
 {
   "name": "web-sv",
   "nodeGroups": [ { "name": "web", "specId": "aws+us-west-1+t3a.medium",
                     "imageId": "ami-0abc...", "nodeGroupSize": 3, "label": { "role": "web" } } ],
-  "postCommandAsync": true,
-  "postCommands": [ { "command": [
-      "sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx",
-      "echo \"<h1>$(hostname)</h1>\" | sudo tee /var/www/html/index.html >/dev/null && sudo systemctl enable --now nginx" ] } ]
+  "postScript": {
+    "phases": [ { "command": [
+        "sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx",
+        "echo \"<h1>$(hostname)</h1>\" | sudo tee /var/www/html/index.html >/dev/null && sudo systemctl enable --now nginx" ] } ]
+  }
 }
-// 2) watch: GET /ns/default/stream/cmd/infra/web-sv?xRequestId={postCommandRequestId}
+// 2) watch: GET /ns/default/stream/cmd/infra/web-sv?xRequestId={postScriptRequestId}
 // 3) open the port: POST /ns/default/resources/securityGroup/web-sv-web/rules  { Ports: "80", ... }
 ```
 
 ### 2. Kubernetes: 컨트롤 플레인 먼저, 그 다음 워커 노드
 
 ```jsonc
-"postCommands": [
-  { "command": ["curl -fsSL .../k8s-control-plane-setup.sh | bash"],
-    "nodeGroupId": "control", "timeoutMinutes": 20 },
-  { "command": ["curl -fsSL .../k8s-worker-setup.sh | bash -s -- --join '<JOIN_CMD>'"],
-    "labelSelector": "role=worker", "timeoutMinutes": 20 }
-]
+"postScript": {
+  "phases": [
+    { "command": ["curl -fsSL .../k8s-control-plane-setup.sh | bash"],
+      "nodeGroupId": "control", "timeoutMinutes": 20 },
+    { "command": ["curl -fsSL .../k8s-worker-setup.sh | bash -s -- --join '<JOIN_CMD>'"],
+      "labelSelector": "role=worker", "timeoutMinutes": 20 }
+  ]
+}
 ```
 2단계는 1단계가 성공한 후에만 실행됩니다. 1단계가 실패하면 2단계는 `Skipped`로 표시됩니다.
 
 ### 3. 커스텀 이미지 구워내기 (Bake a custom image)
 
-프로비저닝 + 부트스트랩 + 스냅샷 생성은 [클라우드 독립적 이미지(Cloud-Agnostic Image)](cloud-agnostic-image.md) 워크플로우를 통해 자동화됩니다. 여기서는 배포 후 명령어가 **동기식으로** 실행되며(스냅샷을 찍기 전에 부트스트랩 결과를 알아야 하므로), 부트스트랩 실패 시 빌드를 중단할지 여부는 `policyOnPostCommandFailure`가 결정합니다.
+프로비저닝 + 부트스트랩 + 스냅샷 생성은 [클라우드 독립적 이미지(Cloud-Agnostic Image)](cloud-agnostic-image.md) 워크플로우를 통해 자동화됩니다. 여기서는 배포 후 스크립트가 **동기식으로** 실행되며(스냅샷을 찍기 전에 부트스트랩 결과를 알아야 하므로), 부트스트랩 실패 시 빌드를 중단할지 여부는 `policyOnPostScriptFailure`가 결정합니다.
 
 ## 📋 API 요약
 

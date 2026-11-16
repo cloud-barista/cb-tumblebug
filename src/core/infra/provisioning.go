@@ -463,17 +463,16 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 	}
 
 	infraInfo := model.InfraInfo{
-		ResourceType:     model.StrInfra,
-		Id:               infraId,
-		Name:             req.Name,
-		Uid:              uid,
-		Description:      req.Description,
-		Status:           initStatus,
-		TargetAction:     initTargetAction,
-		TargetStatus:     model.StatusRunning,
-		SystemLabel:      req.SystemLabel,
-		PostCommands:     req.PostCommands,
-		PostCommandAsync: req.PostCommandAsync,
+		ResourceType: model.StrInfra,
+		Id:           infraId,
+		Name:         req.Name,
+		Uid:          uid,
+		Description:  req.Description,
+		Status:       initStatus,
+		TargetAction: initTargetAction,
+		TargetStatus: model.StatusRunning,
+		SystemLabel:  req.SystemLabel,
+		PostScript:   req.PostScript,
 	}
 
 	val, err := json.Marshal(infraInfo)
@@ -1382,13 +1381,13 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	log.Info().Msgf("Infra '%s' has been successfully created with %d VMs", infraId, len(nodeConfigs))
 
-	// Execute post-deployment commands
-	if err := handlePostCommands(nsId, infraId, infraTmp); err != nil {
-		log.Error().Err(err).Msg("Failed to execute post-deployment commands, but continuing")
-		// Add post-command error to SystemMessage
+	// Execute the post-deployment script
+	if err := handlePostScript(nsId, infraId, infraTmp, req.PostScriptAsync); err != nil {
+		log.Error().Err(err).Msg("Failed to execute the post-deployment script, but continuing")
+		// Add the post-deployment script error to SystemMessage
 		infraTmp, _, infraErr := GetInfraObject(nsId, infraId)
 		if infraErr == nil {
-			errorMsg := fmt.Sprintf("Post-deployment commands failed: %s", err.Error())
+			errorMsg := fmt.Sprintf("Post-deployment script failed: %s", err.Error())
 			infraTmp.SystemMessage = append(infraTmp.SystemMessage, errorMsg)
 			UpdateInfraInfo(nsId, infraTmp)
 		}

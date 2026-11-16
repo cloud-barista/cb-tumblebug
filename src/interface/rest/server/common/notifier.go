@@ -64,8 +64,8 @@ func RestPutNotifier(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-	if req.Url == "" || req.Topic == "" {
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: "url and topic are required"})
+	if (req.Url == "" && len(req.Urls) == 0) || req.Topic == "" {
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: "url (or urls) and topic are required"})
 	}
 	info, err := notifier.Register(req)
 	if err != nil {

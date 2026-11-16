@@ -1,0 +1,26 @@
+{
+  "resourceType": "infra",
+  "name": "infra-ntfy-global",
+  "description": "Dual ntfy notification servers (Korea + Mainland China) in a single Infra. Used by POST /tumblebug/notifier/ntfy with templateId=infra-ntfy-global so nodes both outside and inside Mainland China can report reliably.",
+  "infraDynamicReq": {
+    "sgTemplateId": "sg-ntfy",
+    "nodeGroups": [
+      {
+        "name": "ntfy-kr",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-2+t3.micro",
+        "imageId": "ami-0fde5763b4c293a0b",
+        "rootDiskType": "gp3",
+        "rootDiskSize": 20
+      },
+      {
+        "name": "ntfy-cn",
+        "nodeGroupSize": 1,
+        "specId": "alibaba+cn-shanghai+ecs.e-c1m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260916.vhd",
+        "rootDiskType": "cloud_essd",
+        "rootDiskSize": 40
+      }
+    ]
+  }
+}

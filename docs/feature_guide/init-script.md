@@ -27,7 +27,7 @@ Every CSP runs user data once on the first boot of a VM (cloud-init on most imag
 
 ### Why use it?
 
-- **No SSH needed at scale.** Bootstrapping 10,000 Nodes over `postCommands` means 10,000 SSH sessions from CB-Tumblebug. An init script runs on the VM by itself and the VM reports back, even when CB-Tumblebug sits in a private network.
+- **No SSH needed at scale.** Bootstrapping 10,000 Nodes over `postScript` means 10,000 SSH sessions from CB-Tumblebug. An init script runs on the VM by itself and the VM reports back, even when CB-Tumblebug sits in a private network.
 - **Same behaviour on every CSP.** The wrapper script is the same on AWS, Azure, GCP, Alibaba, Tencent, IBM, OpenStack, KT, NCP and NHN.
 - **Reusable steps.** Scripts can be stored as templates in the `system` namespace (shared) or in a user namespace, and combined in order, for example base hardening, then a monitoring agent, then a role-specific script.
 
@@ -103,7 +103,7 @@ Per-step options (also valid inside templates):
 |--------|--------|
 | `continueOnError` | The run goes on when this step fails; the Node reports `ok` with `initScriptMessage: optional step(s) failed: ...` and the step shows `fail` in the step list |
 | `timeoutSec` | The step is stopped after this many seconds (exit code 124) and counted as failed |
-| `labelSelector` | The step runs only on Nodes whose labels match (same syntax as post-deployment commands, e.g. `role=gpu`); other Nodes skip it. Lets one Infra-level script serve groups with different roles |
+| `labelSelector` | The step runs only on Nodes whose labels match (same syntax as `postScript` phases, e.g. `role=gpu`); other Nodes skip it. Lets one Infra-level script serve groups with different roles |
 
 **Infra and NodeGroup levels.** `initScript` on the Infra applies to every NodeGroup. A NodeGroup `initScript` that does not set `mode`, `userName` or `notify` *extends* the Infra one: its `templateId`, `script` and `scripts` run after the Infra steps and its env overrides. A NodeGroup `initScript` that sets `mode`, `userName` or `notify` *replaces* the Infra one for that group. Steps of a template are named after the template id (`initscript-nginx`, or `initscript-nginx-2` for a multi-step template) unless the template names them.
 
@@ -194,14 +194,14 @@ On the VM itself: `/var/lib/tb/init-script.status` holds `ok|fail <exit code> <t
 
 `initScript` itself is a field of the Infra, Infra template and NodeGroup dynamic requests; the Node object exposes `initScript`, `initScriptStatus` and `initScriptMessage`.
 
-**Running a template later over SSH.** Remote commands (`POST /ns/{nsId}/cmd/infra/{infraId}`, with `nodeGroupId`, `nodeId` or `labelSelector`) and post-deployment phases accept `templateId` and/or `scripts` instead of `command`, plus `env`. The steps then run as root with the same `TB_*` variables and rules as at first boot. Use it to apply a template to existing Nodes or to re-run a failed init script without recreating the Node:
+**Running a template later over SSH.** Remote commands (`POST /ns/{nsId}/cmd/infra/{infraId}`, with `nodeGroupId`, `nodeId` or `labelSelector`) and `postScript` phases accept `templateId` and/or `scripts` instead of `command`, plus `env`. The steps then run as root with the same `TB_*` variables and rules as at first boot. Use it to apply a template to existing Nodes or to re-run a failed init script without recreating the Node:
 
 ```bash
 curl -u default:default -X POST http://localhost:1323/tumblebug/ns/default/cmd/infra/web?nodeId=g1-1 \
   -H 'Content-Type: application/json' -d '{"templateId": "initscript-nginx", "env": {"SITE_TITLE": "retry"}}'
 ```
 
-Such a run reports `event: done` through the Notifier like a first boot, so the Node's `initScriptStatus` and steps follow the latest run. In MapUI, a Node whose init failed shows a **re-run via SSH** button in the Infra card that repeats the Node's own steps; the post-deployment command composer lets a phase run a template instead of commands, and the review dialog can add template or inline steps per NodeGroup.
+Such a run reports `event: done` through the Notifier like a first boot, so the Node's `initScriptStatus` and steps follow the latest run. In MapUI, a Node whose init failed shows a **re-run via SSH** button in the Infra card that repeats the Node's own steps; the post-deployment script composer lets a phase run a template instead of commands, and the review dialog can add template or inline steps per NodeGroup.
 
 Plain `command` requests may also carry `env`; it is exported in front of each command.
 

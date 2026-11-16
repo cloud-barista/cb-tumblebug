@@ -699,12 +699,12 @@ func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.In
 	}
 
 	infraDynamicReq := &model.InfraDynamicReq{
-		Name:         infraInfo.Name,
-		Label:        filterOutSystemLabels(infraInfo.Label),
-		SystemLabel:  infraInfo.SystemLabel,
-		Description:  infraInfo.Description,
-		NodeGroups:   nodeGroups,
-		PostCommands: infraInfo.PostCommands,
+		Name:        infraInfo.Name,
+		Label:       filterOutSystemLabels(infraInfo.Label),
+		SystemLabel: infraInfo.SystemLabel,
+		Description: infraInfo.Description,
+		NodeGroups:  nodeGroups,
+		PostScript:  infraInfo.PostScript,
 	}
 
 	return infraDynamicReq, nil
@@ -1227,6 +1227,12 @@ func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
 
 	infraTmp := model.InfraInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
+
+	// The post-script outcome is written only by updateInfraPostScript; a caller holding an
+	// older copy of the Infra must not roll it back
+	infraInfoData.PostScriptStatus = infraTmp.PostScriptStatus
+	infraInfoData.PostScriptResults = infraTmp.PostScriptResults
+	infraInfoData.PostScriptRequestId = infraTmp.PostScriptRequestId
 
 	// Note: Using reflect.DeepEqual for performance optimization to avoid unnecessary kvstore writes
 	// The static analysis warning about errors is acceptable in this context

@@ -530,10 +530,10 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	var infraInfo *model.InfraInfo
 
 	// Base infra configuration used when creating the infra with the first NodeGroup.
-	// PostCommands are intentionally withheld here: CreateInfraDynamic runs them at the
+	// The post script is intentionally withheld here: CreateInfraDynamic runs it at the
 	// end of the FIRST NodeGroup only (while all other NodeGroups are still blocked on
-	// infra creation), so nodes added afterwards would never receive them. Autopilot
-	// instead runs them once, after every NodeGroup has completed and excess NodeGroups
+	// infra creation), so nodes added afterwards would never receive it. Autopilot
+	// instead runs it once, after every NodeGroup has completed and excess NodeGroups
 	// have been terminated — see the deferred post-processing below.
 	baseInfraReq := model.InfraDynamicReq{
 		Name:                   req.Name,
@@ -762,30 +762,30 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 		infraInfo = &model.InfraInfo{Name: req.Name}
 	}
 
-	// Deferred post-processing: monitoring agent installation and post-deployment
-	// commands, exactly once against the final node set (withheld from
+	// Deferred post-processing: monitoring agent installation and the post-deployment
+	// script, exactly once against the final node set (withheld from
 	// CreateInfraDynamic above). Skipped when nothing was provisioned.
 	infraMu.Lock()
 	created := infraCreated
 	infraMu.Unlock()
 	if created && stats.Succeeded > 0 {
 		if infraObj, _, getErr := GetInfraObject(nsId, infraId); getErr == nil {
-			if len(req.PostCommands) > 0 {
-				infraObj.PostCommands = req.PostCommands
+			if req.PostScript.HasPhases() {
+				infraObj.PostScript = req.PostScript
 			}
 			UpdateInfraInfo(nsId, infraObj)
 
-			if err := handlePostCommands(nsId, infraId, infraObj); err != nil {
-				log.Error().Err(err).Msg("Failed to execute post-deployment commands, but continuing")
-				appendInfraSystemMessage(nsId, infraId, fmt.Sprintf("Post-deployment commands failed: %s", err.Error()))
+			if err := handlePostScript(nsId, infraId, infraObj, req.PostScriptAsync); err != nil {
+				log.Error().Err(err).Msg("Failed to execute the post-deployment script, but continuing")
+				appendInfraSystemMessage(nsId, infraId, fmt.Sprintf("Post-deployment script failed: %s", err.Error()))
 			}
 
-			// Refresh so the result carries PostCommandResults and final status.
+			// Refresh so the result carries PostScriptResults and final status.
 			if refreshed, refErr := GetInfraInfo(nsId, infraId); refErr == nil {
 				infraInfo = refreshed
 			}
 		} else {
-			log.Warn().Err(getErr).Msg("Cannot load infra for post-processing; skipping monitoring agent and post commands")
+			log.Warn().Err(getErr).Msg("Cannot load infra for post-processing; skipping monitoring agent and the post-deployment script")
 		}
 	}
 

@@ -369,6 +369,12 @@ func TbInfraCmdReqStructLevelValidation(sl validator.StructLevel) {
 // It now supports user-configurable timeout via InfraCmdReq.TimeoutMinutes
 // Returns the task ID in x-task-id for tracking and cancellation
 func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeId string, labelSelector string, req *model.InfraCmdReq, xRequestId string) ([]model.SshCmdResult, error) {
+	return remoteCommandToInfra(nsId, infraId, nodeGroupId, nodeId, labelSelector, req, xRequestId, true)
+}
+
+// remoteCommandToInfra runs the command; publishDone is false for one phase of a post-deployment script,
+// whose stream ends with the script and not with the phase
+func remoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeId string, labelSelector string, req *model.InfraCmdReq, xRequestId string, publishDone bool) ([]model.SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -774,6 +780,10 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 	// goroutine started (wg.Add(len(nodeCommands)) above), so dynamically
 	// launched deferred bastions cannot race this Wait.
 	wg.Wait()
+
+	if !publishDone || xRequestId == "" {
+		return resultArray, nil
+	}
 
 	// Publish CommandDone event to SSE subscribers
 	completedNodes := 0

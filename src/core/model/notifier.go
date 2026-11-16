@@ -31,13 +31,16 @@ const (
 
 // NotifierInfo is the registered notification channel (one per CB-Tumblebug).
 // VMs publish to it with WriteToken; CB-Tumblebug subscribes with ReadToken.
+// When provisioned from a multi-NodeGroup Infra template (e.g. infra-ntfy-global), Urls holds every ntfy
+// server endpoint sharing Topic and tokens; Url is always the first entry for single-endpoint callers.
 type NotifierInfo struct {
-	Type       string `json:"type" example:"ntfy"`
-	Url        string `json:"url" example:"https://3.35.10.20"`
-	Topic      string `json:"topic" example:"tb-a1b2c3d4"`
-	WriteToken string `json:"writeToken,omitempty" example:"tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`
-	ReadToken  string `json:"readToken,omitempty" example:"tk_yyyyyyyyyyyyyyyyyyyyyyyyyyyyy"`
-	// CaCert is the PEM certificate VMs and CB-Tumblebug trust for a self-signed server.
+	Type       string   `json:"type" example:"ntfy"`
+	Url        string   `json:"url" example:"https://3.35.10.20:9443"`
+	Urls       []string `json:"urls,omitempty" example:"https://ntfy.example.com,https://47.103.10.20:9443"`
+	Topic      string   `json:"topic" example:"tb-a1b2c3d4"`
+	WriteToken string   `json:"writeToken,omitempty" example:"tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`
+	ReadToken  string   `json:"readToken,omitempty" example:"tk_yyyyyyyyyyyyyyyyyyyyyyyyyyyyy"`
+	// CaCert is the PEM certificate bundle VMs and CB-Tumblebug trust for self-signed server endpoints.
 	CaCert string `json:"caCert,omitempty"`
 
 	Source         string `json:"source" example:"managed" enums:"external,managed"`
@@ -45,27 +48,57 @@ type NotifierInfo struct {
 	ManagedInfraId string `json:"managedInfraId,omitempty" example:"ntfy"`
 	// Resources created for the managed Infra; removed together with it on DELETE ?deleteInfra=true.
 	ManagedVNetId           string   `json:"managedVNetId,omitempty"`
+	ManagedVNetIds          []string `json:"managedVNetIds,omitempty"`
 	ManagedSecurityGroupIds []string `json:"managedSecurityGroupIds,omitempty"`
 	ManagedSshKeyId         string   `json:"managedSshKeyId,omitempty"`
-	// Route53 record created for the managed Infra (empty when a self-signed certificate is used).
-	ManagedDnsDomain string `json:"managedDnsDomain,omitempty" example:"example.com"`
-	ManagedDnsRecord string `json:"managedDnsRecord,omitempty" example:"ntfy.example.com"`
+	ManagedSshKeyIds        []string `json:"managedSshKeyIds,omitempty"`
+	// Route53 record(s) created for DNS-eligible managed nodes (empty when only self-signed certificates are used).
+	ManagedDnsDomain  string   `json:"managedDnsDomain,omitempty" example:"example.com"`
+	ManagedDnsRecord  string   `json:"managedDnsRecord,omitempty" example:"ntfy.example.com"`
+	ManagedDnsRecords []string `json:"managedDnsRecords,omitempty"`
 	// Readers are read-only ntfy user accounts created through POST /notifier/reader.
 	Readers []string `json:"readers,omitempty"`
 
-	Status        string    `json:"status" example:"Active" enums:"Active,Error"`
-	StatusMessage string    `json:"statusMessage,omitempty"`
-	LastMessageId string    `json:"lastMessageId,omitempty"`
-	RegisteredAt  time.Time `json:"registeredAt"`
+	Status         string            `json:"status" example:"Active" enums:"Active,Error"`
+	StatusMessage  string            `json:"statusMessage,omitempty"`
+	LastMessageId  string            `json:"lastMessageId,omitempty"`
+	LastMessageIds map[string]string `json:"lastMessageIds,omitempty"`
+	RegisteredAt   time.Time         `json:"registeredAt"`
 }
 
-// NotifierRegisterReq registers an existing ntfy server.
+// EffectiveUrls returns the deduplicated list of server URLs for this notifier, falling back to Url when Urls is empty.
+func (n *NotifierInfo) EffectiveUrls() []string {
+	if n == nil {
+		return nil
+	}
+	seen := map[string]struct{}{}
+	var out []string
+	add := func(u string) {
+		if u == "" {
+			return
+		}
+		if _, dup := seen[u]; !dup {
+			seen[u] = struct{}{}
+			out = append(out, u)
+		}
+	}
+	for _, u := range n.Urls {
+		add(u)
+	}
+	if len(out) == 0 {
+		add(n.Url)
+	}
+	return out
+}
+
+// NotifierRegisterReq registers one or more existing ntfy servers sharing the same topic and tokens.
 type NotifierRegisterReq struct {
-	Url        string `json:"url" validate:"required" example:"https://ntfy.example.com"`
-	Topic      string `json:"topic" validate:"required" example:"tb-a1b2c3d4"`
-	WriteToken string `json:"writeToken,omitempty" example:"tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`
-	ReadToken  string `json:"readToken,omitempty" example:"tk_yyyyyyyyyyyyyyyyyyyyyyyyyyyyy"`
-	CaCert     string `json:"caCert,omitempty"`
+	Url        string   `json:"url,omitempty" example:"https://ntfy.example.com"`
+	Urls       []string `json:"urls,omitempty" example:"https://ntfy.example.com,https://47.103.10.20:9443"`
+	Topic      string   `json:"topic" validate:"required" example:"tb-a1b2c3d4"`
+	WriteToken string   `json:"writeToken,omitempty" example:"tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`
+	ReadToken  string   `json:"readToken,omitempty" example:"tk_yyyyyyyyyyyyyyyyyyyyyyyyyyyyy"`
+	CaCert     string   `json:"caCert,omitempty"`
 }
 
 // NotifierSetReq provisions an ntfy server from an Infra template and registers it.

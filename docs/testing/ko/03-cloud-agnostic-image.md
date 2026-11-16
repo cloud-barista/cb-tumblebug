@@ -25,7 +25,7 @@
 
 | 순서 | 단계 | 요청 | 완료 판정 |
 |---|---|---|---|
-| 1 | 이미지 자동 생성 | `POST /ns/default/buildAgnosticImage` — 소스 Infra(10노드) 생성, `postCommands`로 nginx 설치, 페이지 작성, sync, 노드별 스냅샷, Available 대기, 소스 Infra 정리 | 이미지 10건 `Available`, 소스 Infra 삭제 |
+| 1 | 이미지 자동 생성 | `POST /ns/default/buildAgnosticImage` — 소스 Infra(10노드) 생성, `postScript`로 nginx 설치, 페이지 작성, sync, 노드별 스냅샷, Available 대기, 소스 Infra 정리 | 이미지 10건 `Available`, 소스 Infra 삭제 |
 | 2 | 이미지 확인 | `GET /ns/default/resources/customImage/{id}` | 상태, OS, CSP 이미지 ID 채움 |
 | 3 | 이미지로 재생성 | `POST /ns/default/infraDynamic` (`imageId` = 커스텀 이미지, CSP당 1노드) | 노드 Running |
 | 4 | SG 개방 | `PUT /ns/default/infra/{id}/associatedSecurityGroups` (inbound TCP 22, 80, ICMP, outbound ALL) | 규칙 반영 |

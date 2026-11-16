@@ -69,7 +69,7 @@ flowchart LR
 |-----------|------|
 | `src/core/notifier` | Registration store (etcd `/system/notifier`), subscriber goroutine with reconnect and `since=` resume, publish, round-trip test, recent-message buffer, `RegisterHandler(kind, fn)` for consumers |
 | `src/core/embedded/scripts/install-ntfy.sh` | Install script embedded with `//go:embed`; installs the ntfy `.deb` from GitHub releases, configures tokens and TLS |
-| `init/templates/infra-ntfy.json`, `sg-ntfy.json` | One-VM template (AWS t3.micro by default) and security group (443, 80, 22) |
+| `init/templates/infra-ntfy.json`, `infra-ntfy-global.json`, `sg-ntfy.json` | Default single-VM template (AWS t3.micro), dual-VM template (Korea + Mainland China), and security group (443, 9443, 80, 22) |
 | `POST /tumblebug/notifier/ntfy` | Orchestrates: provision from template → optional Route53 record → run install script over SSH → register → round-trip test |
 
 The install script runs as root on the VM. All parameters are passed as `TB_NTFY_*` environment
@@ -88,9 +88,15 @@ curl -u default:default -X POST http://localhost:1323/tumblebug/notifier/ntfy
 ```
 
 Creates Infra `ntfy` in the `system` namespace (override with `nsId`, `name`, `templateId`),
-installs ntfy with a self-signed certificate whose SAN is the public IP, and registers
-`https://<public-ip>`. Takes about 1.5 to 3 minutes. The CA certificate is stored in the registration
-(`caCert`) and must be trusted by clients; phone apps cannot subscribe to this mode.
+installs ntfy with a self-signed leaf certificate (`CA:FALSE`, IP SAN) on port `:9443`, and registers
+`https://<public-ip>:9443`. Takes about 1.5 to 3 minutes. The certificate is stored in the registration
+(`caCert`) for pinned verification; phone apps cannot subscribe to this mode.
+
+When a multi-NodeGroup Infra template such as `"templateId": "infra-ntfy-global"` (Korea + Mainland China)
+is passed, CB-Tumblebug installs ntfy with the same topic and tokens on every node of the Infra, subscribes
+to all of them in parallel (`urls`), and injects `TB_NOTIFY_URLS` into workload VMs so each VM reports to the
+first reachable endpoint and sticks to it. If `domainName` is also specified, the first node uses Let's Encrypt
+on `:443` while additional nodes use pinned self-signed TLS on `:9443`.
 
 If the install step fails, send the same request again: an existing Infra of the same name is reused
 and the installation is retried.

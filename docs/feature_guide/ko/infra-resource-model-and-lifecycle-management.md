@@ -4,7 +4,7 @@
 
 > 💡 요청 구조, 자동 생성되는 공유 리소스, 배포 후 부트스트랩(Post-deployment bootstrap), 스케일링, 정리(Cleanup) 등 *생성* 경로 자체에 대한 자세한 내용은
 > [Infra 프로비저닝](infra-provisioning.md)을 참조하세요. 참고로 노드 상태와 부트스트랩 상태는
-> 별개의 신호입니다. 즉, `postCommandStatus`가 부트스트랩 실패를 보고하는 동안에도 Infra 상태는 `Running`일 수 있습니다.
+> 별개의 신호입니다. 즉, `postScriptStatus`가 부트스트랩 실패를 보고하는 동안에도 Infra 상태는 `Running`일 수 있습니다.
 
 ## 🔑 주요 개념 및 용어
 

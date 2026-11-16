@@ -365,7 +365,7 @@ func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.Snapshot
 	return result, nil
 }
 
-// BuildAgnosticImage creates an Infra, executes post commands, creates snapshots, and optionally cleans up
+// BuildAgnosticImage creates an Infra, runs the post-deployment script, creates snapshots, and optionally cleans up
 // This is a complete workflow for building agnostic (CSP-independent) custom images
 func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.BuildAgnosticImageResult, error) {
 	startTime := time.Now()
@@ -378,10 +378,10 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 	req.SourceInfraReq.PolicyOnPartialFailure = "refine"
 
 	// Image baking must observe the bootstrap outcome before snapshotting, so this
-	// workflow always runs post-deployment commands synchronously
-	if req.SourceInfraReq.PostCommandAsync {
+	// workflow always runs the post-deployment script synchronously
+	if req.SourceInfraReq.PostScriptAsync {
 		log.Info().Msg("postCommandAsync is ignored for image building (bootstrap result is required before snapshot)")
-		req.SourceInfraReq.PostCommandAsync = false
+		req.SourceInfraReq.PostScriptAsync = false
 	}
 
 	log.Info().Msgf("Starting BuildAgnosticImage workflow for Infra: %s", req.SourceInfraReq.Name)
@@ -423,17 +423,17 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 		return result, err
 	}
 
-	// Gate on post-deployment command outcome: a failed bootstrap means the image
+	// Gate on the post-deployment script outcome: a failed bootstrap means the image
 	// content is wrong — do not bake a broken image unless explicitly allowed
-	if len(req.SourceInfraReq.PostCommands) > 0 {
+	if req.SourceInfraReq.PostScript.HasPhases() {
 		if fresh, _, ferr := GetInfraObject(nsId, infraInfo.Id); ferr == nil {
-			result.PostCommandStatus = fresh.PostCommandStatus
-			policy := strings.ToLower(req.PolicyOnPostCommandFailure)
+			result.PostScriptStatus = fresh.PostScriptStatus
+			policy := strings.ToLower(req.PolicyOnPostScriptFailure)
 			if policy == "" {
 				policy = "abort"
 			}
-			if policy == "abort" && fresh.PostCommandStatus != model.PostCommandStatusCompleted {
-				err := fmt.Errorf("post-deployment commands did not complete cleanly (status: %s); aborting image build (set policyOnPostCommandFailure=proceed to bake anyway)", fresh.PostCommandStatus)
+			if policy == "abort" && fresh.PostScriptStatus != model.PostScriptStatusCompleted {
+				err := fmt.Errorf("post-deployment script did not complete cleanly (status: %s); aborting image build (set policyOnPostScriptFailure=proceed to bake anyway)", fresh.PostScriptStatus)
 				log.Error().Err(err).Msg("")
 				if req.CleanupInfraAfterSnapshot {
 					log.Info().Msg("Cleaning up Infra after aborted image build...")
@@ -450,7 +450,7 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 	}
 
 	// Flush guest writes to disk first; a snapshot taken right after the bootstrap otherwise misses unsynced files
-	if len(req.SourceInfraReq.PostCommands) > 0 {
+	if req.SourceInfraReq.PostScript.HasPhases() {
 		if _, serr := RemoteCommandToInfra(nsId, infraInfo.Id, "", "", "", &model.InfraCmdReq{Command: []string{"sync"}, TimeoutMinutes: 2}, ""); serr != nil {
 			log.Warn().Err(serr).Msg("sync before snapshot failed; continuing")
 		}

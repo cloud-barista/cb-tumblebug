@@ -11,7 +11,7 @@
 #   TB_INIT_SCRIPT_<i>_CONTINUE  1 to keep going when script i fails (reported as a failed optional step)
 #   TB_INIT_SCRIPT_<i>_TIMEOUT   seconds after which script i is stopped and counted as failed (0: no limit)
 #   TB_NS_ID, TB_INFRA_ID, TB_NODEGROUP_ID, TB_NODE_ID, TB_CSP, TB_REGION   node identity
-#   TB_NOTIFY_URL, TB_NOTIFY_TOPIC, TB_NOTIFY_TOKEN, TB_NOTIFY_CA_B64        optional ntfy report target
+#   TB_NOTIFY_URL, TB_NOTIFY_URLS, TB_NOTIFY_TOPIC, TB_NOTIFY_TOKEN, TB_NOTIFY_CA_B64  optional ntfy report target(s)
 #
 # Result: $TB_DIR/init-script.status ("ok|fail <exit code> <time>"), script output in $TB_LOG, and ntfy messages of
 # kind initScript when TB_NOTIFY_URL is set: one "step" event (status initializing) as each step starts and one "done" event.
@@ -37,11 +37,30 @@ if [ "${TB_INIT_ACCESS:-0}" = "1" ] && [ -n "${TB_INIT_USER:-}" ]; then
   chmod 440 "/etc/sudoers.d/$TB_INIT_USER"
 fi
 
-CA_OPT=""
-if [ -n "${TB_NOTIFY_URL:-}" ] && [ -n "${TB_NOTIFY_CA_B64:-}" ]; then
+TB_NOTIFY_URLS="${TB_NOTIFY_URLS:-${TB_NOTIFY_URL:-}}"
+CA_FILE=""
+if [ -n "$TB_NOTIFY_URLS" ] && [ -n "${TB_NOTIFY_CA_B64:-}" ]; then
   echo "$TB_NOTIFY_CA_B64" | base64 -d > "$TB_DIR/notify-ca.pem"
-  CA_OPT="--cacert $TB_DIR/notify-ca.pem"
+  CA_FILE="$TB_DIR/notify-ca.pem"
 fi
+
+post_notify() {
+  local u="$1" body="$2" h code="" rc=0
+  h="${u#*://}"; h="${h%%/*}"; h="${h%%:*}"
+  if [ -n "$CA_FILE" ] && [[ "$u" == https://* ]] && [[ "$h" =~ ^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\[.*\])$ ]]; then
+    code=$(curl -sS --connect-timeout 3 -m 8 --cacert "$CA_FILE" -o /dev/null -w '%{http_code}' \
+      -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$u/${TB_NOTIFY_TOPIC:-}" 2>/dev/null || true)
+    echo "${code:-000}"
+    return 0
+  fi
+  code=$(curl -sS --connect-timeout 3 -m 8 -o /dev/null -w '%{http_code}' \
+    -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$u/${TB_NOTIFY_TOPIC:-}" 2>/dev/null) || rc=$?
+  if [ "$rc" -eq 60 ] && [ -n "$CA_FILE" ] && [[ "$u" == https://* ]]; then
+    code=$(curl -sS --connect-timeout 3 -m 8 --cacert "$CA_FILE" -o /dev/null -w '%{http_code}' \
+      -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$u/${TB_NOTIFY_TOPIC:-}" 2>/dev/null || true)
+  fi
+  echo "${code:-000}"
+}
 
 COUNT=${TB_INIT_SCRIPT_COUNT:-0}
 declare -a S_NAME S_STATUS S_EXIT S_SEC
@@ -61,26 +80,34 @@ steps_json() {
   echo "$out"
 }
 
-# report <event> <status> <current step> <attempts>: sends a full snapshot so CB-Tumblebug can just store the latest one
+# report <event> <status> <current step> <attempts>: sends a full snapshot to the first reachable notifier URL
+# and promotes that URL to the front so subsequent reports avoid retrying unreachable endpoints.
 report() {
-  [ -n "${TB_NOTIFY_URL:-}" ] || return 0
-  local msg body code n=0
+  [ -n "$TB_NOTIFY_URLS" ] || return 0
+  TB_SEQ=$((TB_SEQ+1))
+  local msg body code n=0 u rest other
   msg=$(tail -c 300 "$TB_LOG" 2>/dev/null | tr -d '\000-\037"\\' | tail -c 200)
-  body=$(printf '{"kind":"initScript","nsId":"%s","infraId":"%s","nodeGroupId":"%s","nodeId":"%s","csp":"%s","region":"%s","event":"%s","status":"%s","step":"%s","exitCode":%s,"durationSec":%s,"hostname":"%s","steps":[%s],"message":"%s"}' \
+  body=$(printf '{"kind":"initScript","nsId":"%s","infraId":"%s","nodeGroupId":"%s","nodeId":"%s","csp":"%s","region":"%s","runId":%s,"seq":%s,"event":"%s","status":"%s","step":"%s","exitCode":%s,"durationSec":%s,"hostname":"%s","steps":[%s],"message":"%s"}' \
     "${TB_NS_ID:-}" "${TB_INFRA_ID:-}" "${TB_NODEGROUP_ID:-}" "${TB_NODE_ID:-}" "${TB_CSP:-}" "${TB_REGION:-}" \
-    "$1" "$2" "$3" "$TB_EXIT" "$(( $(date +%s) - TB_START ))" "$(hostname)" "$(steps_json)" "$msg")
+    "$TB_START" "$TB_SEQ" "$1" "$2" "$3" "$TB_EXIT" "$(( $(date +%s) - TB_START ))" "$(hostname)" "$(steps_json)" "$msg")
   while [ "$n" -lt "$4" ]; do
-    # shellcheck disable=SC2086
-    code=$(curl -sS -m 10 $CA_OPT -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$TB_NOTIFY_URL/$TB_NOTIFY_TOPIC" 2>/dev/null)
     n=$((n+1))
-    echo "report $1 http ${code:-000} attempt $n" >> "$TB_LOG"   # left for diagnosing lost reports
-    [ "$code" = 200 ] && return 0
+    for u in $TB_NOTIFY_URLS; do
+      code=$(post_notify "$u" "$body")
+      echo "report $1 $u http ${code:-000} attempt $n" >> "$TB_LOG"   # left for diagnosing lost reports
+      if [ "$code" = 200 ]; then
+        rest=""
+        for other in $TB_NOTIFY_URLS; do [ "$other" != "$u" ] && rest="$rest $other"; done
+        TB_NOTIFY_URLS="$u$rest"
+        return 0
+      fi
+    done
     [ "$n" -lt "$4" ] && sleep 5
   done
   return 0
 }
 
-TB_STATUS=ok; TB_EXIT=0; TB_START=$(date +%s)
+TB_STATUS=ok; TB_EXIT=0; TB_START=$(date +%s); TB_SEQ=0
 i=1
 while [ "$i" -le "$COUNT" ]; do
   B64_VAR="TB_INIT_SCRIPT_${i}_B64"

@@ -276,13 +276,13 @@ func OrchestrationController() {
 						}
 						// common.PrintJsonPretty(result)
 
-						if len(autoAction.PostCommands) != 0 {
+						if autoAction.PostScript.HasPhases() {
 
-							log.Debug().Msgf("[Post Command to Node] %v", autoAction.PostCommands)
+							log.Debug().Msgf("[Post Script to Node] %d phase(s)", len(autoAction.PostScript.Phases))
 							// Shared helper: aggregates per-node outcomes and persists status/results
-							status, cmdErr := executePostCommands(nsId, infraPolicyTmp.Id, common.ToLower(autoAction.NodeGroupDynamicReq.Name),
-								autoAction.PostCommands, newPostCommandRequestId(infraPolicyTmp.Id))
-							if cmdErr != nil || status == model.PostCommandStatusFailed || status == model.PostCommandStatusCompletedWithErrors {
+							status, cmdErr := executePostScript(nsId, infraPolicyTmp.Id, common.ToLower(autoAction.NodeGroupDynamicReq.Name),
+								autoAction.PostScript.Phases, newPostScriptRequestId(infraPolicyTmp.Id))
+							if cmdErr != nil || status == model.PostScriptStatusFailed || status == model.PostScriptStatusCompletedWithErrors {
 								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							}

@@ -819,7 +819,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 	// Review is the dry run of creation: reject a malformed bootstrap request here
 	// so the caller sees it before any provisioning attempt
-	if err := ValidatePostCommandRequest(req.PostCommands); err != nil {
+	if err := ValidatePostScript(req.PostScript); err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}

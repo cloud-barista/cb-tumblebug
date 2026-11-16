@@ -209,7 +209,7 @@ func RestPostInfraSnapshot(c echo.Context) error {
 // RestPostBuildAgnosticImage godoc
 // @ID PostBuildAgnosticImage
 // @Summary Build agnostic custom images by creating Infra, executing commands, and taking snapshots
-// @Description Creates an Infra infrastructure, executes post-deployment commands, creates snapshots from each nodegroup, and optionally cleans up the Infra. This is a complete workflow for building CSP-agnostic custom images.
+// @Description Creates an Infra infrastructure, runs the post-deployment script, creates snapshots from each nodegroup, and optionally cleans up the Infra. This is a complete workflow for building CSP-agnostic custom images.
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json

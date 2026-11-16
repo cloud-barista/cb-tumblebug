@@ -50,6 +50,7 @@ func CreateInfraDynamicFromTemplate(ctx context.Context, nsId string, templateId
 	if infraReq.PolicyOnPartialFailure == "" {
 		infraReq.PolicyOnPartialFailure = "continue"
 	}
+	infraReq.PostScriptAsync = infraReq.PostScriptAsync || applyReq.PostScriptAsync
 
 	// Call the existing CreateInfraDynamic function
 	result, err := CreateInfraDynamic(ctx, nsId, &infraReq, option)

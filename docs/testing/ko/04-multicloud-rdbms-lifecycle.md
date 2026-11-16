@@ -52,7 +52,7 @@
 
 | 순서 | 단계 | 요청 | 완료 판정 |
 |---|---|---|---|
-| 1 | 전용 Bastion 인프라 생성 | `POST /ns/default/infraDynamic` (CSP별 전용 1노드 Infra + `postCommands`로 `mysql-client`, `netcat` 자동 설치) | 모든 Bastion VM `Running` 및 원격 명령 실행 준비 완료 |
+| 1 | 전용 Bastion 인프라 생성 | `POST /ns/default/infraDynamic` (CSP별 전용 1노드 Infra + `postScript`로 `mysql-client`, `netcat` 자동 설치) | 모든 Bastion VM `Running` 및 원격 명령 실행 준비 완료 |
 | 2 | 네트워크 해석 및 사전 검증 | `GET /ns/default/resources/vNet/{id}`, `POST .../securityGroup/{id}/rules` (포트 `3306`), `POST /ns/default/resources/rdbms/validate` | 서브넷, 보안그룹 매핑 및 Dry-run 검증 `200 OK` |
 | 3 | 관리형 RDBMS 생성 | `POST /ns/default/resources/rdbms` (`autoFillDefaults: true`) | 모든 인스턴스가 `Available` 상태 및 유효 `endpoint:port` 확보 |
 | 4 | 정보 조회 및 동기화 | `GET /ns/default/resources/rdbms`, `GET .../rdbms/{id}`, `PUT .../rdbms/{id}/reconcile`, `GET .../certificate` (IBM) | 필수 메타데이터 채움, 목록, 상세, 동기화 뷰 간 값 일치 |

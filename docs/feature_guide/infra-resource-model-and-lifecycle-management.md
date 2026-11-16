@@ -5,7 +5,7 @@ This document provides a comprehensive guide to the **Infra** resource model in 
 > 💡 For the *creation* path itself — request structure, auto-created shared resources,
 > post-deployment bootstrap, scaling, and cleanup — see
 > [Infra Provisioning](infra-provisioning.md). Note that node status and bootstrap status
-> are separate signals: an Infra can be `Running` while `postCommandStatus` reports a
+> are separate signals: an Infra can be `Running` while `postScriptStatus` reports a
 > failed bootstrap.
 
 ## 🔑 Key Concepts and Terminology
