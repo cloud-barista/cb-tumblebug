@@ -13,7 +13,7 @@
 | **[자격증명 및 커넥션 관리](credential-and-connection.md)** | 자격증명, 자격증명 소유자, 커넥션 관리: 멀티테넌트 자격증명 격리, 커넥션 명명 규칙 및 `X-Credential-Holder` 헤더 사용법 안내. |
 | **[글로벌 DNS 관리](global-dns-management.md)** | AWS Route53을 활용한 글로벌 DNS 레코드 관리: Infra/레이블 기반 IP 자동 해석, 단순 라우팅 및 지리적 근접성 라우팅, 일괄 제어 기능 설명. |
 | **[대규모 프로비저닝 아키텍처](high-scale-provisioning-architecture.md)** | 10개 CSP, 146개 리전, 10,000+ VM 규모 프로비저닝 및 생명주기 제어를 위한 4개 영역, 10대 핵심 병목 해결 아키텍처 및 실측 벤치마크 심층 분석. |
-| **[인프라 프로비저닝](infra-provisioning.md)** | 인프라 생성 End-to-End 가이드: 요청 구조, 부분 실패 정책(`continue`/`refine`/`rollback`), 공유 리소스 자동 생성, 레이블, 배포 후 명령(단계별/타겟팅/비동기 스트리밍), 스케일링, 검증 및 정리. |
+| **[인프라 프로비저닝](infra-provisioning.md)** | 인프라 생성 End-to-End 가이드: 요청 구조, 부분 실패 정책(`continue`/`refine`/`rollback`), 공유 리소스 자동 생성, 레이블, 배포 후 스크립트 `postScript`(단계별/타겟팅/비동기 스트리밍), 스케일링, 검증 및 정리. |
 | **[인프라 리소스 모델 및 생명주기 관리](infra-resource-model-and-lifecycle-management.md)** | `Infra`, `NodeGroup`, `Node`의 계층적 리소스 모델 개념과 생명주기 제어(`Suspend`, `Resume`, `Reboot`, `Terminate`, `Refine`) 및 `NodeStatusAgent` 상태 관리 아키텍처 설명. |
 | **[기존 CSP 리소스 동기화 작업 스케줄러](existing-csp-res-job-scheduler.md)** | 주기적인 CSP 기존 리소스 탐지, 동기화 및 자동 등록을 수행하는 작업 스케줄러 가이드. |
 | **[`make init` 초기화 워크플로우](make-init-workflow.md)** | OpenBao 자격증명 등록과 Tumblebug 에셋 적재로 구성된 2단계 초기화 프로세스를 컴포넌트 간 시퀀스 다이어그램과 함께 상세히 설명. |

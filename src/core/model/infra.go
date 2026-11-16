@@ -152,11 +152,11 @@ type InfraReq struct {
 
 	NodeGroups []CreateNodeGroupReq `json:"nodeGroups" validate:"required"`
 
-	// PostCommands are sequential post-deployment command phases that bootstrap the Nodes
-	PostCommands []PostCommandReq `json:"postCommands,omitempty" validate:"omitempty"`
+	// PostScript is the post-deployment script that bootstraps the Nodes once they are up
+	PostScript *PostScriptReq `json:"postScript,omitempty" validate:"omitempty"`
 
-	// PostCommandAsync runs post-deployment commands in the background
-	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
+	// PostScriptAsync carries the postScriptAsync query parameter (see InfraDynamicReq)
+	PostScriptAsync bool `json:"-"`
 
 	// PolicyOnPartialFailure determines how to handle Node creation failures
 	// - "continue": Continue with partial Infra creation (default)
@@ -212,32 +212,26 @@ type InfraInfo struct {
 	// List of IDs for new nodes. Return IDs if the nodes are newly added. This field should be used for return body only.
 	NewNodeList []string `json:"newNodeList"`
 
-	// PostCommands are the requested post-deployment command phases
-	PostCommands []PostCommandReq `json:"postCommands,omitempty"`
+	// PostScript echoes the requested post-deployment script
+	PostScript *PostScriptReq `json:"postScript,omitempty"`
 
-	// PostCommandAsync echoes whether the commands run in the background
-	PostCommandAsync bool `json:"postCommandAsync,omitempty"`
+	// PostScriptResults holds per-phase outcomes
+	PostScriptResults []PostScriptPhaseResult `json:"postScriptResults,omitempty"`
 
-	// PostCommandResults holds per-phase outcomes
-	PostCommandResults []PostCommandPhaseResult `json:"postCommandResults,omitempty"`
-
-	// PostCommandStatus summarizes the post-deployment command outcome.
+	// PostScriptStatus summarizes the post-deployment script outcome.
 	// "Running" means execution is still in progress (async mode): stream it with
-	// GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+	// GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postScriptRequestId}
 	// or poll this object until the status becomes terminal.
-	PostCommandStatus PostCommandStatus `json:"postCommandStatus,omitempty" example:"Completed"`
+	PostScriptStatus PostScriptStatus `json:"postScriptStatus,omitempty" example:"Completed"`
 
-	// PostCommandRequestId is the streaming/tracking key of the post-deployment run
-	// (always set when post-deployment commands were requested, in both modes)
-	PostCommandRequestId string `json:"postCommandRequestId,omitempty" example:"pc-infra01-1a2b3c"`
+	// PostScriptRequestId is the streaming/tracking key of the post-deployment run
+	// (always set when a post-deployment script was requested, in both modes)
+	PostScriptRequestId string `json:"postScriptRequestId,omitempty" example:"ps-infra01-1a2b3c"`
 
 	// CreationErrors contains information about Node creation failures (if any)
 	CreationErrors *InfraCreationErrors `json:"creationErrors,omitempty"`
 }
 
-// PostCommandReq is a post-deployment command phase: an InfraCmdReq plus optional
-// targeting (at most one of nodeGroupId/nodeId/labelSelector) and phase policy.
-// Targeting mirrors the query parameters of the remote-command API.
 // InitScriptReq controls the init script (cloud-init user data) a Node runs on first boot.
 // TemplateId selects an init script template (looked up in the request namespace, then in system) whose
 // scripts run first, in order; Script and Scripts are inline steps appended after them. The first failure
@@ -274,6 +268,8 @@ type InitScriptStep struct {
 // InitScriptResult is the latest snapshot a Node reported about its init script, stored per Node.
 // The Node sends one as each step starts (event step, status initializing) and one at the end (event done).
 type InitScriptResult struct {
+	RunId       int64                  `json:"runId,omitempty" example:"1763251200"`
+	Seq         int                    `json:"seq,omitempty" example:"1"`
 	Event       string                 `json:"event,omitempty" example:"done" enums:"step,done"`
 	Status      string                 `json:"status" example:"ok" enums:"initializing,ok,fail"`
 	Step        string                 `json:"step,omitempty" example:"initscript-nginx"`
@@ -409,7 +405,23 @@ func isEnvName(k string) bool {
 	return true
 }
 
-type PostCommandReq struct {
+// PostScriptReq is the post-deployment script: phases run in order over SSH once the Nodes are up.
+// A single command set is one phase: {"phases": [{"command": ["..."]}]}
+// Whether the call waits for it is the postScriptAsync query parameter, not part of the script.
+type PostScriptReq struct {
+	// Phases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector
+	Phases []PostScriptPhase `json:"phases"`
+}
+
+// HasPhases reports whether there is anything to run; a nil script has none
+func (p *PostScriptReq) HasPhases() bool {
+	return p != nil && len(p.Phases) > 0
+}
+
+// PostScriptPhase is one phase of a post-deployment script: an InfraCmdReq plus optional
+// targeting (at most one of nodeGroupId/nodeId/labelSelector) and phase policy.
+// Targeting mirrors the query parameters of the remote-command API.
+type PostScriptPhase struct {
 	InfraCmdReq
 
 	// NodeGroupId limits execution to one nodeGroup
@@ -423,7 +435,7 @@ type PostCommandReq struct {
 }
 
 // Target returns a human-readable echo of this phase's target scope
-func (p PostCommandReq) Target() string {
+func (p PostScriptPhase) Target() string {
 	switch {
 	case p.NodeGroupId != "":
 		return "nodeGroupId=" + p.NodeGroupId
@@ -435,37 +447,40 @@ func (p PostCommandReq) Target() string {
 	return "all nodes"
 }
 
-// PostCommandPhaseResult is the outcome of a single post-command phase
-type PostCommandPhaseResult struct {
+// PostScriptPhaseResult is the outcome of a single post-deployment script phase
+type PostScriptPhaseResult struct {
 	// Phase is the 1-based execution order
 	Phase int `json:"phase" example:"1"`
 	// Target echoes the scope this phase ran against
 	Target string `json:"target" example:"nodeGroupId=control"`
 	// Status is the aggregated outcome of this phase (Skipped when a previous phase stopped execution)
-	Status PostCommandStatus `json:"status" example:"Completed"`
+	Status PostScriptStatus `json:"status" example:"Completed"`
 	// Results holds per-node command results
 	Results InfraSshCmdResultForAPI `json:"results"`
 }
 
-// PostCommandStatusSkipped indicates the phase did not run (a previous phase failed)
-const PostCommandStatusSkipped PostCommandStatus = "Skipped"
+// PostScriptStatusSkipped indicates the phase did not run (a previous phase failed)
+const PostScriptStatusSkipped PostScriptStatus = "Skipped"
 
-// PostCommandStatusRunning indicates post-deployment commands are still executing
-// (async mode: the creation response returns before they finish)
-const PostCommandStatusRunning PostCommandStatus = "Running"
+// PostScriptStatusRunning indicates the post-deployment script is still executing
+// (async mode: the creation response returns before it finishes)
+const PostScriptStatusRunning PostScriptStatus = "Running"
 
-// PostCommandStatus summarizes a post-deployment command run across target nodes
-type PostCommandStatus string
+// PostScriptStatusInterrupted indicates the run was cut off by a server restart before it finished
+const PostScriptStatusInterrupted PostScriptStatus = "Interrupted"
+
+// PostScriptStatus summarizes a post-deployment script run across target nodes
+type PostScriptStatus string
 
 const (
-	// PostCommandStatusNone indicates no post-deployment command was requested
-	PostCommandStatusNone PostCommandStatus = "None"
-	// PostCommandStatusCompleted indicates all target nodes succeeded
-	PostCommandStatusCompleted PostCommandStatus = "Completed"
-	// PostCommandStatusCompletedWithErrors indicates some target nodes failed
-	PostCommandStatusCompletedWithErrors PostCommandStatus = "CompletedWithErrors"
-	// PostCommandStatusFailed indicates all target nodes failed (or execution could not start)
-	PostCommandStatusFailed PostCommandStatus = "Failed"
+	// PostScriptStatusNone indicates no post-deployment script was requested
+	PostScriptStatusNone PostScriptStatus = "None"
+	// PostScriptStatusCompleted indicates all target nodes succeeded
+	PostScriptStatusCompleted PostScriptStatus = "Completed"
+	// PostScriptStatusCompletedWithErrors indicates some target nodes failed
+	PostScriptStatusCompletedWithErrors PostScriptStatus = "CompletedWithErrors"
+	// PostScriptStatusFailed indicates all target nodes failed (or execution could not start)
+	PostScriptStatusFailed PostScriptStatus = "Failed"
 )
 
 // InfraCreationErrors represents errors that occurred during Infra creation
@@ -558,17 +573,16 @@ type ScaleOutNodeGroupReq struct {
 // AddNodeGroupDynamicReq is the request body for adding a NodeGroup to an existing Infra.
 // It is CreateNodeGroupDynamicReq plus bootstrap fields; those fields are intentionally
 // absent from the nodeGroups[] elements of InfraDynamicReq, where Infra-level
-// postCommands (with per-phase targeting) is the single way to bootstrap.
+// postScript (with per-phase targeting) is the single way to bootstrap.
 type AddNodeGroupDynamicReq struct {
 	CreateNodeGroupDynamicReq
 
-	// PostCommands are sequential bootstrap phases for the newly added nodes.
+	// PostScript bootstraps the newly added nodes.
 	// Phases without an explicit target are scoped to this NodeGroup.
-	PostCommands []PostCommandReq `json:"postCommands,omitempty" validate:"omitempty"`
+	PostScript *PostScriptReq `json:"postScript,omitempty" validate:"omitempty"`
 
-	// PostCommandAsync returns the response as soon as the nodes are provisioned and
-	// runs the bootstrap commands in the background (observe via streaming/polling)
-	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
+	// PostScriptAsync carries the postScriptAsync query parameter (see InfraDynamicReq)
+	PostScriptAsync bool `json:"-"`
 }
 
 // InfraDynamicReq is struct for requirements to create Infra dynamically (with default resource option)
@@ -611,17 +625,15 @@ type InfraDynamicReq struct {
 	// ]
 	NodeGroups []CreateNodeGroupDynamicReq `json:"nodeGroups" validate:"required"`
 
-	// PostCommands are post-deployment command phases that bootstrap the Nodes.
-	// Phases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector.
-	// A single command set is simply one phase: [{"command": ["..."]}]
-	PostCommands []PostCommandReq `json:"postCommands,omitempty"`
+	// PostScript is the post-deployment script that bootstraps the Nodes once they are up.
+	// Its phases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector.
+	PostScript *PostScriptReq `json:"postScript,omitempty"`
 
-	// PostCommandAsync (default false) returns the response as soon as nodes are
-	// provisioned and runs post-deployment commands in the background. The response
-	// then carries postCommandStatus="Running" plus postCommandRequestId; observe with
-	// GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
-	// or by polling GET /ns/{nsId}/infra/{infraId}.
-	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
+	// PostScriptAsync carries the postScriptAsync query parameter of the call and is not a body field:
+	// return once the Nodes are provisioned and run the post script in the background
+	PostScriptAsync bool `json:"-"`
+	// With it the response carries postScriptStatus "Running" and postScriptRequestId; observe with
+	// GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postScriptRequestId} or by polling the Infra.
 
 	// InitScript is the default init script for all NodeGroups (overridable per NodeGroup)
 	InitScript *InitScriptReq `json:"initScript,omitempty"`
@@ -1846,9 +1858,9 @@ type AutoAction struct {
 	ActionType          string                    `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
 	NodeGroupDynamicReq CreateNodeGroupDynamicReq `json:"nodeGroupDynamicReq"`
 
-	// PostCommands bootstrap the Nodes added by this action (phases run in order)
-	PostCommands  []PostCommandReq `json:"postCommands,omitempty"`
-	PlacementAlgo string           `json:"placementAlgo" example:"random"`
+	// PostScript bootstraps the Nodes added by this action; the policy waits for its result
+	PostScript    *PostScriptReq `json:"postScript,omitempty"`
+	PlacementAlgo string         `json:"placementAlgo" example:"random"`
 }
 
 // Policy is struct for Infra auto-control Policy request that includes AutoCondition, AutoAction, Status.
@@ -2719,12 +2731,14 @@ type AutopilotPolicy struct {
 
 // InfraAutopilotReq is the request body for POST /:nsId/infraAutopilot.
 type InfraAutopilotReq struct {
-	Name         string            `json:"name" validate:"required" example:"my-infra"`
-	NodeSpecs    []NodeSpec        `json:"nodeSpecs" validate:"required,min=1"`
-	Policy       AutopilotPolicy   `json:"policy,omitempty"`
-	PostCommands []PostCommandReq  `json:"postCommands,omitempty"`
-	Description  string            `json:"description,omitempty"`
-	Label        map[string]string `json:"label,omitempty"`
+	Name       string          `json:"name" validate:"required" example:"my-infra"`
+	NodeSpecs  []NodeSpec      `json:"nodeSpecs" validate:"required,min=1"`
+	Policy     AutopilotPolicy `json:"policy,omitempty"`
+	PostScript *PostScriptReq  `json:"postScript,omitempty"`
+	// PostScriptAsync carries the postScriptAsync query parameter (see InfraDynamicReq)
+	PostScriptAsync bool              `json:"-"`
+	Description     string            `json:"description,omitempty"`
+	Label           map[string]string `json:"label,omitempty"`
 }
 
 // ProvisioningAttempt records one pre-flight review pass for a candidate spec.

@@ -67,6 +67,9 @@ type TemplateApplyReq struct {
 
 	// PolicyOnPartialFailure specifies how to handle partial node creation failures (optional: "continue", "rollback", "refine")
 	PolicyOnPartialFailure string `json:"policyOnPartialFailure,omitempty" example:"continue" enums:"continue,rollback,refine"`
+
+	// PostScriptAsync carries the postScriptAsync query parameter (see InfraDynamicReq)
+	PostScriptAsync bool `json:"-"`
 }
 
 // InfraDynamicTemplateListResponse is struct for listing Infra Dynamic Templates

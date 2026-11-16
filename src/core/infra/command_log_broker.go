@@ -31,7 +31,7 @@ const (
 
 	// cleanupDelay is how long to keep the session (and its replay buffer) after
 	// CommandDone. It must outlive the gap between "the run finishes" and "a client
-	// subscribes": async post-deployment commands are watched by a human action taken
+	// subscribes": an async post-deployment script is watched by a human action taken
 	// after the creation response returns, and short commands often finish first.
 	// Dropping the buffer too early makes a late subscriber see an empty stream.
 	cleanupDelay = 10 * time.Minute

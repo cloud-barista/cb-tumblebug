@@ -3,6 +3,7 @@ package infra
 import (
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -419,12 +421,15 @@ func TestInitScriptWrapperOptionalAndTimeout(t *testing.T) {
 			t.Skipf("%s not available", bin)
 		}
 	}
+	var lastMu sync.Mutex
 	var last map[string]any
+	getLast := func() map[string]any { lastMu.Lock(); defer lastMu.Unlock(); return last }
+	setLast := func(v map[string]any) { lastMu.Lock(); last = v; lastMu.Unlock() }
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var rep map[string]any
 		if json.Unmarshal(body, &rep) == nil {
-			last = rep
+			setLast(rep)
 		}
 	}))
 	defer srv.Close()
@@ -447,20 +452,21 @@ func TestInitScriptWrapperOptionalAndTimeout(t *testing.T) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("wrapper failed: %v\n%s", err, out)
 	}
+	curLast := getLast()
 	if _, err := os.Stat(filepath.Join(dir, "last")); err != nil {
 		logText, _ := os.ReadFile(filepath.Join(dir, "log"))
 		status, _ := os.ReadFile(filepath.Join(dir, "init-script.status"))
-		t.Fatalf("the required step after optional failures must still run\nstatus: %s\nlog:\n%s\nreport: %v", status, logText, last)
+		t.Fatalf("the required step after optional failures must still run\nstatus: %s\nlog:\n%s\nreport: %v", status, logText, curLast)
 	}
-	if last["status"] != "ok" {
-		t.Fatalf("overall status must be ok when only optional steps failed: %v", last)
+	if curLast["status"] != "ok" {
+		t.Fatalf("overall status must be ok when only optional steps failed: %v", curLast)
 	}
-	steps := last["steps"].([]any)
+	steps := curLast["steps"].([]any)
 	if steps[0].(map[string]any)["status"] != "fail" || steps[1].(map[string]any)["status"] != "fail" || steps[1].(map[string]any)["exitCode"] != float64(124) || steps[2].(map[string]any)["status"] != "ok" {
 		t.Fatalf("steps = %v", steps)
 	}
 	var r model.InitScriptResult
-	b, _ := json.Marshal(last)
+	b, _ := json.Marshal(curLast)
 	_ = json.Unmarshal(b, &r)
 	if r.Summary() != "optional step(s) failed: optional, slow" {
 		t.Fatalf("summary = %q", r.Summary())
@@ -484,31 +490,33 @@ func TestInitScriptWrapperOptionalAndTimeout(t *testing.T) {
 	if !strings.Contains(string(raw), "export TB_NODE_ID='g1-1'") || !strings.Contains(string(raw), "run_step 2 'slow'") {
 		t.Fatalf("runner content: %s", raw)
 	}
-	last = nil
+	setLast(nil)
 	run := exec.Command("bash", "-c", string(raw))
 	run.Env = append(os.Environ(), "TB_RUN_DIR="+dir)
 	if out, err := run.CombinedOutput(); err != nil {
 		t.Fatalf("runner failed: %v\n%s", err, out)
 	}
-	if last == nil || last["event"] != "done" || last["status"] != "ok" || last["message"] != "re-run over ssh" {
-		t.Fatalf("runner report = %v", last)
+	curLast = getLast()
+	if curLast == nil || curLast["event"] != "done" || curLast["status"] != "ok" || curLast["message"] != "re-run over ssh" {
+		t.Fatalf("runner report = %v", curLast)
 	}
-	steps = last["steps"].([]any)
+	steps = curLast["steps"].([]any)
 	if len(steps) != 3 || steps[0].(map[string]any)["exitCode"] != float64(5) || steps[1].(map[string]any)["exitCode"] != float64(124) || steps[2].(map[string]any)["status"] != "ok" {
 		t.Fatalf("runner steps = %v", steps)
 	}
 	// a required failure stops the run, leaves the rest pending and reports fail with the step name
 	node.InitScript.Scripts = []model.InitScriptStep{{Name: "boom", Script: "exit 3\n"}, {Name: "never", Script: "true\n"}}
 	raw, _ = base64.StdEncoding.DecodeString(strings.TrimSuffix(strings.TrimPrefix(InitScriptRunnerCommand("ns1", "infra1", node, node.InitScript.Scripts, nil), "echo "), " | base64 -d | sudo bash"))
-	last = nil
+	setLast(nil)
 	run = exec.Command("bash", "-c", string(raw))
 	run.Env = append(os.Environ(), "TB_RUN_DIR="+dir)
 	if err := run.Run(); err == nil {
 		t.Fatal("runner must exit non-zero on a required failure")
 	}
-	steps = last["steps"].([]any)
-	if last["status"] != "fail" || last["step"] != "boom" || last["exitCode"] != float64(3) || steps[1].(map[string]any)["status"] != "pending" {
-		t.Fatalf("runner failure report = %v", last)
+	curLast = getLast()
+	steps = curLast["steps"].([]any)
+	if curLast["status"] != "fail" || curLast["step"] != "boom" || curLast["exitCode"] != float64(3) || steps[1].(map[string]any)["status"] != "pending" {
+		t.Fatalf("runner failure report = %v", curLast)
 	}
 }
 
@@ -539,5 +547,108 @@ func TestLowMemoryInitScriptNote(t *testing.T) {
 	}
 	if note, _ := lowMemoryInitScriptNote(0.5, []model.InitScriptStep{agent, nginx}); !strings.Contains(note, `"nginx"`) || !strings.Contains(note, `"otel-agent"`) {
 		t.Errorf("the warning should name both steps: %s", note)
+	}
+}
+
+func TestInitScriptMultiUrlStickyFailoverAndOutOfOrder(t *testing.T) {
+	for _, bin := range []string{"bash", "curl", "base64"} {
+		if _, err := exec.LookPath(bin); err != nil {
+			t.Skipf("%s not available", bin)
+		}
+	}
+
+	var repMu sync.Mutex
+	var reports []map[string]any
+	tlsSrv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var rep map[string]any
+		if err := json.Unmarshal(body, &rep); err != nil {
+			t.Errorf("invalid JSON: %v", err)
+		}
+		repMu.Lock()
+		reports = append(reports, rep)
+		repMu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer tlsSrv.Close()
+
+	caPEM := string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: tlsSrv.Certificate().Raw}))
+	deadUrl := "http://127.0.0.1:1"
+	NotifierProvider = func() *model.NotifierInfo {
+		return &model.NotifierInfo{
+			Status:     model.NotifierStatusActive,
+			Url:        deadUrl,
+			Urls:       []string{deadUrl, tlsSrv.URL},
+			Topic:      "tb-cn",
+			WriteToken: "tk_w",
+			CaCert:     caPEM,
+		}
+	}
+	defer func() { NotifierProvider = nil }()
+
+	dir := t.TempDir()
+	node := &model.NodeInfo{
+		Id: "cn-1", NodeGroupId: "cn",
+		InitScript: &model.InitScriptReq{
+			Mode: "custom",
+			Scripts: []model.InitScriptStep{
+				{Name: "s1", Script: "echo ok1\n"},
+				{Name: "s2", Script: "echo ok2\n"},
+			},
+		},
+	}
+	script, err := buildInitScript("ns1", "infra1", node, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(script, "export TB_NOTIFY_URLS='"+deadUrl+" "+tlsSrv.URL+"'") {
+		t.Fatalf("expected TB_NOTIFY_URLS in rendered script:\n%s", script)
+	}
+
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Env = append(os.Environ(), "TB_DIR="+dir, "TB_LOG="+filepath.Join(dir, "log"))
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("wrapper failed: %v\n%s", err, out)
+	}
+
+	// Both step events + done must have reached tlsSrv via sticky failover, and deadUrl must only be tried once!
+	if len(reports) != 3 || reports[0]["event"] != "step" || reports[1]["event"] != "step" || reports[2]["event"] != "done" || reports[2]["status"] != "ok" {
+		t.Fatalf("unexpected reports received on fallback TLS server: %v", reports)
+	}
+	logText, _ := os.ReadFile(filepath.Join(dir, "log"))
+	if got := strings.Count(string(logText), deadUrl); got != 1 {
+		t.Fatalf("sticky promotion should avoid retrying deadUrl after first failover; saw %d attempts in log:\n%s", got, logText)
+	}
+
+	// Verify out-of-order protection in RecordInitScriptResult across dual streams.
+	restore := kvstore.SetTestStore(kvtest.NewMemoryStore())
+	defer restore()
+	b, _ := json.Marshal(model.CompactNodeInfo{Id: "cn-1"})
+	_ = kvstore.Put(common.GenInfraKey("ns1", "infra1", "cn-1"), string(b))
+
+	doneRes := model.InitScriptResult{RunId: 1000, Seq: 3, Event: "done", Status: "ok"}
+	lateStep := model.InitScriptResult{RunId: 1000, Seq: 1, Event: "step", Status: "initializing", Step: "s1"}
+	legacyLateStep := model.InitScriptResult{Event: "step", Status: "initializing", Step: "s1"}
+	sshRerun := model.InitScriptResult{RunId: 2000, Seq: 1, Event: "done", Status: "fail", ExitCode: 2, Message: "re-run over ssh"}
+
+	if err := RecordInitScriptResult("ns1", "infra1", "cn-1", doneRes); err != nil {
+		t.Fatal(err)
+	}
+	if err := RecordInitScriptResult("ns1", "infra1", "cn-1", lateStep); err != nil {
+		t.Fatal(err)
+	}
+	if err := RecordInitScriptResult("ns1", "infra1", "cn-1", legacyLateStep); err != nil {
+		t.Fatal(err)
+	}
+	resMap, _ := listInitScriptResults("ns1", "infra1")
+	if resMap["cn-1"].Status != "ok" || resMap["cn-1"].Event != "done" {
+		t.Fatalf("delayed step must not overwrite done result: %+v", resMap["cn-1"])
+	}
+	if err := RecordInitScriptResult("ns1", "infra1", "cn-1", sshRerun); err != nil {
+		t.Fatal(err)
+	}
+	resMap, _ = listInitScriptResults("ns1", "infra1")
+	if resMap["cn-1"].Status != "fail" || resMap["cn-1"].RunId != 2000 {
+		t.Fatalf("newer SSH re-run must update stored result: %+v", resMap["cn-1"])
 	}
 }

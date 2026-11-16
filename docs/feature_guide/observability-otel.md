@@ -143,7 +143,7 @@ Viewer accounts (`POST /tumblebug/observability/reader`) are Grafana users with 
 
 ## GPU Metrics
 
-When the Node's spec reports an accelerator (`acceleratorType`), CB-Tumblebug exports `TB_ACCELERATOR_TYPE`, `TB_ACCELERATOR_MODEL` and `TB_ACCELERATOR_COUNT` to the init script. With `OTEL_GPU=auto` the installer adds an nvidia-smi based exporter (served from the stack mirror) and a Prometheus scrape of `127.0.0.1:9835`. The exporter is installed even when the driver is not there yet; metrics start as soon as `nvidia-smi` works, so installing the driver later over SSH (post-deployment commands) is fine. DCGM-level metrics (NVLink, ECC, MIG) are not covered by this exporter.
+When the Node's spec reports an accelerator (`acceleratorType`), CB-Tumblebug exports `TB_ACCELERATOR_TYPE`, `TB_ACCELERATOR_MODEL` and `TB_ACCELERATOR_COUNT` to the init script. With `OTEL_GPU=auto` the installer adds an nvidia-smi based exporter (served from the stack mirror) and a Prometheus scrape of `127.0.0.1:9835`. The exporter is installed even when the driver is not there yet; metrics start as soon as `nvidia-smi` works, so installing the driver later over SSH (`postScript` or a remote command) is fine. DCGM-level metrics (NVLink, ECC, MIG) are not covered by this exporter.
 
 ---
 

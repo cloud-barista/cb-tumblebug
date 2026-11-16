@@ -275,10 +275,7 @@ func renderInitScript(env map[string]string, req *model.InitScriptReq) string {
 		}
 	}
 	if n := activeNotifier(); n != nil && initScriptNotify(req) {
-		env["TB_NOTIFY_URL"], env["TB_NOTIFY_TOPIC"], env["TB_NOTIFY_TOKEN"] = n.Url, n.Topic, n.WriteToken
-		if n.CaCert != "" {
-			env["TB_NOTIFY_CA_B64"] = base64.StdEncoding.EncodeToString([]byte(n.CaCert))
-		}
+		exportNotifierEnv(env, n)
 	}
 	// The observability stack is exported whenever one is registered (its status only reflects the last
 	// round-trip check); only scripts that use it (e.g. the initscript-otel-agent template) act on it.
@@ -468,6 +465,12 @@ func RecordInitScriptResult(nsId, infraId, nodeId string, r model.InitScriptResu
 	if _, exists, err := kvstore.GetKv(common.GenInfraKey(nsId, infraId, nodeId)); err != nil || !exists {
 		return fmt.Errorf("node %s/%s/%s not found; report ignored", nsId, infraId, nodeId)
 	}
+	if prev, ok := existingInitScriptResult(nsId, infraId, nodeId); ok && isStaleInitScriptResult(prev, r) {
+		log.Debug().Str("nsId", nsId).Str("infraId", infraId).Str("nodeId", nodeId).
+			Str("event", r.Event).Int64("runId", r.RunId).Int("seq", r.Seq).
+			Msg("init script stale or out-of-order report ignored")
+		return nil
+	}
 	val, err := json.Marshal(r)
 	if err != nil {
 		return err
@@ -483,6 +486,44 @@ func RecordInitScriptResult(nsId, infraId, nodeId string, r model.InitScriptResu
 	}
 	log.Info().Str("nsId", nsId).Str("infraId", infraId).Str("nodeId", nodeId).Str("status", r.Status).Str("reportedAt", r.ReportedAt).Msg("init script result recorded")
 	return nil
+}
+
+func existingInitScriptResult(nsId, infraId, nodeId string) (model.InitScriptResult, bool) {
+	if v, ok := initResults.Load(initResultKey(nsId, infraId)); ok {
+		idx := v.(*initResultIndex)
+		idx.mu.RLock()
+		prev, found := idx.m[nodeId]
+		idx.mu.RUnlock()
+		return prev, found
+	}
+	raw, exists, err := kvstore.Get(common.GenInfraNodeInitScriptKey(nsId, infraId, nodeId))
+	if err != nil || !exists {
+		return model.InitScriptResult{}, false
+	}
+	var prev model.InitScriptResult
+	if json.Unmarshal([]byte(raw), &prev) != nil || prev.Status == "" {
+		return model.InitScriptResult{}, false
+	}
+	return prev, true
+}
+
+func isStaleInitScriptResult(prev, next model.InitScriptResult) bool {
+	if next.RunId > 0 && prev.RunId > 0 {
+		if next.RunId < prev.RunId {
+			return true
+		}
+		if next.RunId == prev.RunId {
+			if (prev.Event == "done" || prev.Status == "ok" || prev.Status == "fail") && next.Event == "step" {
+				return true
+			}
+			if next.Seq > 0 && prev.Seq > 0 && next.Seq <= prev.Seq {
+				return true
+			}
+		}
+		return false
+	}
+	// Unnumbered reports: never let a delayed step overwrite a completed snapshot unless it is a new done event.
+	return (prev.Event == "done" || prev.Status == "ok" || prev.Status == "fail") && next.Event == "step"
 }
 
 // listInitScriptResults returns a snapshot of every Node's result of an Infra from the in-memory index.
@@ -717,10 +758,25 @@ func activeNotifier() *model.NotifierInfo {
 	if NotifierProvider == nil {
 		return nil
 	}
-	if n := NotifierProvider(); n != nil && n.Status == model.NotifierStatusActive && n.WriteToken != "" {
+	if n := NotifierProvider(); n != nil && n.Status == model.NotifierStatusActive && n.WriteToken != "" && len(n.EffectiveUrls()) > 0 {
 		return n
 	}
 	return nil
+}
+
+func exportNotifierEnv(env map[string]string, n *model.NotifierInfo) {
+	urls := n.EffectiveUrls()
+	if len(urls) == 0 {
+		return
+	}
+	env["TB_NOTIFY_URL"] = urls[0]
+	if len(urls) > 1 {
+		env["TB_NOTIFY_URLS"] = strings.Join(urls, " ")
+	}
+	env["TB_NOTIFY_TOPIC"], env["TB_NOTIFY_TOKEN"] = n.Topic, n.WriteToken
+	if n.CaCert != "" {
+		env["TB_NOTIFY_CA_B64"] = base64.StdEncoding.EncodeToString([]byte(n.CaCert))
+	}
 }
 
 // acceleratorCache keeps the accelerator fields of a spec so that provisioning many Nodes of one spec reads
@@ -843,7 +899,7 @@ func InitScriptRunnerCommand(nsId, infraId string, node *model.NodeInfo, steps [
 	req := stepsForNode(&model.InitScriptReq{Mode: InitScriptModeCustom, Scripts: steps, Env: env}, node.Label)
 	vars := nodeIdentityEnv(nsId, infraId, node)
 	if n := activeNotifier(); n != nil {
-		vars["TB_NOTIFY_URL"], vars["TB_NOTIFY_TOPIC"], vars["TB_NOTIFY_TOKEN"] = n.Url, n.Topic, n.WriteToken
+		exportNotifierEnv(vars, n)
 	}
 	if ObservabilityProvider != nil {
 		if o := ObservabilityProvider(); o != nil && o.OtlpEndpoint != "" {
@@ -874,8 +930,16 @@ func InitScriptRunnerCommand(nsId, infraId string, node *model.NodeInfo, steps [
 // initScriptRunnerBody is the SSH runner: like the first-boot wrapper it runs each step as root, keeps a
 // per-step status and reports the final snapshot to the notifier so the stored init script result is
 // replaced by this run's outcome.
-const initScriptRunnerBody = `D=${TB_RUN_DIR:-/var/lib/tb}/run-$(date +%s%N); mkdir -p "$D"; OPT=""; STATUS=ok; EXIT=0; START=$(date +%s); STEPS=""; CA=""
-if [ -n "${TB_NOTIFY_URL:-}" ] && [ -n "${TB_NOTIFY_CA_B64:-}" ]; then echo "$TB_NOTIFY_CA_B64" | base64 -d > "$D/ca.pem"; CA="--cacert $D/ca.pem"; fi
+const initScriptRunnerBody = `D=${TB_RUN_DIR:-/var/lib/tb}/run-$(date +%s%N); mkdir -p "$D"; OPT=""; STATUS=ok; EXIT=0; START=$(date +%s); STEPS=""; CA_FILE=""
+TB_NOTIFY_URLS="${TB_NOTIFY_URLS:-${TB_NOTIFY_URL:-}}"
+if [ -n "$TB_NOTIFY_URLS" ] && [ -n "${TB_NOTIFY_CA_B64:-}" ]; then echo "$TB_NOTIFY_CA_B64" | base64 -d > "$D/ca.pem"; CA_FILE="$D/ca.pem"; fi
+post_notify() { local u="$1" body="$2" h code="" rc=0; h="${u#*://}"; h="${h%%/*}"; h="${h%%:*}"
+  if [ -n "$CA_FILE" ] && [[ "$u" == https://* ]] && [[ "$h" =~ ^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\[.*\])$ ]]; then
+    code=$(curl -sS --connect-timeout 3 -m 8 --cacert "$CA_FILE" -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$u/${TB_NOTIFY_TOPIC:-}" 2>/dev/null || true); echo "${code:-000}"; return 0; fi
+  code=$(curl -sS --connect-timeout 3 -m 8 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$u/${TB_NOTIFY_TOPIC:-}" 2>/dev/null) || rc=$?
+  if [ "$rc" -eq 60 ] && [ -n "$CA_FILE" ] && [[ "$u" == https://* ]]; then
+    code=$(curl -sS --connect-timeout 3 -m 8 --cacert "$CA_FILE" -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$u/${TB_NOTIFY_TOPIC:-}" 2>/dev/null || true); fi
+  echo "${code:-000}"; }
 run_step() { [ "$STATUS" = ok ] || { STEPS="$STEPS${STEPS:+,}{\"name\":\"$2\",\"status\":\"pending\",\"exitCode\":0,\"durationSec\":0}"; return 0; }
   echo "== $2 $(date -u +%FT%TZ)"; echo "$3" | base64 -d > "$D/$1.sh"; rc=0; t0=$(date +%s)
   if [ "$5" -gt 0 ]; then timeout "$5" bash "$D/$1.sh" || rc=$?; else bash "$D/$1.sh" || rc=$?; fi
@@ -883,10 +947,10 @@ run_step() { [ "$STATUS" = ok ] || { STEPS="$STEPS${STEPS:+,}{\"name\":\"$2\",\"
   st=ok; if [ $rc -ne 0 ]; then st=fail; echo "step $2 failed (exit $rc)"; if [ "$4" = 1 ]; then OPT="$OPT $2"; else STATUS=fail; EXIT=$rc; FAILED=$2; fi; fi
   STEPS="$STEPS${STEPS:+,}{\"name\":\"$2\",\"status\":\"$st\",\"exitCode\":$rc,\"durationSec\":$(( $(date +%s) - t0 ))}"; return 0; }
 finish() { [ -n "$OPT" ] && echo "optional step(s) failed:$OPT"
-  if [ -n "${TB_NOTIFY_URL:-}" ]; then
-    body=$(printf '{"kind":"initScript","nsId":"%s","infraId":"%s","nodeGroupId":"%s","nodeId":"%s","csp":"%s","region":"%s","event":"done","status":"%s","step":"%s","exitCode":%s,"durationSec":%s,"hostname":"%s","steps":[%s],"message":"%s"}' \
-      "${TB_NS_ID:-}" "${TB_INFRA_ID:-}" "${TB_NODEGROUP_ID:-}" "${TB_NODE_ID:-}" "${TB_CSP:-}" "${TB_REGION:-}" "$STATUS" "${FAILED:-}" "$EXIT" "$(( $(date +%s) - START ))" "$(hostname)" "$STEPS" "re-run over ssh")
-    curl -fsS -m 10 $CA -H "Authorization: Bearer ${TB_NOTIFY_TOKEN:-}" -d "$body" "$TB_NOTIFY_URL/$TB_NOTIFY_TOPIC" >/dev/null 2>&1 || true
+  if [ -n "$TB_NOTIFY_URLS" ]; then
+    body=$(printf '{"kind":"initScript","nsId":"%s","infraId":"%s","nodeGroupId":"%s","nodeId":"%s","csp":"%s","region":"%s","runId":%s,"seq":1,"event":"done","status":"%s","step":"%s","exitCode":%s,"durationSec":%s,"hostname":"%s","steps":[%s],"message":"%s"}' \
+      "${TB_NS_ID:-}" "${TB_INFRA_ID:-}" "${TB_NODEGROUP_ID:-}" "${TB_NODE_ID:-}" "${TB_CSP:-}" "${TB_REGION:-}" "$START" "$STATUS" "${FAILED:-}" "$EXIT" "$(( $(date +%s) - START ))" "$(hostname)" "$STEPS" "re-run over ssh")
+    for u in $TB_NOTIFY_URLS; do [ "$(post_notify "$u" "$body")" = 200 ] && break; done
   fi
   exit $EXIT; }
 `

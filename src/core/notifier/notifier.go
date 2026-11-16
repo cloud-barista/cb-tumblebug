@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -50,13 +51,14 @@ const (
 type Handler func(msg model.NotifierMessage)
 
 type state struct {
-	mu       sync.RWMutex
-	info     *model.NotifierInfo
-	cancel   context.CancelFunc
-	recent   []model.NotifierMessage
-	dirty    bool // LastMessageId changed since the last save
-	handlers map[string][]Handler
-	waiters  map[chan model.NotifierMessage]struct{}
+	mu        sync.RWMutex
+	info      *model.NotifierInfo
+	cancel    context.CancelFunc
+	urlErrors map[string]string
+	recent    []model.NotifierMessage
+	dirty     bool // LastMessageIds changed since the last save
+	handlers  map[string][]Handler
+	waiters   map[chan model.NotifierMessage]struct{}
 }
 
 var s = &state{handlers: map[string][]Handler{}, waiters: map[chan model.NotifierMessage]struct{}{}}
@@ -78,7 +80,7 @@ func init() {
 	})
 }
 
-// Init loads the stored notifier, seeds it from TB_NOTIFIER_* when none is stored, and starts the subscriber.
+// Init loads the stored notifier, seeds it from TB_NOTIFIER_* when none is stored, and starts the subscriber(s).
 func Init() {
 	info, err := load()
 	if err != nil {
@@ -94,10 +96,11 @@ func Init() {
 			log.Error().Err(err).Msg("notifier: failed to save notifier seeded from env")
 			return
 		}
-		log.Info().Str("url", info.Url).Str("topic", info.Topic).Msg("notifier: registered from environment")
+		log.Info().Strs("urls", info.EffectiveUrls()).Str("topic", info.Topic).Msg("notifier: registered from environment")
 	}
+	normalizeInfo(info)
 	s.mu.Lock()
-	s.info = info
+	s.info = cloneInfo(info)
 	s.mu.Unlock()
 	startSubscriber(info)
 }
@@ -107,13 +110,13 @@ func fromEnv() *model.NotifierInfo {
 	if env.Url == "" || env.Topic == "" {
 		return nil
 	}
-	cleanUrl, err := validateEndpoint(env.Url, env.Topic)
+	cleanUrls, err := validateEndpoints(splitUrlList(env.Url), env.Topic)
 	if err != nil {
 		log.Error().Err(err).Msg("notifier: TB_NOTIFIER_NTFY_URL/TOPIC rejected")
 		return nil
 	}
 	info := &model.NotifierInfo{
-		Type: model.NotifierTypeNtfy, Url: cleanUrl, Topic: env.Topic,
+		Type: model.NotifierTypeNtfy, Url: cleanUrls[0], Urls: cleanUrls, Topic: env.Topic,
 		WriteToken: env.WriteToken, ReadToken: env.ReadToken,
 		Source: model.NotifierSourceExternal, Status: model.NotifierStatusActive, RegisteredAt: time.Now(),
 	}
@@ -135,7 +138,6 @@ func RegisterHandler(kind string, fn Handler) {
 	s.handlers[kind] = append(s.handlers[kind], fn)
 }
 
-// Register stores an external notifier and starts subscribing to it.
 // topicPattern is the ntfy topic rule; the topic is appended to the server URL as a path segment.
 var topicPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
@@ -152,13 +154,46 @@ func validateEndpoint(rawUrl, topic string) (string, error) {
 	return cleanUrl, nil
 }
 
+func validateEndpoints(rawUrls []string, topic string) ([]string, error) {
+	if len(rawUrls) == 0 {
+		return nil, errors.New("at least one server url is required")
+	}
+	seen := map[string]struct{}{}
+	var out []string
+	for _, raw := range rawUrls {
+		u, err := validateEndpoint(raw, topic)
+		if err != nil {
+			return nil, err
+		}
+		if _, dup := seen[u]; !dup {
+			seen[u] = struct{}{}
+			out = append(out, u)
+		}
+	}
+	return out, nil
+}
+
+func splitUrlList(s string) []string {
+	return strings.FieldsFunc(s, func(r rune) bool {
+		return r == ',' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
+	})
+}
+
+// Register stores an external notifier (one or more ntfy URLs sharing a topic) and starts subscribing to it.
 func Register(req model.NotifierRegisterReq) (*model.NotifierInfo, error) {
-	cleanUrl, err := validateEndpoint(req.Url, req.Topic)
+	var rawUrls []string
+	if req.Url != "" {
+		rawUrls = append(rawUrls, splitUrlList(req.Url)...)
+	}
+	for _, u := range req.Urls {
+		rawUrls = append(rawUrls, splitUrlList(u)...)
+	}
+	cleanUrls, err := validateEndpoints(rawUrls, req.Topic)
 	if err != nil {
 		return nil, err
 	}
 	info := &model.NotifierInfo{
-		Type: model.NotifierTypeNtfy, Url: cleanUrl, Topic: req.Topic,
+		Type: model.NotifierTypeNtfy, Url: cleanUrls[0], Urls: cleanUrls, Topic: req.Topic,
 		WriteToken: req.WriteToken, ReadToken: req.ReadToken, CaCert: req.CaCert,
 		Source: model.NotifierSourceExternal, RegisteredAt: time.Now(),
 	}
@@ -166,6 +201,7 @@ func Register(req model.NotifierRegisterReq) (*model.NotifierInfo, error) {
 }
 
 func register(info *model.NotifierInfo) (*model.NotifierInfo, error) {
+	normalizeInfo(info)
 	if err := health(info); err != nil {
 		return nil, fmt.Errorf("ntfy health check failed: %w", err)
 	}
@@ -176,10 +212,53 @@ func register(info *model.NotifierInfo) (*model.NotifierInfo, error) {
 		return nil, err
 	}
 	s.mu.Lock()
-	s.info = info
+	s.info = cloneInfo(info)
 	s.mu.Unlock()
 	startSubscriber(info)
 	return masked(info), nil
+}
+
+func normalizeInfo(info *model.NotifierInfo) {
+	if info == nil {
+		return
+	}
+	urls := info.EffectiveUrls()
+	if len(urls) > 0 {
+		info.Urls = urls
+		info.Url = urls[0]
+	}
+}
+
+func cloneInfo(info *model.NotifierInfo) *model.NotifierInfo {
+	if info == nil {
+		return nil
+	}
+	c := *info
+	if info.Urls != nil {
+		c.Urls = append([]string(nil), info.Urls...)
+	}
+	if info.ManagedVNetIds != nil {
+		c.ManagedVNetIds = append([]string(nil), info.ManagedVNetIds...)
+	}
+	if info.ManagedSecurityGroupIds != nil {
+		c.ManagedSecurityGroupIds = append([]string(nil), info.ManagedSecurityGroupIds...)
+	}
+	if info.ManagedSshKeyIds != nil {
+		c.ManagedSshKeyIds = append([]string(nil), info.ManagedSshKeyIds...)
+	}
+	if info.ManagedDnsRecords != nil {
+		c.ManagedDnsRecords = append([]string(nil), info.ManagedDnsRecords...)
+	}
+	if info.Readers != nil {
+		c.Readers = append([]string(nil), info.Readers...)
+	}
+	if info.LastMessageIds != nil {
+		c.LastMessageIds = make(map[string]string, len(info.LastMessageIds))
+		for k, v := range info.LastMessageIds {
+			c.LastMessageIds[k] = v
+		}
+	}
+	return &c
 }
 
 // Get returns the registered notifier with tokens masked, or nil.
@@ -193,18 +272,15 @@ func Get() *model.NotifierInfo {
 func Current() *model.NotifierInfo {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	if s.info == nil {
-		return nil
-	}
-	c := *s.info
-	return &c
+	return cloneInfo(s.info)
 }
 
-// Unregister stops the subscriber and removes the stored notifier.
+// Unregister stops the subscriber(s) and removes the stored notifier.
 func Unregister() error {
 	stopSubscriber()
 	s.mu.Lock()
 	s.info = nil
+	s.urlErrors = nil
 	s.recent = nil
 	s.mu.Unlock()
 	if err := kvstore.Delete(storeKey); err != nil && !strings.Contains(err.Error(), "not found") {
@@ -213,17 +289,33 @@ func Unregister() error {
 	return nil
 }
 
-// Publish sends a message of the given kind to the topic and returns the ntfy message id.
+// Publish sends a message of the given kind to the first reachable notifier endpoint and returns the ntfy message id.
 func Publish(kind string, data json.RawMessage) (string, error) {
 	info := Current()
 	if info == nil {
 		return "", errors.New("no notifier is registered")
 	}
+	payload, err := buildPublishPayload(kind, data)
+	if err != nil {
+		return "", err
+	}
+	var lastErr error
+	for _, targetUrl := range info.EffectiveUrls() {
+		id, err := publishToUrl(info, targetUrl, payload)
+		if err == nil {
+			return id, nil
+		}
+		lastErr = err
+	}
+	return "", lastErr
+}
+
+func buildPublishPayload(kind string, data json.RawMessage) ([]byte, error) {
 	body := map[string]any{"kind": kind, "time": time.Now().UTC().Format(time.RFC3339)}
 	if len(data) > 0 {
 		var extra map[string]any
 		if err := json.Unmarshal(data, &extra); err != nil {
-			return "", fmt.Errorf("data must be a JSON object: %w", err)
+			return nil, fmt.Errorf("data must be a JSON object: %w", err)
 		}
 		for k, v := range extra {
 			if k != "kind" {
@@ -231,15 +323,18 @@ func Publish(kind string, data json.RawMessage) (string, error) {
 			}
 		}
 	}
-	payload, _ := json.Marshal(body)
-	req, err := http.NewRequest(http.MethodPost, info.Url+"/"+info.Topic, bytes.NewReader(payload))
+	return json.Marshal(body)
+}
+
+func publishToUrl(info *model.NotifierInfo, targetUrl string, payload []byte) (string, error) {
+	req, err := http.NewRequest(http.MethodPost, targetUrl+"/"+info.Topic, bytes.NewReader(payload))
 	if err != nil {
 		return "", err
 	}
 	if info.WriteToken != "" {
 		req.Header.Set("Authorization", "Bearer "+info.WriteToken)
 	}
-	client, err := httpClient(info, 15*time.Second)
+	client, err := httpClientForUrl(info, targetUrl, 15*time.Second)
 	if err != nil {
 		return "", err
 	}
@@ -250,7 +345,7 @@ func Publish(kind string, data json.RawMessage) (string, error) {
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("ntfy publish failed: %s %s", resp.Status, strings.TrimSpace(string(raw)))
+		return "", fmt.Errorf("ntfy publish failed (%s): %s %s", targetUrl, resp.Status, strings.TrimSpace(string(raw)))
 	}
 	var out struct {
 		Id string `json:"id"`
@@ -259,27 +354,48 @@ func Publish(kind string, data json.RawMessage) (string, error) {
 	return out.Id, nil
 }
 
-// Test publishes a probe and waits until the subscriber receives it.
+// Test publishes a probe to every registered endpoint URL and waits until the subscriber receives each one.
 func Test(timeout time.Duration) model.NotifierTestResult {
 	start := time.Now()
-	nonce := randomToken(12)
+	info := Current()
+	if info == nil {
+		return model.NotifierTestResult{Success: false, Message: "no notifier is registered"}
+	}
+	urls := info.EffectiveUrls()
 	ch := addWaiter()
 	defer removeWaiter(ch)
-	id, err := Publish("test", json.RawMessage(fmt.Sprintf(`{"nonce":"%s"}`, nonce)))
-	if err != nil {
-		return model.NotifierTestResult{Success: false, ElapsedMs: time.Since(start).Milliseconds(), Message: err.Error()}
-	}
+
 	deadline := time.After(timeout)
-	for {
-		select {
-		case msg := <-ch:
-			if strings.Contains(msg.Message, nonce) {
-				return model.NotifierTestResult{Success: true, MessageId: id, ElapsedMs: time.Since(start).Milliseconds()}
-			}
-		case <-deadline:
-			return model.NotifierTestResult{Success: false, MessageId: id, ElapsedMs: time.Since(start).Milliseconds(),
-				Message: "published but not received by the subscriber within " + timeout.String()}
+	var ids []string
+	for _, targetUrl := range urls {
+		nonce := randomToken(12)
+		payload, _ := buildPublishPayload("test", json.RawMessage(fmt.Sprintf(`{"nonce":"%s"}`, nonce)))
+		id, err := publishToUrl(info, targetUrl, payload)
+		if err != nil {
+			return model.NotifierTestResult{Success: false, ElapsedMs: time.Since(start).Milliseconds(), Message: err.Error()}
 		}
+		ids = append(ids, id)
+		received := false
+		for !received {
+			select {
+			case msg := <-ch:
+				if strings.Contains(msg.Message, nonce) {
+					received = true
+				}
+			case <-deadline:
+				return model.NotifierTestResult{
+					Success: false, MessageId: strings.Join(ids, ","), ElapsedMs: time.Since(start).Milliseconds(),
+					Message: fmt.Sprintf("published to %s but not received by the subscriber within %s", targetUrl, timeout),
+				}
+			}
+		}
+	}
+	var note string
+	if len(urls) > 1 {
+		note = fmt.Sprintf("%d/%d endpoints ok", len(urls), len(urls))
+	}
+	return model.NotifierTestResult{
+		Success: true, MessageId: strings.Join(ids, ","), ElapsedMs: time.Since(start).Milliseconds(), Message: note,
 	}
 }
 
@@ -320,28 +436,79 @@ func SetStatus(status, message string) {
 	_ = save(s.info)
 }
 
+func recordUrlStatus(targetUrl string, streamErr error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.info == nil {
+		return
+	}
+	if s.urlErrors == nil {
+		s.urlErrors = map[string]string{}
+	}
+	if streamErr == nil {
+		s.urlErrors[targetUrl] = ""
+	} else {
+		s.urlErrors[targetUrl] = streamErr.Error()
+	}
+	urls := s.info.EffectiveUrls()
+	activeCount := 0
+	var errs []string
+	for _, u := range urls {
+		if msg := s.urlErrors[u]; msg != "" {
+			errs = append(errs, u+": "+msg)
+		} else {
+			activeCount++
+		}
+	}
+	var nextStatus, nextMsg string
+	if activeCount > 0 {
+		nextStatus = model.NotifierStatusActive
+		if len(errs) > 0 {
+			nextMsg = fmt.Sprintf("degraded (%d/%d active): %s", activeCount, len(urls), strings.Join(errs, "; "))
+		}
+	} else {
+		nextStatus = model.NotifierStatusError
+		nextMsg = strings.Join(errs, "; ")
+	}
+	if s.info.Status != nextStatus || s.info.StatusMessage != nextMsg {
+		s.info.Status = nextStatus
+		s.info.StatusMessage = nextMsg
+		_ = save(s.info)
+	}
+}
+
 func health(info *model.NotifierInfo) error {
-	client, err := httpClient(info, 10*time.Second)
-	if err != nil {
-		return err
-	}
-	resp, err := client.Get(info.Url + "/v1/health")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status %s", resp.Status)
+	for _, targetUrl := range info.EffectiveUrls() {
+		client, err := httpClientForUrl(info, targetUrl, 10*time.Second)
+		if err != nil {
+			return err
+		}
+		resp, err := client.Get(targetUrl + "/v1/health")
+		if err != nil {
+			return fmt.Errorf("%s: %w", targetUrl, err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("%s: unexpected status %s", targetUrl, resp.Status)
+		}
 	}
 	return nil
 }
 
-func httpClient(info *model.NotifierInfo, timeout time.Duration) (*http.Client, error) {
+func httpClientForUrl(info *model.NotifierInfo, targetUrl string, timeout time.Duration) (*http.Client, error) {
 	transport := &http.Transport{Proxy: http.ProxyFromEnvironment}
 	if info.CaCert != "" {
-		pool := x509.NewCertPool()
-		if !pool.AppendCertsFromPEM([]byte(info.CaCert)) {
+		pinned := x509.NewCertPool()
+		if !pinned.AppendCertsFromPEM([]byte(info.CaCert)) {
 			return nil, errors.New("caCert is not a valid PEM certificate")
+		}
+		pool := pinned
+		if u, err := url.Parse(targetUrl); err == nil && u.Hostname() != "" && net.ParseIP(u.Hostname()) == nil {
+			// Domain endpoints (e.g. Let's Encrypt on Node 1) validate against system CAs; custom domain CAs still work.
+			if sysPool, sysErr := x509.SystemCertPool(); sysErr == nil && sysPool != nil {
+				sysPool.AppendCertsFromPEM([]byte(info.CaCert))
+				pool = sysPool
+			}
 		}
 		transport.TLSClientConfig = &tls.Config{RootCAs: pool}
 	}
@@ -350,10 +517,15 @@ func httpClient(info *model.NotifierInfo, timeout time.Duration) (*http.Client, 
 
 func startSubscriber(info *model.NotifierInfo) {
 	ctx, cancel := context.WithCancel(context.Background())
+	urls := info.EffectiveUrls()
 	s.mu.Lock()
 	s.cancel = cancel
+	s.urlErrors = make(map[string]string, len(urls))
 	s.mu.Unlock()
-	go subscribe(ctx, *info)
+	snap := cloneInfo(info)
+	for _, targetUrl := range urls {
+		go subscribe(ctx, *snap, targetUrl)
+	}
 	go saveLoop(ctx)
 }
 
@@ -366,7 +538,7 @@ func stopSubscriber() {
 	}
 }
 
-// saveLoop persists LastMessageId at most once per interval while messages arrive, and once more when the
+// saveLoop persists LastMessageIds at most once per interval while messages arrive, and once more when the
 // subscriber stops. Messages received after the last save are re-delivered on restart; handlers are idempotent.
 func saveLoop(ctx context.Context) {
 	ticker := time.NewTicker(2 * time.Second)
@@ -391,12 +563,12 @@ func saveLoop(ctx context.Context) {
 	}
 }
 
-// subscribe streams the topic as JSON lines and reconnects with backoff. It stops when ctx is cancelled.
-func subscribe(ctx context.Context, info model.NotifierInfo) {
+// subscribe streams the topic from targetUrl as JSON lines and reconnects with backoff until ctx is cancelled.
+func subscribe(ctx context.Context, info model.NotifierInfo, targetUrl string) {
 	backoff := 2 * time.Second
 	for ctx.Err() == nil {
 		started := time.Now()
-		err := streamOnce(ctx, &info)
+		err := streamOnce(ctx, &info, targetUrl)
 		if ctx.Err() != nil {
 			return
 		}
@@ -404,8 +576,8 @@ func subscribe(ctx context.Context, info model.NotifierInfo) {
 			backoff = 2 * time.Second
 		}
 		if err != nil {
-			log.Warn().Err(err).Str("topic", info.Topic).Msg("notifier: subscription interrupted, reconnecting")
-			SetStatus(model.NotifierStatusError, err.Error())
+			log.Warn().Err(err).Str("url", targetUrl).Str("topic", info.Topic).Msg("notifier: subscription interrupted, reconnecting")
+			recordUrlStatus(targetUrl, err)
 		}
 		select {
 		case <-ctx.Done():
@@ -418,10 +590,25 @@ func subscribe(ctx context.Context, info model.NotifierInfo) {
 	}
 }
 
-func streamOnce(ctx context.Context, info *model.NotifierInfo) error {
-	u := info.Url + "/" + info.Topic + "/json"
-	if info.LastMessageId != "" {
-		u += "?since=" + url.QueryEscape(info.LastMessageId)
+func lastMessageIdFor(targetUrl string) string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.info == nil {
+		return ""
+	}
+	if id := s.info.LastMessageIds[targetUrl]; id != "" {
+		return id
+	}
+	if len(s.info.EffectiveUrls()) == 1 && targetUrl == s.info.Url {
+		return s.info.LastMessageId
+	}
+	return ""
+}
+
+func streamOnce(ctx context.Context, info *model.NotifierInfo, targetUrl string) error {
+	u := targetUrl + "/" + info.Topic + "/json"
+	if since := lastMessageIdFor(targetUrl); since != "" {
+		u += "?since=" + url.QueryEscape(since)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
@@ -430,7 +617,7 @@ func streamOnce(ctx context.Context, info *model.NotifierInfo) error {
 	if info.ReadToken != "" {
 		req.Header.Set("Authorization", "Bearer "+info.ReadToken)
 	}
-	client, err := httpClient(info, 0)
+	client, err := httpClientForUrl(info, targetUrl, 0)
 	if err != nil {
 		return err
 	}
@@ -443,8 +630,8 @@ func streamOnce(ctx context.Context, info *model.NotifierInfo) error {
 		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return fmt.Errorf("subscribe failed: %s %s", resp.Status, strings.TrimSpace(string(raw)))
 	}
-	SetStatus(model.NotifierStatusActive, "")
-	log.Info().Str("url", info.Url).Str("topic", info.Topic).Msg("notifier: subscribed")
+	recordUrlStatus(targetUrl, nil)
+	log.Info().Str("url", targetUrl).Str("topic", info.Topic).Msg("notifier: subscribed")
 
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
@@ -469,8 +656,7 @@ func streamOnce(ctx context.Context, info *model.NotifierInfo) error {
 		if json.Unmarshal([]byte(ev.Message), &meta) == nil {
 			msg.Kind, msg.NsId, msg.InfraId, msg.NodeGroupId, msg.NodeId = meta.Kind, meta.NsId, meta.InfraId, meta.NodeGroupId, meta.NodeId
 		}
-		info.LastMessageId = ev.Id
-		dispatch(msg)
+		dispatchFrom(targetUrl, msg)
 	}
 	if err := scanner.Err(); err != nil && ctx.Err() == nil {
 		return err
@@ -478,11 +664,15 @@ func streamOnce(ctx context.Context, info *model.NotifierInfo) error {
 	return errors.New("stream closed by server")
 }
 
-func dispatch(msg model.NotifierMessage) {
+func dispatchFrom(targetUrl string, msg model.NotifierMessage) {
 	s.mu.Lock()
 	if s.info != nil {
-		// LastMessageId is persisted by saveLoop, not per message: thousands of Nodes can report at once
+		// LastMessageIds is persisted by saveLoop, not per message: thousands of Nodes can report at once
 		s.info.LastMessageId = msg.Id
+		if s.info.LastMessageIds == nil {
+			s.info.LastMessageIds = map[string]string{}
+		}
+		s.info.LastMessageIds[targetUrl] = msg.Id
 		s.dirty = true
 	}
 	s.recent = append(s.recent, msg)
@@ -525,10 +715,12 @@ func load() (*model.NotifierInfo, error) {
 	if err := json.Unmarshal([]byte(raw), &info); err != nil {
 		return nil, err
 	}
+	normalizeInfo(&info)
 	return &info, nil
 }
 
 func save(info *model.NotifierInfo) error {
+	normalizeInfo(info)
 	raw, err := json.Marshal(info)
 	if err != nil {
 		return err
@@ -537,13 +729,13 @@ func save(info *model.NotifierInfo) error {
 }
 
 func masked(info *model.NotifierInfo) *model.NotifierInfo {
-	if info == nil {
+	c := cloneInfo(info)
+	if c == nil {
 		return nil
 	}
-	c := *info
 	c.WriteToken = maskToken(c.WriteToken)
 	c.ReadToken = maskToken(c.ReadToken)
-	return &c
+	return c
 }
 
 func maskToken(t string) string {

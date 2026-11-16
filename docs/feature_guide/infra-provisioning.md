@@ -2,7 +2,7 @@
 
 This document is the end-to-end guide for **creating infrastructure** with CB-Tumblebug:
 what a provisioning request contains, what gets created automatically, how nodes are
-bootstrapped with post-deployment commands, and how to verify, scale, and clean up.
+bootstrapped with a post-deployment script, and how to verify, scale, and clean up.
 
 It ties together the topics covered in depth elsewhere:
 [Spec & Image Recommendation](spec-image-recommendation.md) (choosing what to run),
@@ -11,7 +11,7 @@ It ties together the topics covered in depth elsewhere:
 [Infra Resource Model & Lifecycle](infra-resource-model-and-lifecycle-management.md)
 (status and control after creation), and
 [Remote Command & File Transfer](remote-command-and-file-transfer.md)
-(the execution engine reused by post-deployment commands).
+(the execution engine reused by the post-deployment script).
 
 ## 🗺️ The Provisioning Flow
 
@@ -28,9 +28,9 @@ flowchart TD
     F -->|refine| H[Remove failed nodes]
     F -->|rollback| I[Delete everything]
 
-    G --> J[4. Bootstrap<br/>postCommand / postCommands]
+    G --> J[4. Bootstrap<br/>postScript]
     H --> J
-    J --> K[5. Verify<br/>postCommandStatus + node status]
+    J --> K[5. Verify<br/>postScriptStatus + node status]
     K --> L[6. Scale<br/>add NodeGroup / add Nodes]
     K --> M[7. Clean up<br/>DELETE infra → release shared resources]
 
@@ -130,34 +130,40 @@ everything that follows:
 # Run a command only on workers
 POST /ns/{nsId}/cmd/infra/{infraId}?labelSelector=role=worker
 
-# Bootstrap only the control plane during creation (see postCommands below)
-"postCommands": [ { "command": ["..."], "labelSelector": "role=control" } ]
+# Bootstrap only the control plane during creation (see postScript below)
+"postScript": { "phases": [ { "command": ["..."], "labelSelector": "role=control" } ] }
 ```
 
 Keep the label scheme consistent across NodeGroups (`role`, `tier`, `env`) — it pays off
 when you later add NodeGroups or run targeted operations.
 
-## 🚀 Post-deployment Commands (Bootstrap)
+## 🚀 Post-deployment Script (Bootstrap)
 
-Post-deployment commands turn provisioned nodes into a working system. They run through
-the same engine as [Remote Command](remote-command-and-file-transfer.md) — bastion
+The post-deployment script (`postScript`) turns provisioned nodes into a working system.
+It runs through the same engine as [Remote Command](remote-command-and-file-transfer.md) — bastion
 routing, TOFU host-key verification, per-node parallelism, `$$Func()` placeholders, and
 command-status history all apply.
 
-`postCommands[]` is the single entry point: it holds **phases** that run
-**sequentially**, each with its own target. A simple "run these commands everywhere"
-request is just one phase.
+`postScript` is the single entry point: its `phases[]` run **sequentially**, each with
+its own target. A simple "run these commands everywhere" request is just one phase.
+
+> The earlier field names are still accepted in requests: `postCommands` is read as
+> `postScript.phases`, `postCommandAsync: true` acts like the `postScriptAsync=true` query
+> parameter, and `policyOnPostCommandFailure` (image builds) as `policyOnPostScriptFailure`.
+> Responses use the new names only.
 
 ### Single phase (simple case)
 
 ```jsonc
-"postCommands": [
-  {
-    "command": ["sudo apt-get update", "sudo apt-get install -y nginx"],
-    "timeoutMinutes": 10,
-    "labelSelector": "role=web"     // optional target; default = all nodes
-  }
-]
+"postScript": {
+  "phases": [
+    {
+      "command": ["sudo apt-get update", "sudo apt-get install -y nginx"],
+      "timeoutMinutes": 10,
+      "labelSelector": "role=web"     // optional target; default = all nodes
+    }
+  ]
+}
 ```
 
 ### Ordered phases (multi-step bootstrap)
@@ -165,11 +171,13 @@ request is just one phase.
 Multiple phases give the control-plane-then-worker shape:
 
 ```jsonc
-"postCommands": [
-  { "command": ["k8s-control-plane-setup.sh"], "nodeGroupId": "control", "timeoutMinutes": 15 },
-  { "command": ["k8s-worker-join.sh"],         "labelSelector": "role=worker",
-    "continueOnError": false }                  // default: a failed phase skips the rest
-]
+"postScript": {
+  "phases": [
+    { "command": ["k8s-control-plane-setup.sh"], "nodeGroupId": "control", "timeoutMinutes": 15 },
+    { "command": ["k8s-worker-join.sh"],         "labelSelector": "role=worker",
+      "continueOnError": false }                  // default: a failed phase skips the rest
+  ]
+}
 ```
 
 | Field | Meaning |
@@ -185,31 +193,39 @@ no command, or if the cumulative timeout exceeds the budget.
 
 ### Synchronous vs Asynchronous
 
-Nodes bill from the moment they are `Running`, and a long bootstrap can outlive client
-or proxy timeouts. Therefore **asynchronous execution is recommended**:
+By default the call **waits for the post-deployment script** and returns its final result.
+That suits callers whose next step depends on the setup.
 
-```jsonc
-"postCommandAsync": true
+A long bootstrap can outlive client or proxy timeouts, and a UI may want to show the nodes
+as soon as they exist. For those cases add the `postScriptAsync` query parameter. It is an
+option of the call, not part of the script, so a template never carries it:
+
+```bash
+POST /tumblebug/ns/{nsId}/infraDynamic?postScriptAsync=true
 ```
 
-| | Synchronous (default) | Asynchronous |
+It is available on `infraDynamic`, `infra`, `infra/template/{templateId}`,
+`infra/{infraId}/nodeGroupDynamic` and `infraAutopilot`. Image building and policy
+scale-out always wait for the result.
+
+| | Synchronous (default) | Asynchronous (`postScriptAsync=true`) |
 |---|---|---|
 | Response returns | after bootstrap finishes | as soon as nodes are provisioned |
-| `postCommandStatus` in response | terminal (`Completed` / ...) | **`Running`** |
-| `postCommandResults` | already filled | filled as phases complete |
-| `postCommandRequestId` | present (for history/replay) | present (for live streaming) |
+| `postScriptStatus` in response | terminal (`Completed` / ...) | **`Running`** |
+| `postScriptResults` | already filled | filled as phases complete |
+| `postScriptRequestId` | present (for history/replay) | present (for live streaming) |
 
-The response shape is identical in both modes — `postCommandStatus` is the only
+The response shape is identical in both modes — `postScriptStatus` is the only
 discriminator, so clients need no mode-specific parsing.
 
-The background run is detached from the request: a disconnecting client no longer
-cancels the bootstrap.
+The script is not tied to the HTTP connection in either mode: if a synchronous caller
+disconnects, the run continues and its result is stored on the Infra.
 
 ### Watching progress
 
 ```bash
 # Live stream (Server-Sent Events): CommandStatus → CommandLog → CommandDone
-GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postScriptRequestId}
 
 # Or poll the Infra object until the status becomes terminal
 GET /tumblebug/ns/{nsId}/infra/{infraId}
@@ -220,9 +236,9 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}
 ```jsonc
 {
   "status": "Running:3 (R:3/3)",              // node status — independent of bootstrap
-  "postCommandStatus": "CompletedWithErrors",
-  "postCommandRequestId": "pc-web-cluster-tb1a2b3c",
-  "postCommandResults": [
+  "postScriptStatus": "CompletedWithErrors",
+  "postScriptRequestId": "ps-web-cluster-tb1a2b3c",
+  "postScriptResults": [
     { "phase": 1, "target": "nodeGroupId=control", "status": "Completed", "results": { "results": [ ... ] } },
     { "phase": 2, "target": "labelSelector=role=worker", "status": "Failed",
       "results": { "results": [ { "nodeId": "worker-1", "error": "Process exited with status 7" } ] } },
@@ -231,13 +247,14 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}
 }
 ```
 
-| `postCommandStatus` | Meaning | Typical action |
+| `postScriptStatus` | Meaning | Typical action |
 |---|---|---|
-| `None` | No post-deployment command was requested | — |
+| `None` | No post-deployment script was requested | — |
 | `Running` | Still executing (async) | Stream or poll |
 | `Completed` | All target nodes succeeded | Proceed |
 | `CompletedWithErrors` | Some nodes failed | Inspect per-node `error`, re-run on those nodes |
 | `Failed` | All targeted nodes failed, or execution could not start | Check SSH/user/image assumptions |
+| `Interrupted` | CB-Tumblebug restarted while the script was running | Check which phases finished in `postScriptResults`, re-run the rest |
 | `Skipped` (per phase) | An earlier phase failed with `continueOnError: false` | Fix the earlier phase first |
 
 **Infra creation success and bootstrap success are separate signals.** Nodes can be
@@ -251,7 +268,7 @@ per-node error strings are surfaced in the API response.
   on freshly created nodes. Genuine auth/config errors are still reported per node.
 - **Timeouts are per phase.** For finer granularity, split work into more phases.
 - **Failures are recorded.** Every run appears in the per-node command status history and
-  can be re-inspected with the `postCommandRequestId`.
+  can be re-inspected with the `postScriptRequestId`.
 - **Re-running.** Bootstrap is not automatically retried; re-run the failed part with
   `POST /ns/{nsId}/cmd/infra/{infraId}` targeting the affected nodes.
 
@@ -261,7 +278,7 @@ Two different operations, often confused:
 
 | Goal | API | Notes |
 |---|---|---|
-| **Add a new NodeGroup** (different spec/image/labels) | `POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic` | Supports `label`, `postCommands` (scoped to the new group by default), and `postCommandAsync` |
+| **Add a new NodeGroup** (different spec/image/labels) | `POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic` | Supports `label` and `postScript` (phases scoped to the new group by default) and `?postScriptAsync=true` |
 | **Add nodes to an existing NodeGroup** | `POST /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}` with `{"numNodesToAdd": N}` | Same spec/image as the group; no bootstrap fields |
 
 Adding a NodeGroup has its own review endpoint (`.../nodeGroupDynamicReview`) with the
@@ -269,14 +286,16 @@ same semantics as `infraDynamicReview`.
 
 ```jsonc
 // Add GPU workers and bootstrap only them
+// POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic?postScriptAsync=true
 {
   "name": "worker-gpu",
   "specId": "aws+us-east-1+g4dn.xlarge",
   "imageId": "ami-0abc...",
   "nodeGroupSize": 2,
   "label": { "role": "worker", "accelerator": "gpu" },
-  "postCommands": [ { "command": ["curl -fsSL https://.../worker-setup.sh | bash"] } ],
-  "postCommandAsync": true
+  "postScript": {
+    "phases": [ { "command": ["curl -fsSL https://.../worker-setup.sh | bash"] } ]
+  }
 }
 ```
 
@@ -310,7 +329,7 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}?option=status
 GET /tumblebug/ns/{nsId}/infra/{infraId}?option=accessinfo
 
 # Bootstrap outcome
-GET /tumblebug/ns/{nsId}/infra/{infraId}     # → postCommandStatus / postCommandResults
+GET /tumblebug/ns/{nsId}/infra/{infraId}     # → postScriptStatus / postScriptResults
 ```
 
 See [Infra Resource Model & Lifecycle](infra-resource-model-and-lifecycle-management.md)
@@ -343,38 +362,41 @@ retry a few minutes later rather than forcing.
 
 ```jsonc
 // 1) create + bootstrap asynchronously
-POST /ns/default/infraDynamic
+POST /ns/default/infraDynamic?postScriptAsync=true
 {
   "name": "web-sv",
   "nodeGroups": [ { "name": "web", "specId": "aws+us-west-1+t3a.medium",
                     "imageId": "ami-0abc...", "nodeGroupSize": 3, "label": { "role": "web" } } ],
-  "postCommandAsync": true,
-  "postCommands": [ { "command": [
-      "sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx",
-      "echo \"<h1>$(hostname)</h1>\" | sudo tee /var/www/html/index.html >/dev/null && sudo systemctl enable --now nginx" ] } ]
+  "postScript": {
+    "phases": [ { "command": [
+        "sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx",
+        "echo \"<h1>$(hostname)</h1>\" | sudo tee /var/www/html/index.html >/dev/null && sudo systemctl enable --now nginx" ] } ]
+  }
 }
-// 2) watch: GET /ns/default/stream/cmd/infra/web-sv?xRequestId={postCommandRequestId}
+// 2) watch: GET /ns/default/stream/cmd/infra/web-sv?xRequestId={postScriptRequestId}
 // 3) open the port: POST /ns/default/resources/securityGroup/web-sv-web/rules  { Ports: "80", ... }
 ```
 
 ### 2. Kubernetes: control plane first, then workers
 
 ```jsonc
-"postCommands": [
-  { "command": ["curl -fsSL .../k8s-control-plane-setup.sh | bash"],
-    "nodeGroupId": "control", "timeoutMinutes": 20 },
-  { "command": ["curl -fsSL .../k8s-worker-setup.sh | bash -s -- --join '<JOIN_CMD>'"],
-    "labelSelector": "role=worker", "timeoutMinutes": 20 }
-]
+"postScript": {
+  "phases": [
+    { "command": ["curl -fsSL .../k8s-control-plane-setup.sh | bash"],
+      "nodeGroupId": "control", "timeoutMinutes": 20 },
+    { "command": ["curl -fsSL .../k8s-worker-setup.sh | bash -s -- --join '<JOIN_CMD>'"],
+      "labelSelector": "role=worker", "timeoutMinutes": 20 }
+  ]
+}
 ```
 Phase 2 runs only after phase 1 succeeds; if phase 1 fails, phase 2 is marked `Skipped`.
 
 ### 3. Bake a custom image
 
 Provisioning + bootstrap + snapshot is automated by the
-[Cloud-Agnostic Image](cloud-agnostic-image.md) workflow. There, post-deployment
-commands run **synchronously** (the bootstrap result must be known before snapshotting),
-and `policyOnPostCommandFailure` decides whether a failed bootstrap aborts the build.
+[Cloud-Agnostic Image](cloud-agnostic-image.md) workflow. There, the post-deployment
+script runs **synchronously** (the bootstrap result must be known before snapshotting),
+and `policyOnPostScriptFailure` decides whether a failed bootstrap aborts the build.
 
 ## 📋 API Summary
 

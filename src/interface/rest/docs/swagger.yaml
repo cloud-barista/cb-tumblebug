@@ -3097,7 +3097,7 @@ paths:
       - "[Infra Resource] Image Management"
       summary: "Build agnostic custom images by creating Infra, executing commands,\
         \ and taking snapshots"
-      description: "Creates an Infra infrastructure, executes post-deployment commands,\
+      description: "Creates an Infra infrastructure, runs the post-deployment script,\
         \ creates snapshots from each nodegroup, and optionally cleans up the Infra.\
         \ This is a complete workflow for building CSP-agnostic custom images."
       operationId: PostBuildAgnosticImage
@@ -4240,7 +4240,7 @@ paths:
         - Multi-cloud node deployment with heterogeneous configurations
         - Automatic resource dependency management (VPC → Security Group → node)
         - Built-in failure handling with configurable policies (continue/rollback/refine)
-        - Post-deployment command execution support
+        - Post-deployment script (postScript) support
         - Real-time status updates and progress tracking
 
         **node Lifecycle:**
@@ -4267,6 +4267,13 @@ paths:
         schema:
           type: string
           default: default
+      - name: postScriptAsync
+        in: query
+        description: "If true, return once the Nodes are provisioned and run postScript\
+          \ in the background; follow it with postScriptStatus and postScriptRequestId"
+        schema:
+          type: string
+          default: "false"
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -7286,6 +7293,13 @@ paths:
         schema:
           type: string
           default: infra01
+      - name: postScriptAsync
+        in: query
+        description: "If true, return once the Nodes are provisioned and run postScript\
+          \ in the background; follow it with postScriptStatus and postScriptRequestId"
+        schema:
+          type: string
+          default: "false"
       - name: x-credential-holder
         in: header
         description: "Credential holder ID to select which credentials to use for\
@@ -7299,7 +7313,7 @@ paths:
           type: string
       requestBody:
         description: "NodeGroup dynamic request specifying specId, imageId, scaling\
-          \ parameters, and optional postCommands bootstrap"
+          \ parameters, and optional postScript bootstrap"
         content:
           application/json:
             schema:
@@ -8540,6 +8554,13 @@ paths:
           type: string
           enum:
           - hold
+      - name: postScriptAsync
+        in: query
+        description: "If true, return once the Nodes are provisioned and run postScript\
+          \ in the background; follow it with postScriptStatus and postScriptRequestId"
+        schema:
+          type: string
+          default: "false"
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -8618,6 +8639,13 @@ paths:
         schema:
           type: string
           default: default
+      - name: postScriptAsync
+        in: query
+        description: "If true, return once the Nodes are provisioned and run postScript\
+          \ in the background; follow it with postScriptStatus and postScriptRequestId"
+        schema:
+          type: string
+          default: "false"
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -8851,7 +8879,7 @@ paths:
         - Built-in rate limiting prevents CSP API throttling
 
         **Monitoring and Post-Deployment:**
-        - Custom post-deployment command execution
+        - Custom post-deployment script (postScript) execution
         - Real-time status tracking and progress updates
         - Automatic resource labeling and metadata management
       operationId: PostInfraDynamic
@@ -8871,6 +8899,13 @@ paths:
           type: string
           enum:
           - hold
+      - name: postScriptAsync
+        in: query
+        description: "If true, return once the Nodes are provisioned and run postScript\
+          \ in the background; follow it with postScriptStatus and postScriptRequestId"
+        schema:
+          type: string
+          default: "false"
       - name: x-request-id
         in: header
         description: Custom request ID for tracking and correlation across API calls
@@ -16785,7 +16820,7 @@ paths:
         - node specifications (specId, imageId) for each nodegroup
         - NodeGroup sizing and naming
         - Network and disk configuration
-        - Post-deployment commands
+        - Post-deployment script (postScript)
         - Monitoring agent options
 
         Templates can be created manually or extracted from existing Infras.
@@ -21626,19 +21661,13 @@ components:
           description: "NodeGroupSize is the number of Nodes to create in this NodeGroup.\
             \ If > 0, nodeGroup will be generated. Default is 1."
           example: 3
-        postCommandAsync:
-          type: boolean
+        postScript:
+          type: object
           description: |-
-            PostCommandAsync returns the response as soon as the nodes are provisioned and
-            runs the bootstrap commands in the background (observe via streaming/polling)
-          example: false
-        postCommands:
-          type: array
-          description: |-
-            PostCommands are sequential bootstrap phases for the newly added nodes.
+            PostScript bootstraps the newly added nodes.
             Phases without an explicit target are scoped to this NodeGroup.
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
+          allOf:
+          - $ref: '#/components/schemas/model.PostScriptReq'
         rootDiskSize:
           type: integer
           description: Root disk size in GB. 0 = use CSP default.
@@ -21753,12 +21782,12 @@ components:
         placementAlgo:
           type: string
           example: random
-        postCommands:
-          type: array
-          description: PostCommands bootstrap the Nodes added by this action (phases
-            run in order)
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
+        postScript:
+          type: object
+          description: PostScript bootstraps the Nodes added by this action; the policy
+            waits for its result
+          allOf:
+          - $ref: '#/components/schemas/model.PostScriptReq'
     model.AutoCondition:
       type: object
       properties:
@@ -22106,11 +22135,11 @@ components:
           description: Whether to cleanup (terminate) Infra after snapshot creation
           example: true
           default: true
-        policyOnPostCommandFailure:
+        policyOnPostScriptFailure:
           type: string
           description: |-
-            PolicyOnPostCommandFailure decides whether to bake images when post-deployment
-            commands did not complete cleanly: "abort" (default) fails the build, "proceed" continues
+            PolicyOnPostScriptFailure decides whether to bake images when the post-deployment
+            script did not complete cleanly: "abort" (default) fails the build, "proceed" continues
           example: abort
           enum:
           - abort
@@ -22144,13 +22173,13 @@ components:
         namespace:
           type: string
           example: default
-        postCommandStatus:
+        postScriptStatus:
           type: object
-          description: PostCommandStatus echoes the post-deployment command outcome
+          description: PostScriptStatus echoes the post-deployment script outcome
             of the source infra
           example: Completed
           allOf:
-          - $ref: '#/components/schemas/model.PostCommandStatus'
+          - $ref: '#/components/schemas/model.PostScriptStatus'
         snapshotResult:
           type: object
           description: Snapshot results
@@ -24301,10 +24330,8 @@ components:
             $ref: '#/components/schemas/model.NodeSpec'
         policy:
           $ref: '#/components/schemas/model.AutopilotPolicy'
-        postCommands:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
+        postScript:
+          $ref: '#/components/schemas/model.PostScriptReq'
     model.InfraAutopilotResult:
       type: object
       properties:
@@ -24362,35 +24389,32 @@ components:
             $ref: '#/components/schemas/model.NodeSpecResult'
         placementAlgo:
           type: string
-        postCommandAsync:
-          type: boolean
-          description: PostCommandAsync echoes whether the commands run in the background
-        postCommandRequestId:
+        postScript:
+          type: object
+          description: PostScript echoes the requested post-deployment script
+          allOf:
+          - $ref: '#/components/schemas/model.PostScriptReq'
+        postScriptRequestId:
           type: string
           description: |-
-            PostCommandRequestId is the streaming/tracking key of the post-deployment run
-            (always set when post-deployment commands were requested, in both modes)
-          example: pc-infra01-1a2b3c
-        postCommandResults:
+            PostScriptRequestId is the streaming/tracking key of the post-deployment run
+            (always set when a post-deployment script was requested, in both modes)
+          example: ps-infra01-1a2b3c
+        postScriptResults:
           type: array
-          description: PostCommandResults holds per-phase outcomes
+          description: PostScriptResults holds per-phase outcomes
           items:
-            $ref: '#/components/schemas/model.PostCommandPhaseResult'
-        postCommandStatus:
+            $ref: '#/components/schemas/model.PostScriptPhaseResult'
+        postScriptStatus:
           type: object
           description: |-
-            PostCommandStatus summarizes the post-deployment command outcome.
+            PostScriptStatus summarizes the post-deployment script outcome.
             "Running" means execution is still in progress (async mode): stream it with
-            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postScriptRequestId}
             or poll this object until the status becomes terminal.
           example: Completed
           allOf:
-          - $ref: '#/components/schemas/model.PostCommandStatus'
-        postCommands:
-          type: array
-          description: PostCommands are the requested post-deployment command phases
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
+          - $ref: '#/components/schemas/model.PostScriptStatus'
         provisioningAttempts:
           type: array
           items:
@@ -24660,23 +24684,13 @@ components:
           - continue
           - rollback
           - refine
-        postCommandAsync:
-          type: boolean
+        postScript:
+          type: object
           description: |-
-            PostCommandAsync (default false) returns the response as soon as nodes are
-            provisioned and runs post-deployment commands in the background. The response
-            then carries postCommandStatus="Running" plus postCommandRequestId; observe with
-            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
-            or by polling GET /ns/{nsId}/infra/{infraId}.
-          example: false
-        postCommands:
-          type: array
-          description: |-
-            PostCommands are post-deployment command phases that bootstrap the Nodes.
-            Phases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector.
-            A single command set is simply one phase: [{"command": ["..."]}]
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
+            PostScript is the post-deployment script that bootstraps the Nodes once they are up.
+            Its phases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector.
+          allOf:
+          - $ref: '#/components/schemas/model.PostScriptReq'
         sgTemplateId:
           type: string
           description: |-
@@ -24838,35 +24852,32 @@ components:
             $ref: '#/components/schemas/model.NodeInfo'
         placementAlgo:
           type: string
-        postCommandAsync:
-          type: boolean
-          description: PostCommandAsync echoes whether the commands run in the background
-        postCommandRequestId:
+        postScript:
+          type: object
+          description: PostScript echoes the requested post-deployment script
+          allOf:
+          - $ref: '#/components/schemas/model.PostScriptReq'
+        postScriptRequestId:
           type: string
           description: |-
-            PostCommandRequestId is the streaming/tracking key of the post-deployment run
-            (always set when post-deployment commands were requested, in both modes)
-          example: pc-infra01-1a2b3c
-        postCommandResults:
+            PostScriptRequestId is the streaming/tracking key of the post-deployment run
+            (always set when a post-deployment script was requested, in both modes)
+          example: ps-infra01-1a2b3c
+        postScriptResults:
           type: array
-          description: PostCommandResults holds per-phase outcomes
+          description: PostScriptResults holds per-phase outcomes
           items:
-            $ref: '#/components/schemas/model.PostCommandPhaseResult'
-        postCommandStatus:
+            $ref: '#/components/schemas/model.PostScriptPhaseResult'
+        postScriptStatus:
           type: object
           description: |-
-            PostCommandStatus summarizes the post-deployment command outcome.
+            PostScriptStatus summarizes the post-deployment script outcome.
             "Running" means execution is still in progress (async mode): stream it with
-            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postScriptRequestId}
             or poll this object until the status becomes terminal.
           example: Completed
           allOf:
-          - $ref: '#/components/schemas/model.PostCommandStatus'
-        postCommands:
-          type: array
-          description: PostCommands are the requested post-deployment command phases
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
+          - $ref: '#/components/schemas/model.PostScriptStatus'
         resourceType:
           type: string
           description: ResourceType is the type of the resource
@@ -25069,16 +25080,12 @@ components:
           - continue
           - rollback
           - refine
-        postCommandAsync:
-          type: boolean
-          description: PostCommandAsync runs post-deployment commands in the background
-          example: false
-        postCommands:
-          type: array
-          description: PostCommands are sequential post-deployment command phases
-            that bootstrap the Nodes
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
+        postScript:
+          type: object
+          description: PostScript is the post-deployment script that bootstraps the
+            Nodes once they are up
+          allOf:
+          - $ref: '#/components/schemas/model.PostScriptReq'
         systemLabel:
           type: string
           description: SystemLabel is for describing the infra in a keyword (any string
@@ -27446,6 +27453,12 @@ components:
         reportedAt:
           type: string
           example: 2026-01-01T00:00:00Z
+        runId:
+          type: integer
+          example: 1763251200
+        seq:
+          type: integer
+          example: 1
         status:
           type: string
           example: ok
@@ -27743,18 +27756,26 @@ components:
       properties:
         caCert:
           type: string
-          description: CaCert is the PEM certificate VMs and CB-Tumblebug trust for
-            a self-signed server.
+          description: CaCert is the PEM certificate bundle VMs and CB-Tumblebug trust
+            for self-signed server endpoints.
         lastMessageId:
           type: string
+        lastMessageIds:
+          type: object
+          additionalProperties:
+            type: string
         managedDnsDomain:
           type: string
-          description: Route53 record created for the managed Infra (empty when a
-            self-signed certificate is used).
+          description: Route53 record(s) created for DNS-eligible managed nodes (empty
+            when only self-signed certificates are used).
           example: example.com
         managedDnsRecord:
           type: string
           example: ntfy.example.com
+        managedDnsRecords:
+          type: array
+          items:
+            type: string
         managedInfraId:
           type: string
           example: ntfy
@@ -27767,10 +27788,18 @@ components:
             type: string
         managedSshKeyId:
           type: string
+        managedSshKeyIds:
+          type: array
+          items:
+            type: string
         managedVNetId:
           type: string
           description: Resources created for the managed Infra; removed together with
             it on DELETE ?deleteInfra=true.
+        managedVNetIds:
+          type: array
+          items:
+            type: string
         readToken:
           type: string
           example: tk_yyyyyyyyyyyyyyyyyyyyyyyyyyyyy
@@ -27804,7 +27833,14 @@ components:
           example: ntfy
         url:
           type: string
-          example: https://3.35.10.20
+          example: https://3.35.10.20:9443
+        urls:
+          type: array
+          example:
+          - https://ntfy.example.com
+          - https://47.103.10.20:9443
+          items:
+            type: string
         writeToken:
           type: string
           example: tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -27870,7 +27906,6 @@ components:
     model.NotifierRegisterReq:
       required:
       - topic
-      - url
       type: object
       properties:
         caCert:
@@ -27884,6 +27919,13 @@ components:
         url:
           type: string
           example: https://ntfy.example.com
+        urls:
+          type: array
+          example:
+          - https://ntfy.example.com
+          - https://47.103.10.20:9443
+          items:
+            type: string
         writeToken:
           type: string
           example: tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -28583,30 +28625,7 @@ components:
           $ref: '#/components/schemas/model.AutoCondition'
         status:
           type: string
-    model.PostCommandPhaseResult:
-      type: object
-      properties:
-        phase:
-          type: integer
-          description: Phase is the 1-based execution order
-          example: 1
-        results:
-          type: object
-          description: Results holds per-node command results
-          allOf:
-          - $ref: '#/components/schemas/model.InfraSshCmdResultForAPI'
-        status:
-          type: object
-          description: Status is the aggregated outcome of this phase (Skipped when
-            a previous phase stopped execution)
-          example: Completed
-          allOf:
-          - $ref: '#/components/schemas/model.PostCommandStatus'
-        target:
-          type: string
-          description: Target echoes the scope this phase ran against
-          example: nodeGroupId=control
-    model.PostCommandReq:
+    model.PostScriptPhase:
       type: object
       properties:
         command:
@@ -28665,22 +28684,56 @@ components:
           type: string
           description: UserName is the SSH username to use for command execution
           example: cb-user
-    model.PostCommandStatus:
+    model.PostScriptPhaseResult:
+      type: object
+      properties:
+        phase:
+          type: integer
+          description: Phase is the 1-based execution order
+          example: 1
+        results:
+          type: object
+          description: Results holds per-node command results
+          allOf:
+          - $ref: '#/components/schemas/model.InfraSshCmdResultForAPI'
+        status:
+          type: object
+          description: Status is the aggregated outcome of this phase (Skipped when
+            a previous phase stopped execution)
+          example: Completed
+          allOf:
+          - $ref: '#/components/schemas/model.PostScriptStatus'
+        target:
+          type: string
+          description: Target echoes the scope this phase ran against
+          example: nodeGroupId=control
+    model.PostScriptReq:
+      type: object
+      properties:
+        phases:
+          type: array
+          description: "Phases run sequentially; each may target a nodeGroupId, nodeId,\
+            \ or labelSelector"
+          items:
+            $ref: '#/components/schemas/model.PostScriptPhase'
+    model.PostScriptStatus:
       type: string
       enum:
       - Skipped
       - Running
+      - Interrupted
       - None
       - Completed
       - CompletedWithErrors
       - Failed
       x-enum-varnames:
-      - PostCommandStatusSkipped
-      - PostCommandStatusRunning
-      - PostCommandStatusNone
-      - PostCommandStatusCompleted
-      - PostCommandStatusCompletedWithErrors
-      - PostCommandStatusFailed
+      - PostScriptStatusSkipped
+      - PostScriptStatusRunning
+      - PostScriptStatusInterrupted
+      - PostScriptStatusNone
+      - PostScriptStatusCompleted
+      - PostScriptStatusCompletedWithErrors
+      - PostScriptStatusFailed
     model.PriceFetchOption:
       type: object
       properties:

@@ -143,7 +143,7 @@ Grafana가 있는 스택이 등록되어 있으면 MapUI의 Infra Status 카드�
 
 ## GPU 메트릭
 
-노드 스펙에 가속기(`acceleratorType`)가 있으면 CB-Tumblebug이 `TB_ACCELERATOR_TYPE`, `TB_ACCELERATOR_MODEL`, `TB_ACCELERATOR_COUNT`를 init script에 내려줍니다. `OTEL_GPU=auto`면 설치 스크립트가 nvidia-smi 기반 익스포터(스택 미러 제공)를 설치하고 `127.0.0.1:9835` 스크레이프를 추가합니다. 드라이버가 아직 없어도 익스포터는 설치되며 `nvidia-smi`가 동작하는 순간부터 메트릭이 흐르므로, 나중에 SSH(post-deployment 명령)로 드라이버를 설치해도 됩니다. DCGM 수준 지표(NVLink, ECC, MIG)는 이 익스포터가 다루지 않습니다.
+노드 스펙에 가속기(`acceleratorType`)가 있으면 CB-Tumblebug이 `TB_ACCELERATOR_TYPE`, `TB_ACCELERATOR_MODEL`, `TB_ACCELERATOR_COUNT`를 init script에 내려줍니다. `OTEL_GPU=auto`면 설치 스크립트가 nvidia-smi 기반 익스포터(스택 미러 제공)를 설치하고 `127.0.0.1:9835` 스크레이프를 추가합니다. 드라이버가 아직 없어도 익스포터는 설치되며 `nvidia-smi`가 동작하는 순간부터 메트릭이 흐르므로, 나중에 SSH(`postScript` 또는 원격 명령)로 드라이버를 설치해도 됩니다. DCGM 수준 지표(NVLink, ECC, MIG)는 이 익스포터가 다루지 않습니다.
 
 ---
 

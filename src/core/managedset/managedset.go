@@ -52,12 +52,25 @@ func ProvisionOrReuse(ctx context.Context, nsId, templateId, name, description, 
 
 // PublicNode returns the first Node of the Infra that has a public IP.
 func PublicNode(infraInfo *model.InfraInfo) (*model.NodeInfo, error) {
+	nodes, err := PublicNodes(infraInfo)
+	if err != nil {
+		return nil, err
+	}
+	return nodes[0], nil
+}
+
+// PublicNodes returns every Node of the Infra that has a public IP, in Infra order.
+func PublicNodes(infraInfo *model.InfraInfo) ([]*model.NodeInfo, error) {
+	var out []*model.NodeInfo
 	for i := range infraInfo.Node {
 		if infraInfo.Node[i].PublicIP != "" {
-			return &infraInfo.Node[i], nil
+			out = append(out, &infraInfo.Node[i])
 		}
 	}
-	return nil, fmt.Errorf("infra '%s' has no node with a public IP", infraInfo.Id)
+	if len(out) == 0 {
+		return nil, fmt.Errorf("infra '%s' has no node with a public IP", infraInfo.Id)
+	}
+	return out, nil
 }
 
 // ChooseRecordName returns the FQDN for the server. An explicit record name is used as given; it must not
@@ -131,24 +144,52 @@ func UpsertDnsRecord(ctx context.Context, domain, fqdn, ip string) error {
 // DeleteManagedResources removes the DNS record, SecurityGroups, SSHKey and vNet created for a managed Infra.
 // A resource still used by another Infra fails to delete and is left in place.
 func DeleteManagedResources(ns, vNetId string, sgIds []string, sshKeyId, dnsDomain, dnsRecord, who string) {
+	var vNets, keys []string
+	if vNetId != "" {
+		vNets = []string{vNetId}
+	}
+	if sshKeyId != "" {
+		keys = []string{sshKeyId}
+	}
+	DeleteManagedResourceSet(ns, vNets, sgIds, keys, dnsDomain, dnsRecord, who)
+}
+
+// DeleteManagedResourceSet removes the DNS record and all deduplicated SecurityGroups, SSHKeys and vNets
+// created across one or more regions of a managed Infra.
+func DeleteManagedResourceSet(ns string, vNetIds, sgIds, sshKeyIds []string, dnsDomain, dnsRecord, who string) {
 	if dnsRecord != "" {
 		DeleteDnsRecord(dnsDomain, dnsRecord, who)
 	}
-	for _, sgId := range sgIds {
+	for _, sgId := range uniqueNonEmpty(sgIds) {
 		if err := resource.DelResource(ns, model.StrSecurityGroup, sgId, "false"); err != nil {
 			log.Warn().Err(err).Str("securityGroup", sgId).Msgf("%s: left managed securityGroup in place", who)
 		}
 	}
-	if sshKeyId != "" {
+	for _, sshKeyId := range uniqueNonEmpty(sshKeyIds) {
 		if err := resource.DelResource(ns, model.StrSSHKey, sshKeyId, "false"); err != nil {
 			log.Warn().Err(err).Str("sshKey", sshKeyId).Msgf("%s: left managed sshKey in place", who)
 		}
 	}
-	if vNetId != "" {
+	for _, vNetId := range uniqueNonEmpty(vNetIds) {
 		if _, err := resource.DeleteVNet(ns, vNetId, string(resource.ActionWithSubnets)); err != nil {
 			log.Warn().Err(err).Str("vNet", vNetId).Msgf("%s: left managed vNet in place", who)
 		}
 	}
+}
+
+func uniqueNonEmpty(in []string) []string {
+	seen := map[string]struct{}{}
+	var out []string
+	for _, v := range in {
+		if v == "" {
+			continue
+		}
+		if _, dup := seen[v]; !dup {
+			seen[v] = struct{}{}
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 // WithEnv prefixes a script with exported variables. Values are single-quoted; a quote in a value is rejected upstream.
@@ -170,11 +211,16 @@ func ShellCommand(script string) string {
 	return "echo " + base64.StdEncoding.EncodeToString([]byte(script)) + " | base64 -d | sudo bash"
 }
 
-// RunScript runs the command on the Infra, retrying while SSH is not yet reachable after boot.
+// RunScript runs the command on the first Node of the Infra, retrying while SSH is not yet reachable after boot.
 func RunScript(nsId, infraId, command string, attempts int, who string) (string, error) {
+	return RunScriptOnNode(nsId, infraId, "", command, attempts, who)
+}
+
+// RunScriptOnNode runs the command on a specific Node (or the first Node when nodeId is empty), retrying while SSH comes up.
+func RunScriptOnNode(nsId, infraId, nodeId, command string, attempts int, who string) (string, error) {
 	var lastErr error
 	for attempt := 1; attempt <= attempts; attempt++ {
-		stdout, err := RunOnce(nsId, infraId, command, 30)
+		stdout, err := RunOnceOnNode(nsId, infraId, nodeId, command, 30)
 		if err == nil {
 			return stdout, nil
 		}
@@ -182,7 +228,7 @@ func RunScript(nsId, infraId, command string, attempts int, who string) (string,
 		if strings.Contains(err.Error(), "Process exited with status") {
 			return "", err // the script ran and failed; running it again would only repeat the failure
 		}
-		log.Warn().Err(err).Int("attempt", attempt).Msgf("%s: install attempt failed, retrying", who)
+		log.Warn().Err(err).Str("node", nodeId).Int("attempt", attempt).Msgf("%s: install attempt failed, retrying", who)
 		time.Sleep(15 * time.Second)
 	}
 	return "", lastErr
@@ -190,7 +236,12 @@ func RunScript(nsId, infraId, command string, attempts int, who string) (string,
 
 // RunOnce runs one command on the first Node of the Infra and returns its stdout.
 func RunOnce(nsId, infraId, command string, timeoutMinutes int) (string, error) {
-	results, err := infra.RemoteCommandToInfra(nsId, infraId, "", "", "",
+	return RunOnceOnNode(nsId, infraId, "", command, timeoutMinutes)
+}
+
+// RunOnceOnNode runs one command on the given Node (or the Infra when nodeId is empty) and returns its stdout.
+func RunOnceOnNode(nsId, infraId, nodeId, command string, timeoutMinutes int) (string, error) {
+	results, err := infra.RemoteCommandToInfra(nsId, infraId, "", nodeId, "",
 		&model.InfraCmdReq{Command: []string{command}, TimeoutMinutes: timeoutMinutes}, "")
 	if err != nil {
 		return "", err
@@ -202,6 +253,24 @@ func RunOnce(nsId, infraId, command string, timeoutMinutes int) (string, error) 
 		return "", fmt.Errorf("%v (stderr: %s)", results[0].Err, strings.TrimSpace(results[0].Stderr[0]))
 	}
 	return results[0].Stdout[0], nil
+}
+
+// RunOnceOnAllNodes runs one command across every Node of the Infra and returns an error if any Node fails.
+func RunOnceOnAllNodes(nsId, infraId, command string, timeoutMinutes int) error {
+	results, err := infra.RemoteCommandToInfra(nsId, infraId, "", "", "",
+		&model.InfraCmdReq{Command: []string{command}, TimeoutMinutes: timeoutMinutes}, "")
+	if err != nil {
+		return err
+	}
+	if len(results) == 0 {
+		return errors.New("no command result")
+	}
+	for _, r := range results {
+		if r.Err != nil {
+			return fmt.Errorf("node %s: %v (stderr: %s)", r.NodeId, r.Err, strings.TrimSpace(r.Stderr[0]))
+		}
+	}
+	return nil
 }
 
 // ExtractMarked returns the text between two marker lines of a script's output.

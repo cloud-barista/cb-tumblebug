@@ -107,12 +107,12 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 	infraReq.Label = req.Label
 	infraReq.SystemLabel = req.SystemLabel
 	infraReq.Description = req.Description
-	infraReq.PostCommands = req.PostCommands
-	infraReq.PostCommandAsync = req.PostCommandAsync
+	infraReq.PostScript = req.PostScript
+	infraReq.PostScriptAsync = req.PostScriptAsync
 	infraReq.PolicyOnPartialFailure = req.PolicyOnPartialFailure
 
-	// Validate post-deployment command request shape early (before any provisioning)
-	if err := ValidatePostCommandRequest(req.PostCommands); err != nil {
+	// Validate the post-deployment script shape early (before any provisioning)
+	if err := ValidatePostScript(req.PostScript); err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.InfraInfo{}, err
 	}
@@ -662,19 +662,19 @@ func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId strin
 
 	// Bootstrap the newly added nodeGroup (phases without an explicit target
 	// are scoped to this group so existing nodes are untouched)
-	phases := req.PostCommands
-	if len(phases) > 0 {
-		xRequestId := newPostCommandRequestId(infraId)
-		markPostCommandRunning(nsId, infraId, xRequestId)
-		if req.PostCommandAsync {
+	if req.PostScript.HasPhases() {
+		phases := req.PostScript.Phases
+		xRequestId := newPostScriptRequestId(infraId)
+		markPostScriptRunning(nsId, infraId, xRequestId)
+		if req.PostScriptAsync {
 			log.Info().Msgf("Bootstrapping added NodeGroup in background (xRequestId: %s)", xRequestId)
 			go func() {
-				if _, cmdErr := executePostCommands(nsId, infraId, nodeGroupId, phases, xRequestId); cmdErr != nil {
+				if _, cmdErr := executePostScript(nsId, infraId, nodeGroupId, phases, xRequestId); cmdErr != nil {
 					log.Error().Err(cmdErr).Str("xRequestId", xRequestId).Msg("Background NodeGroup bootstrap failed")
 				}
 			}()
-		} else if _, cmdErr := executePostCommands(nsId, infraId, nodeGroupId, phases, xRequestId); cmdErr != nil {
-			log.Error().Err(cmdErr).Msg("Post-deployment commands failed for the added NodeGroup, but continuing")
+		} else if _, cmdErr := executePostScript(nsId, infraId, nodeGroupId, phases, xRequestId); cmdErr != nil {
+			log.Error().Err(cmdErr).Msg("Post-deployment script failed for the added NodeGroup, but continuing")
 		}
 		if refreshed, refErr := GetInfraInfo(nsId, infraId); refErr == nil {
 			infraResult = refreshed

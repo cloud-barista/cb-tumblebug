@@ -25,7 +25,7 @@
 
 | Step | Stage | Request | Pass criteria |
 |---|---|---|---|
-| 1 | Build image | `POST /ns/default/buildAgnosticImage` — create the source Infra (10 nodes), install nginx, write the page and sync via `postCommands`, snapshot each node, wait for Available, clean up the source Infra | 10 images `Available`, source Infra deleted |
+| 1 | Build image | `POST /ns/default/buildAgnosticImage` — create the source Infra (10 nodes), install nginx, write the page and sync via `postScript`, snapshot each node, wait for Available, clean up the source Infra | 10 images `Available`, source Infra deleted |
 | 2 | Verify image | `GET /ns/default/resources/customImage/{id}` | status, OS and CSP image ID populated |
 | 3 | Recreate from image | `POST /ns/default/infraDynamic` (`imageId` = custom image, 1 node per CSP) | Node Running |
 | 4 | Open SG | `PUT /ns/default/infra/{id}/associatedSecurityGroups` (inbound TCP 22, 80, ICMP; outbound ALL) | Rules applied |

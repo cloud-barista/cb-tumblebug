@@ -951,7 +951,7 @@ sequenceDiagram
 3. **25분 인프라 작업 락**: 대규모 생성이나 제어 작업 진행 중 백그라운드 스위퍼가 전이 상태(Creating, Suspending, Resuming, Terminating)를 덮어쓰지 못하도록 보호함.
 
 ### 7.3 능동형 SSH 준비 게이트 및 비동기 스트리밍 원격 명령
-배포 후 원격 명령(Post-Command) 실행 전의 무의미한 고정 대기를 제거하고, 능동형 TCP/SSH 핸드셰이크 준비 게이트, 최초 접속 시 호스트 키 자동 등록, 검증, Bastion/Target 동시성 세마포어, 실시간 SSE 출력 스트리밍, etcd 이력 크기 제한을 적용함.
+배포 후 스크립트(`postScript`) 실행 전의 무의미한 고정 대기를 제거하고, 능동형 TCP/SSH 핸드셰이크 준비 게이트, 최초 접속 시 호스트 키 자동 등록, 검증, Bastion/Target 동시성 세마포어, 실시간 SSE 출력 스트리밍, etcd 이력 크기 제한을 적용함.
 
 ![7.3 능동형 SSH 준비 게이트 및 비동기 스트리밍 원격 명령](images/fig25.svg)
 

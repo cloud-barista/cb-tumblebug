@@ -39,7 +39,7 @@
 
 | Step | Stage | Request | Pass Criteria |
 |---|---|---|---|
-| 1 | Bastion Infra Create | `POST /ns/default/infraDynamic` (1 dedicated Infra per CSP + `postCommands` installing `mysql-client` & `netcat`) | All Bastion VMs `Running` with SSH command execution ready |
+| 1 | Bastion Infra Create | `POST /ns/default/infraDynamic` (1 dedicated Infra per CSP + `postScript` installing `mysql-client` & `netcat`) | All Bastion VMs `Running` with SSH command execution ready |
 | 2 | Network Resolve & Validate | `GET /ns/default/resources/vNet/{id}`, `POST .../securityGroup/{id}/rules` (port `3306`), `POST /ns/default/resources/rdbms/validate` | Subnet/SG resolved and dry-run validation returns `200 OK` |
 | 3 | RDBMS Create | `POST /ns/default/resources/rdbms` (`autoFillDefaults: true`) | All instances reach `Available` status with valid `endpoint` and `port` |
 | 4 | Read & Reconcile | `GET /ns/default/resources/rdbms`, `GET .../rdbms/{id}`, `PUT .../rdbms/{id}/reconcile`, `GET .../certificate` (IBM) | Required metadata populated; list, detail, and reconciled views match |

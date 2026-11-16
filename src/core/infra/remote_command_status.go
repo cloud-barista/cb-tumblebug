@@ -789,7 +789,8 @@ func GetInfraHandlingCommandCount(nsId, infraId string) (map[string]int, int, er
 	return nodeHandlingCounts, totalHandlingCount, nil
 }
 
-// CleanupInterruptedCommands marks all "Handling" or "Queued" commands as "Interrupted"
+// CleanupInterruptedCommands marks all "Handling" or "Queued" commands as "Interrupted",
+// and a post-deployment script left as "Running" likewise.
 // This should be called during system startup to handle commands that were
 // interrupted by a system restart while SSH sessions were still active
 func CleanupInterruptedCommands() error {
@@ -803,6 +804,7 @@ func CleanupInterruptedCommands() error {
 	}
 
 	totalInterrupted := 0
+	interruptedScripts := 0
 
 	for _, nsId := range nsList {
 		// Get all Infras in namespace
@@ -813,6 +815,10 @@ func CleanupInterruptedCommands() error {
 		}
 
 		for _, infraId := range infraList {
+			if cleanupInterruptedPostScript(nsId, infraId) {
+				interruptedScripts++
+			}
+
 			// Get all VMs in Infra
 			nodeList, err := ListNodeId(nsId, infraId)
 			if err != nil {
@@ -831,6 +837,10 @@ func CleanupInterruptedCommands() error {
 				totalInterrupted += count
 			}
 		}
+	}
+
+	if interruptedScripts > 0 {
+		log.Info().Int("interruptedPostScripts", interruptedScripts).Msg("Cleanup: marked interrupted post-deployment scripts")
 	}
 
 	if totalInterrupted > 0 {

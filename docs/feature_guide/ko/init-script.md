@@ -27,7 +27,7 @@
 
 ### 왜 이 기능을 사용하는가?
 
-- **대규모에서 SSH가 필요 없습니다.** 노드 1만 대를 `postCommands`로 부트스트랩하면 CB-Tumblebug이 SSH 세션 1만 개를 열어야 합니다. Init script는 VM이 스스로 실행하고 결과를 보고하므로 CB-Tumblebug이 사설망에 있어도 됩니다.
+- **대규모에서 SSH가 필요 없습니다.** 노드 1만 대를 `postScript`로 부트스트랩하면 CB-Tumblebug이 SSH 세션 1만 개를 열어야 합니다. Init script는 VM이 스스로 실행하고 결과를 보고하므로 CB-Tumblebug이 사설망에 있어도 됩니다.
 - **모든 CSP에서 같은 동작.** AWS, Azure, GCP, Alibaba, Tencent, IBM, OpenStack, KT, NCP, NHN에서 같은 래퍼가 실행됩니다.
 - **단계 재사용.** 스크립트를 `system` 네임스페이스(공용) 또는 사용자 네임스페이스에 템플릿으로 저장하고, 기본 하드닝 → 모니터링 에이전트 → 역할별 스크립트처럼 순서대로 조합할 수 있습니다.
 
@@ -103,7 +103,7 @@ Infra / NodeGroup 요청 ──▶ 템플릿 해석 ──▶ user data 렌더�
 |------|------|
 | `continueOnError` | 이 단계가 실패해도 계속 진행합니다. 노드는 `ok`로 보고되고 `initScriptMessage`에 `optional step(s) failed: ...`가, 단계 목록에는 `fail`이 남습니다 |
 | `timeoutSec` | 지정한 초가 지나면 단계를 중단(종료 코드 124)하고 실패로 처리합니다 |
-| `labelSelector` | 라벨이 맞는 노드에서만 실행합니다(post-deployment 명령과 같은 문법, 예 `role=gpu`). 역할이 다른 그룹을 Infra 단위 스크립트 하나로 다룰 수 있습니다 |
+| `labelSelector` | 라벨이 맞는 노드에서만 실행합니다(`postScript` 단계와 같은 문법, 예 `role=gpu`). 역할이 다른 그룹을 Infra 단위 스크립트 하나로 다룰 수 있습니다 |
 
 **Infra 단위와 NodeGroup 단위.** Infra의 `initScript`는 모든 NodeGroup에 적용됩니다. `mode`, `userName`, `notify`를 지정하지 않은 NodeGroup `initScript`는 Infra 것을 *확장*합니다(그룹의 `templateId`, `script`, `scripts`가 Infra 단계 뒤에 실행되고 env는 덮어씀). 셋 중 하나라도 지정하면 그 그룹에서는 Infra 것을 *대체*합니다. 템플릿의 단계 이름은 템플릿이 지정하지 않으면 템플릿 id(`initscript-nginx`, 여러 단계면 `initscript-nginx-2`)가 됩니다.
 
@@ -194,14 +194,14 @@ VM 안에서는 `/var/lib/tb/init-script.status`에 `ok|fail <종료 코드> <�
 
 `initScript` 자체는 Infra, Infra 템플릿, NodeGroup 동적 요청의 필드이며, 노드 객체는 `initScript`, `initScriptStatus`, `initScriptMessage`를 노출합니다.
 
-**나중에 SSH로 템플릿 실행.** 원격 명령(`POST /ns/{nsId}/cmd/infra/{infraId}`, `nodeGroupId`·`nodeId`·`labelSelector` 지정)과 post-deployment 단계는 `command` 대신 `templateId`와 `scripts`, 그리고 `env`를 받을 수 있습니다. 단계는 첫 부팅 때와 같은 `TB_*` 변수와 규칙으로 root로 실행됩니다. 기존 노드에 템플릿을 적용하거나 실패한 init script를 노드 재생성 없이 다시 돌릴 때 씁니다.
+**나중에 SSH로 템플릿 실행.** 원격 명령(`POST /ns/{nsId}/cmd/infra/{infraId}`, `nodeGroupId`·`nodeId`·`labelSelector` 지정)과 `postScript` 단계는 `command` 대신 `templateId`와 `scripts`, 그리고 `env`를 받을 수 있습니다. 단계는 첫 부팅 때와 같은 `TB_*` 변수와 규칙으로 root로 실행됩니다. 기존 노드에 템플릿을 적용하거나 실패한 init script를 노드 재생성 없이 다시 돌릴 때 씁니다.
 
 ```bash
 curl -u default:default -X POST http://localhost:1323/tumblebug/ns/default/cmd/infra/web?nodeId=g1-1 \
   -H 'Content-Type: application/json' -d '{"templateId": "initscript-nginx", "env": {"SITE_TITLE": "retry"}}'
 ```
 
-이렇게 실행하면 첫 부팅과 같이 Notifier로 `event: done`을 보고하므로 노드의 `initScriptStatus`와 단계 결과는 가장 최근 실행을 따릅니다. MapUI에서는 init이 실패한 노드의 Infra 카드에 **re-run via SSH** 버튼이 보이며 그 노드의 단계를 그대로 다시 실행합니다. post-deployment 명령 작성기에서는 단계마다 명령 대신 템플릿을 고를 수 있고, 검토 창에서는 NodeGroup별로 템플릿·인라인 단계를 추가할 수 있습니다.
+이렇게 실행하면 첫 부팅과 같이 Notifier로 `event: done`을 보고하므로 노드의 `initScriptStatus`와 단계 결과는 가장 최근 실행을 따릅니다. MapUI에서는 init이 실패한 노드의 Infra 카드에 **re-run via SSH** 버튼이 보이며 그 노드의 단계를 그대로 다시 실행합니다. 배포 후 스크립트 작성기에서는 단계마다 명령 대신 템플릿을 고를 수 있고, 검토 창에서는 NodeGroup별로 템플릿·인라인 단계를 추가할 수 있습니다.
 
 일반 `command` 요청도 `env`를 주면 각 명령 앞에 export됩니다.
 

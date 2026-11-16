@@ -2190,7 +2190,7 @@ def manage_command_task(action: str, ns_id: str, infra_id: str,
     """
     List, inspect or cancel remote-command tasks on an Infra.
 
-    A long bootstrap started with post_command_async or a long timeout keeps running on the
+    A long bootstrap started with post_script_async or a long timeout keeps running on the
     server; this is how to see what is in flight and stop it.
 
     Args:
@@ -3143,9 +3143,11 @@ _USAGE_GUIDES = {
 5. Create.  create_infra_dynamic(ns_id, name, node_groups, force_create=True)
    force_create is what distinguishes an intentional provision from a review.
 
-Bootstrapping at creation time: pass post_commands with one phase per tier and
-post_command_async=True for anything slow. Nodes bill from Running, so a synchronous
-wait costs money and can hit proxy timeouts.""",
+Bootstrapping at creation time: pass post_script with one phase per tier, e.g.
+{"phases": [{"nodeGroupId": "web", "command": ["..."]}]}. The call waits for it by
+default and returns the final postScriptStatus. For anything slow set
+post_script_async=True: the call returns once the nodes are up, then poll get_infra()
+until postScriptStatus is terminal.""",
 
     "commands": """Running commands on nodes.
 
@@ -4099,8 +4101,7 @@ def _internal_review_infra_dynamic(
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_commands: Optional[List[Dict]] = None,
-    post_command_async: bool = False,
+    post_script: Optional[Dict] = None,
     hold: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
@@ -4120,10 +4121,8 @@ def _internal_review_infra_dynamic(
         data["systemLabel"] = system_label
     if label:
         data["label"] = label
-    if post_commands:
-        data["postCommands"] = post_commands
-    if post_command_async:
-        data["postCommandAsync"] = True
+    if post_script and post_script.get("phases"):
+        data["postScript"] = post_script
     if vnet_template_id:
         data["vNetTemplateId"] = vnet_template_id
     if sg_template_id:
@@ -4453,8 +4452,7 @@ def review_infra_dynamic_request(
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_commands: Optional[List[Dict]] = None,
-    post_command_async: bool = False,
+    post_script: Optional[Dict] = None,
     hold: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
@@ -4477,9 +4475,7 @@ def review_infra_dynamic_request(
         sg_template_id: Security group template ID, Infra-level default
         system_label: Reserved system label; leave empty unless told otherwise.
         label: Key-value pairs applied to the Infra (enables labelSelector targeting later).
-        post_commands: Bootstrap phases to run once the nodes are up.
-        post_command_async: Return as soon as the nodes exist and let post_commands run
-            in the background (default False).
+        post_script: Bootstrap to run once the nodes are up: {"phases": [...]}.
         hold: Create the records but leave provisioning paused, to be released later.
 
     Returns:
@@ -4494,8 +4490,7 @@ def review_infra_dynamic_request(
         description=description,
         system_label=system_label,
         label=label,
-        post_commands=post_commands,
-        post_command_async=post_command_async,
+        post_script=post_script,
         hold=hold,
         policy_on_partial_failure=policy_on_partial_failure,
         vnet_template_id=vnet_template_id,
@@ -4554,8 +4549,8 @@ def create_infra_dynamic(
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_commands: Optional[List[Dict]] = None,
-    post_command_async: bool = False,
+    post_script: Optional[Dict] = None,
+    post_script_async: bool = False,
     hold: bool = False,
     skip_confirmation: bool = False,
     force_create: bool = False,
@@ -4587,16 +4582,15 @@ def create_infra_dynamic(
         description: Infra description
         system_label: System label for special purposes
         label: Key-value pairs for Infra labeling
-        post_commands: Bootstrap phases, each targeted by at most one of
-            nodeGroupId | nodeId | labelSelector. Omit userName so the server resolves the
-            verified account per node. Phases run in order; a failed one skips the rest by
+        post_script: Bootstrap script, {"phases": [...]}. Each phase is targeted by at most
+            one of nodeGroupId | nodeId | labelSelector. Omit userName so the server resolves
+            the verified account per node. Phases run in order; a failed one skips the rest by
             default. Cumulative timeoutMinutes must stay under 120. Outcome comes back as
-            postCommandStatus / postCommandResults. Worked example:
-            get_usage_guide('provision').
-        post_command_async: Return once nodes are provisioned and run the commands in the
-            background. Recommended for long bootstraps - nodes bill from Running and a
-            synchronous wait can hit proxy timeouts. Poll get_infra() until
-            postCommandStatus is terminal, or stream using postCommandRequestId.
+            postScriptStatus / postScriptResults. Worked example: get_usage_guide('provision').
+        post_script_async: False (default) waits for post_script and returns its final status.
+            True returns once nodes are provisioned and runs the phases in the background -
+            use it when the bootstrap is long enough to outlast the call. Then poll
+            get_infra() until postScriptStatus is terminal, or stream using postScriptRequestId.
         hold: Hold provisioning for review
         skip_confirmation: Skip the confirmation step
         force_create: Confirms the configuration was reviewed
@@ -4683,7 +4677,8 @@ if review_result.get("overallStatus") == "Ready":
             "description": description,
             "system_label": system_label,
             "label": label,
-            "post_commands": post_commands,
+            "post_script": post_script,
+            "post_script_async": post_script_async,
             "hold": hold
         }
         
@@ -4861,18 +4856,21 @@ if review_result.get("overallStatus") == "Ready":
         data["systemLabel"] = system_label
     if label:
         data["label"] = label
-    if post_commands:
-        data["postCommands"] = post_commands
-    if post_command_async:
-        data["postCommandAsync"] = True
+    if post_script and post_script.get("phases"):
+        data["postScript"] = post_script
     if vnet_template_id:
         data["vNetTemplateId"] = vnet_template_id
     if sg_template_id:
         data["sgTemplateId"] = sg_template_id
     
     url = f"/ns/{ns_id}/infraDynamic"
+    query = []
     if hold:
-        url += "?option=hold"
+        query.append("option=hold")
+    if post_script_async and data.get("postScript"):
+        query.append("postScriptAsync=true")
+    if query:
+        url += "?" + "&".join(query)
     
     result = api_request("POST", url, json_data=data)
     
@@ -4986,8 +4984,8 @@ def add_nodegroup_dynamic(
     vnet_template_id: str = "",
     sg_template_id: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_commands: Optional[List[Dict]] = None,
-    post_command_async: bool = False
+    post_script: Optional[Dict] = None,
+    post_script_async: bool = False
 ) -> Dict:
     """
     Add a new NodeGroup of VMs to an existing Infra dynamically.
@@ -5024,10 +5022,11 @@ def add_nodegroup_dynamic(
         vnet_template_id: VNet template ID (optional)
         sg_template_id: Security group template ID (optional)
         label: Key-value pairs for labeling (optional; enables labelSelector targeting later)
-        post_command_async: Return as soon as the nodes exist and let post_commands run
-            in the background (default False).
-        post_commands: Bootstrap phases for the NEW nodes (scoped to this nodeGroup), e.g.
-            [{"command": ["curl ... | bash"], "timeoutMinutes": 10, "continueOnError": False}]
+        post_script: Bootstrap for the NEW nodes (phases are scoped to this nodeGroup), e.g.
+            {"phases": [{"command": ["curl ... | bash"], "timeoutMinutes": 10,
+            "continueOnError": False}]}
+        post_script_async: True returns as soon as the nodes exist and runs post_script in
+            the background (default False: wait for it).
     
     Returns:
         Updated Infra information including the newly added NodeGroup
@@ -5057,12 +5056,13 @@ def add_nodegroup_dynamic(
         data["label"] = label
     # Bootstrap commands run on the NEW nodes only (phases without an explicit
     # target are scoped to this nodeGroup by the server)
-    if post_commands:
-        data["postCommands"] = post_commands
-    if post_command_async:
-        data["postCommandAsync"] = True
+    params = None
+    if post_script and post_script.get("phases"):
+        data["postScript"] = post_script
+        if post_script_async:
+            params = {"postScriptAsync": "true"}
     
-    return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic", json_data=data)
+    return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic", json_data=data, params=params)
 
 # Tool: Review NodeGroup Dynamic Request
 @tool()
@@ -5078,8 +5078,7 @@ def review_nodegroup_dynamic(
     root_disk_size: int = 0,
     connection_name: str = "",
     zone: str = "",
-    post_commands: Optional[List[Dict]] = None,
-    post_command_async: bool = False
+    post_script: Optional[Dict] = None
 ) -> Dict:
     """
     Review/validate a NodeGroup configuration before adding it to an existing Infra.
@@ -5099,8 +5098,7 @@ def review_nodegroup_dynamic(
         root_disk_size: Root disk size in GB (int, 0 for CSP default)
         connection_name: Specific connection name (optional)
         zone: Availability zone (optional)
-        post_commands: Bootstrap phases to validate (same shape as add_nodegroup_dynamic)
-        post_command_async: Whether the bootstrap would run in the background
+        post_script: Bootstrap to validate (same shape as add_nodegroup_dynamic)
     
     Returns:
         Validation result including spec/image availability, cost estimation,
@@ -5125,10 +5123,8 @@ def review_nodegroup_dynamic(
         data["zone"] = zone
     # Review accepts the same body as add_nodegroup_dynamic, so a reviewed request
     # can be submitted unchanged (bootstrap phases are validated here too)
-    if post_commands:
-        data["postCommands"] = post_commands
-    if post_command_async:
-        data["postCommandAsync"] = True
+    if post_script and post_script.get("phases"):
+        data["postScript"] = post_script
 
     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamicReview", json_data=data)
 
@@ -8005,15 +8001,15 @@ def check_infra_status_and_handle_failures(
             "deployment_health": "healthy" if len(failed_vms) == 0 else "partial-failed" if len(running_vms) > 0 else "critical"
         }
 
-        # Post-deployment (bootstrap) command outcome: nodes can be Running while
+        # Post-deployment script (bootstrap) outcome: nodes can be Running while
         # their bootstrap failed, so surface it alongside node health
         post_status = None
         try:
             infra_detail = get_infra(ns_id, infra_id)
             if isinstance(infra_detail, dict):
-                post_status = infra_detail.get("postCommandStatus")
+                post_status = infra_detail.get("postScriptStatus")
                 if post_status and post_status != "None":
-                    recovery_analysis["post_command_status"] = post_status
+                    recovery_analysis["post_script_status"] = post_status
                     failed_phases = [
                         {
                             "phase": ph.get("phase"),
@@ -8025,25 +8021,25 @@ def check_infra_status_and_handle_failures(
                                 if r.get("error")
                             ],
                         }
-                        for ph in (infra_detail.get("postCommandResults") or [])
+                        for ph in (infra_detail.get("postScriptResults") or [])
                         if ph.get("status") not in ("Completed", None)
                     ]
                     if failed_phases:
-                        recovery_analysis["post_command_failed_phases"] = failed_phases
+                        recovery_analysis["post_script_failed_phases"] = failed_phases
         except Exception as e:
-            logger.debug(f"Could not read postCommandStatus: {e}")
+            logger.debug(f"Could not read postScriptStatus: {e}")
 
         # Generate recommendations based on status
         recommendations = []
         recovery_actions = []
 
-        if post_status in ("Failed", "CompletedWithErrors"):
+        if post_status in ("Failed", "CompletedWithErrors", "Interrupted"):
             recommendations.append(
-                f"⚠️ BOOTSTRAP ISSUE: post-deployment commands reported '{post_status}' "
+                f"⚠️ BOOTSTRAP ISSUE: the post-deployment script reported '{post_status}' "
                 f"(nodes may be Running but not configured as intended)"
             )
             recommendations.append(
-                "💡 Inspect 'postCommandResults' for the failing phase/nodes, then re-run the "
+                "💡 Inspect 'postScriptResults' for the failing phase/nodes, then re-run the "
                 "commands with execute_command_infra() targeting those nodes"
             )
         

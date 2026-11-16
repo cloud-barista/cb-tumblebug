@@ -42,7 +42,7 @@ import (
 // @Description - Multi-cloud node deployment with heterogeneous configurations
 // @Description - Automatic resource dependency management (VPC → Security Group → node)
 // @Description - Built-in failure handling with configurable policies (continue/rollback/refine)
-// @Description - Post-deployment command execution support
+// @Description - Post-deployment script (postScript) support
 // @Description - Real-time status updates and progress tracking
 // @Description
 // @Description **node Lifecycle:**
@@ -65,6 +65,7 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID for resource isolation" default(default)
 // @Param infraReq body model.InfraReq true "Infra creation request with node specifications, networking, and deployment options"
+// @Param postScriptAsync query string false "If true, return once the Nodes are provisioned and run postScript in the background; follow it with postScriptStatus and postScriptRequestId" default(false)
 // @Success 200 {object} model.InfraInfo "Created Infra information with node details, status, and resource mapping"
 // @Failure 400 {object} model.SimpleMsg "Invalid request parameters or missing required fields"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found or specified resources unavailable"
@@ -73,6 +74,11 @@ import (
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/infra [post]
+// postScriptAsync reads the postScriptAsync query parameter
+func postScriptAsync(c echo.Context) bool {
+	return c.QueryParam("postScriptAsync") == "true"
+}
+
 func RestPostInfra(c echo.Context) error {
 	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
@@ -82,6 +88,7 @@ func RestPostInfra(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
+	req.PostScriptAsync = req.PostScriptAsync || postScriptAsync(c)
 
 	option := "create"
 	result, err := infra.CreateInfra(ctx, nsId, req, option, false)
@@ -284,7 +291,7 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Description - Built-in rate limiting prevents CSP API throttling
 // @Description
 // @Description **Monitoring and Post-Deployment:**
-// @Description - Custom post-deployment command execution
+// @Description - Custom post-deployment script (postScript) execution
 // @Description - Real-time status tracking and progress updates
 // @Description - Automatic resource labeling and metadata management
 // @Tags [MC-Infra] Infra Provisioning and Management
@@ -293,6 +300,7 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Param nsId path string true "Namespace ID for resource organization and isolation" default(default)
 // @Param infraReq body model.InfraDynamicReq true "Dynamic Infra request with common specifications. Must include specId and imageId for each node group. See description for detailed example."
 // @Param option query string false "Deployment option: 'hold' to create Infra without immediate node provisioning" Enums(hold)
+// @Param postScriptAsync query string false "If true, return once the Nodes are provisioned and run postScript in the background; follow it with postScriptStatus and postScriptRequestId" default(false)
 // @Param x-request-id header string false "Custom request ID for tracking and correlation across API calls"
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for provisioning (default: system default holder)"
 // @Success 200 {object} model.InfraInfo "Successfully created Infra with node deployment status, resource mappings, and configuration details"
@@ -312,6 +320,7 @@ func RestPostInfraDynamic(c echo.Context) error {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
+	req.PostScriptAsync = req.PostScriptAsync || postScriptAsync(c)
 
 	result, err := infra.CreateInfraDynamic(ctx, nsId, req, option)
 	if err != nil {
@@ -433,7 +442,8 @@ func RestPostInfraDynamicReview(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target Infra" default(default)
 // @Param infraId path string true "Infra ID to which new nodes will be added" default(infra01)
-// @Param nodeGroupReq body model.AddNodeGroupDynamicReq true "NodeGroup dynamic request specifying specId, imageId, scaling parameters, and optional postCommands bootstrap"
+// @Param nodeGroupReq body model.AddNodeGroupDynamicReq true "NodeGroup dynamic request specifying specId, imageId, scaling parameters, and optional postScript bootstrap"
+// @Param postScriptAsync query string false "If true, return once the Nodes are provisioned and run postScript in the background; follow it with postScriptStatus and postScriptRequestId" default(false)
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for provisioning (default: system default holder)"
 // @Success 200 {object} model.InfraInfo "Updated Infra information including newly added nodes and current status"
 // @Failure 400 {object} model.SimpleMsg "Invalid node request or incompatible configuration parameters"
@@ -452,6 +462,7 @@ func RestPostInfraNodeGroupDynamic(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
+	req.PostScriptAsync = req.PostScriptAsync || postScriptAsync(c)
 
 	result, err := infra.CreateInfraNodeGroupDynamic(ctx, nsId, infraId, req)
 	return clientManager.EndRequestWithLog(c, err, result)
@@ -515,8 +526,8 @@ func RestPostInfraDynamicNodeGroupNodeReview(c echo.Context) error {
 
 	// Validate the bootstrap request shape here too: review is the dry run, so
 	// shape errors must surface before provisioning is attempted
-	if err := infra.ValidatePostCommandRequest(req.PostCommands); err != nil {
-		log.Warn().Err(err).Msg("invalid postCommands in Node dynamic addition review")
+	if err := infra.ValidatePostScript(req.PostScript); err != nil {
+		log.Warn().Err(err).Msg("invalid postScript in Node dynamic addition review")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 

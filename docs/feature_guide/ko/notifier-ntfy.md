@@ -67,7 +67,7 @@ flowchart LR
 |-----------|------|
 | `src/core/notifier` | 등록 저장(etcd `/system/notifier`), 재접속과 `since=` 이어받기를 갖춘 구독 goroutine, 발행, 왕복 테스트, 최근 메시지 버퍼, 소비자용 `RegisterHandler(kind, fn)` |
 | `src/core/embedded/scripts/install-ntfy.sh` | `//go:embed`로 바이너리에 포함되는 설치 스크립트. GitHub 릴리스의 ntfy `.deb`를 설치하고 토큰과 TLS를 설정 |
-| `init/templates/infra-ntfy.json`, `sg-ntfy.json` | VM 1대 템플릿(기본 AWS t3.micro)과 보안 그룹(443, 80, 22) |
+| `init/templates/infra-ntfy.json`, `infra-ntfy-global.json`, `sg-ntfy.json` | 단일 VM 기본 템플릿(AWS t3.micro), 글로벌+중국 2노드 이원화 템플릿, 보안 그룹(443, 9443, 80, 22) |
 | `POST /tumblebug/notifier/ntfy` | 템플릿으로 프로비저닝 → (선택) Route53 레코드 → SSH로 설치 스크립트 실행 → 등록 → 왕복 테스트 |
 
 설치 스크립트는 VM에서 root로 실행되며 모든 값을 `TB_NTFY_*` 환경변수로 받으므로 수동 실행도 가능합니다
@@ -86,8 +86,10 @@ curl -u default:default -X POST http://localhost:1323/tumblebug/notifier/ntfy
 ```
 
 `system` 네임스페이스에 인프라 `ntfy`를 만들고(`nsId`, `name`, `templateId`로 변경 가능), 공인 IP를 SAN으로 하는
-자체서명 인증서로 ntfy를 설치한 뒤 `https://<공인IP>`를 등록합니다. 약 1.5~3분 걸립니다. CA 인증서는 등록 정보의
-`caCert`에 저장되며 클라이언트가 신뢰하도록 설정해야 합니다. 이 모드에서는 휴대폰 앱 구독이 되지 않습니다.
+자체서명 말단 인증서(`CA:FALSE`)로 `:9443` 포트에 ntfy를 설치한 뒤 `https://<공인IP>:9443`을 등록합니다. 약 1.5~3분 걸립니다. 인증서는 등록 정보의
+`caCert`에 저장되어 피닝 검증에 사용됩니다. 이 모드에서는 휴대폰 앱 구독이 되지 않습니다.
+
+만약 `"templateId": "infra-ntfy-global"`처럼 여러 `nodeGroups`(예: 한국 + 중국 본토)가 정의된 템플릿을 지정하면, 단일 `ntfy` 인프라 내 모든 노드에 동일한 토픽과 토큰으로 ntfy를 병렬 설치해 `urls`에 함께 등록합니다. 워크로드 VM에는 `TB_NOTIFY_URLS`가 주입되어 가용한 첫 번째 서버 1곳에만 보고하고 해당 서버를 고정(Sticky)합니다. `domainName`을 함께 주면 첫 번째 노드는 `:443` Let's Encrypt 인증서를 쓰고 추가 노드는 `:9443` 자체서명 피닝 모드로 구성됩니다.
 
 설치 단계가 실패하면 같은 요청을 다시 보내면 됩니다. 같은 이름의 인프라가 있으면 재사용해 설치부터 재시도합니다.
 

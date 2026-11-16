@@ -20,7 +20,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/embedded"
@@ -36,7 +38,8 @@ const (
 	defaultSetTemplate = "infra-ntfy"
 	defaultSetName     = "ntfy"
 	defaultRecordName  = "ntfy"
-	fallbackVersion    = "2.37.2" // used when the GitHub releases API is unavailable
+	fallbackVersion    = "2.37.2"
+	defaultSelfPort    = "9443"
 	caBegin            = "-----TB-CA-BEGIN-----"
 	caEnd              = "-----TB-CA-END-----"
 )
@@ -55,7 +58,8 @@ func installScript() string {
 	return embedded.InstallNtfy()
 }
 
-// CreateNtfySet provisions an ntfy server from an Infra template, configures it, and registers it as the notifier.
+// CreateNtfySet provisions one or more ntfy servers from an Infra template, configures them with the same
+// topic and tokens, and registers them together as the notifier.
 func CreateNtfySet(ctx context.Context, req model.NotifierSetReq) (*model.NotifierInfo, error) {
 	if Current() != nil {
 		return nil, errors.New("a notifier is already registered; unregister it first")
@@ -82,55 +86,129 @@ func CreateNtfySet(ctx context.Context, req model.NotifierSetReq) (*model.Notifi
 	if err != nil {
 		return nil, err
 	}
-	node, err := managedset.PublicNode(infraInfo)
+	nodes, err := managedset.PublicNodes(infraInfo)
 	if err != nil {
 		return nil, err
 	}
-	publicIP := node.PublicIP
+	// GetInfraInfo returns nodes sorted alphabetically by ID (e.g. "ntfy-cn-1" before "ntfy-kr-1").
+	// Place DNS/Let's-Encrypt-eligible (non-Mainland-China) nodes first so the primary URL uses :443 Let's Encrypt
+	// when a domain is given, while Mainland China nodes (where inbound 80/443 is blocked without ICP filing)
+	// automatically use pinned self-signed TLS on :9443.
+	sortNodesForNotifier(nodes)
 
-	fqdn := ""
+	nodeFqdns := make([]string, len(nodes))
+	var createdFqdns []string
+	cleanupDns := func() {
+		for _, rec := range createdFqdns {
+			managedset.DeleteDnsRecord(domain, rec, "notifier")
+		}
+	}
 	if domain != "" {
-		fqdn, err = chooseRecordName(ctx, domain, recordName, publicIP)
-		if err != nil {
-			return nil, err
-		}
-		log.Info().Str("record", fqdn).Str("ip", publicIP).Msg("notifier: upserting Route53 record")
-		if err := managedset.UpsertDnsRecord(ctx, domain, fqdn, publicIP); err != nil {
-			return nil, err
+		firstDns := true
+		for i, n := range nodes {
+			if !canUsePublicDns(n) {
+				log.Info().Str("node", n.Id).Str("ip", n.PublicIP).Msg("notifier: Mainland China region detected; skipping Route53/Let's Encrypt and using self-signed :9443")
+				continue
+			}
+			wantedRecord := ""
+			if firstDns {
+				wantedRecord = recordName
+				firstDns = false
+			}
+			fqdn, err := chooseRecordName(ctx, domain, wantedRecord, n.PublicIP)
+			if err != nil {
+				cleanupDns()
+				return nil, err
+			}
+			log.Info().Str("node", n.Id).Str("record", fqdn).Str("ip", n.PublicIP).Msg("notifier: upserting Route53 record")
+			if err := managedset.UpsertDnsRecord(ctx, domain, fqdn, n.PublicIP); err != nil {
+				cleanupDns()
+				return nil, err
+			}
+			nodeFqdns[i] = fqdn
+			createdFqdns = append(createdFqdns, fqdn)
 		}
 	}
 
-	script := withEnv(map[string]string{
-		"TB_NTFY_IP": publicIP, "TB_NTFY_FQDN": fqdn, "TB_NTFY_TOPIC": topic,
-		"TB_NTFY_WRITE_TOKEN": writeToken, "TB_NTFY_READ_TOKEN": readToken,
-		"TB_NTFY_WRITER_HASH": string(writerHash), "TB_NTFY_READER_HASH": string(readerHash),
-		"TB_NTFY_VERSION": fallbackVersion,
-	}, installScript())
+	type nodeOutcome struct {
+		url    string
+		caCert string
+		err    error
+	}
+	outcomes := make([]nodeOutcome, len(nodes))
+	baseScript := installScript()
 
-	log.Info().Str("infra", infraInfo.Id).Str("ip", publicIP).Str("fqdn", fqdn).Msg("notifier: installing ntfy")
-	stdout, err := runWithRetry(nsId, infraInfo.Id, shellCommand(script))
-	if err == nil {
-		_, err = extractCA(stdout)
+	var wg sync.WaitGroup
+	for i, n := range nodes {
+		wg.Add(1)
+		go func(idx int, node *model.NodeInfo, nodeFqdn string) {
+			defer wg.Done()
+			env := map[string]string{
+				"TB_NTFY_IP": node.PublicIP, "TB_NTFY_FQDN": nodeFqdn, "TB_NTFY_TOPIC": topic,
+				"TB_NTFY_WRITE_TOKEN": writeToken, "TB_NTFY_READ_TOKEN": readToken,
+				"TB_NTFY_WRITER_HASH": string(writerHash), "TB_NTFY_READER_HASH": string(readerHash),
+				"TB_NTFY_VERSION": fallbackVersion,
+			}
+			if nodeFqdn == "" {
+				env["TB_NTFY_PORT"] = defaultSelfPort
+			}
+			log.Info().Str("infra", infraInfo.Id).Str("node", node.Id).Str("ip", node.PublicIP).Str("fqdn", nodeFqdn).Msg("notifier: installing ntfy")
+			stdout, runErr := managedset.RunScriptOnNode(nsId, infraInfo.Id, node.Id, shellCommand(withEnv(env, baseScript)), 6, "notifier")
+			if runErr != nil {
+				outcomes[idx].err = fmt.Errorf("node '%s' (%s): %w", node.Id, node.PublicIP, runErr)
+				return
+			}
+			ca, caErr := extractCA(stdout)
+			if caErr != nil {
+				outcomes[idx].err = fmt.Errorf("node '%s' (%s): %w", node.Id, node.PublicIP, caErr)
+				return
+			}
+			if nodeFqdn != "" {
+				outcomes[idx].url = "https://" + nodeFqdn
+			} else {
+				outcomes[idx].url = "https://" + node.PublicIP + ":" + defaultSelfPort
+				outcomes[idx].caCert = ca
+			}
+		}(i, n, nodeFqdns[i])
 	}
-	if err != nil {
-		if fqdn != "" {
-			managedset.DeleteDnsRecord(domain, fqdn, "notifier") // a retry draws a fresh name
+	wg.Wait()
+
+	var urls, caCerts []string
+	for _, o := range outcomes {
+		if o.err != nil {
+			cleanupDns()
+			return nil, fmt.Errorf("ntfy install failed on infra '%s': %w", infraInfo.Id, o.err)
 		}
-		return nil, fmt.Errorf("ntfy install failed on infra '%s': %w", infraInfo.Id, err)
+		urls = append(urls, o.url)
+		if o.caCert != "" {
+			caCerts = append(caCerts, o.caCert)
+		}
 	}
-	caCert, _ := extractCA(stdout)
+
+	var vNetIds, sgIds, sshKeyIds []string
+	for _, n := range nodes {
+		if n.VNetId != "" {
+			vNetIds = append(vNetIds, n.VNetId)
+		}
+		sgIds = append(sgIds, n.SecurityGroupIds...)
+		if n.SshKeyId != "" {
+			sshKeyIds = append(sshKeyIds, n.SshKeyId)
+		}
+	}
 
 	info := &model.NotifierInfo{
-		Type: model.NotifierTypeNtfy, Url: "https://" + publicIP, Topic: topic,
-		WriteToken: writeToken, ReadToken: readToken, CaCert: caCert,
+		Type: model.NotifierTypeNtfy, Url: urls[0], Urls: urls, Topic: topic,
+		WriteToken: writeToken, ReadToken: readToken, CaCert: strings.Join(caCerts, ""),
 		Source: model.NotifierSourceManaged, ManagedNsId: nsId, ManagedInfraId: infraInfo.Id,
-		ManagedVNetId: node.VNetId, ManagedSecurityGroupIds: node.SecurityGroupIds, ManagedSshKeyId: node.SshKeyId,
+		ManagedVNetId: nodes[0].VNetId, ManagedVNetIds: vNetIds,
+		ManagedSecurityGroupIds: sgIds,
+		ManagedSshKeyId:         nodes[0].SshKeyId, ManagedSshKeyIds: sshKeyIds,
 		RegisteredAt: time.Now(),
 	}
-	if fqdn != "" {
-		// Publicly trusted certificate: clients need no CA.
-		info.Url, info.CaCert = "https://"+fqdn, ""
-		info.ManagedDnsDomain, info.ManagedDnsRecord = domain, fqdn
+	if len(createdFqdns) > 0 {
+		info.ManagedDnsDomain = domain
+		info.ManagedDnsRecord = createdFqdns[0]
+		info.ManagedDnsRecords = createdFqdns
 	}
 	if _, err := register(info); err != nil {
 		return nil, err
@@ -160,7 +238,7 @@ func DeleteNtfySet(deleteInfra bool) error {
 	return nil
 }
 
-// AddReader creates a read-only ntfy user on the managed server. The password is returned once.
+// AddReader creates a read-only ntfy user on every managed server of the notifier. The password is returned once.
 func AddReader(req model.NotifierReaderReq) (*model.NotifierReaderInfo, error) {
 	info, err := managedNotifier()
 	if err != nil {
@@ -183,7 +261,7 @@ func AddReader(req model.NotifierReaderReq) (*model.NotifierReaderInfo, error) {
 		return nil, errors.New("password must not contain quotes or newlines")
 	}
 	script := fmt.Sprintf("set -e\nNTFY_PASSWORD='%s' ntfy user add --role=user '%s'\nntfy access '%s' '%s' ro\n", password, name, name, info.Topic)
-	if _, err := runOnce(info.ManagedNsId, info.ManagedInfraId, shellCommand(script)); err != nil {
+	if err := runOnAllNodes(info.ManagedNsId, info.ManagedInfraId, shellCommand(script)); err != nil {
 		return nil, fmt.Errorf("failed to create reader '%s': %w", name, err)
 	}
 	updateInfo(func(i *model.NotifierInfo) { i.Readers = append(i.Readers, name) })
@@ -205,7 +283,7 @@ func ListReaders() ([]string, error) {
 	return info.Readers, nil
 }
 
-// RemoveReader deletes a reader account from the managed server.
+// RemoveReader deletes a reader account from every managed server of the notifier.
 func RemoveReader(name string) error {
 	info, err := managedNotifier()
 	if err != nil {
@@ -221,7 +299,7 @@ func RemoveReader(name string) error {
 	if !found {
 		return fmt.Errorf("reader '%s' not found", name)
 	}
-	if _, err := runOnce(info.ManagedNsId, info.ManagedInfraId, shellCommand("ntfy user remove '"+name+"'")); err != nil {
+	if err := runOnAllNodes(info.ManagedNsId, info.ManagedInfraId, shellCommand("ntfy user remove '"+name+"'")); err != nil {
 		return fmt.Errorf("failed to remove reader '%s': %w", name, err)
 	}
 	updateInfo(func(i *model.NotifierInfo) {
@@ -248,7 +326,7 @@ func managedNotifier() (*model.NotifierInfo, error) {
 }
 
 func readerNote(info *model.NotifierInfo) string {
-	if info.CaCert == "" {
+	if info.CaCert == "" || info.ManagedDnsRecord != "" {
 		return "Add the server in the ntfy app or web UI, log in with this account, then subscribe to the topic."
 	}
 	return "Self-signed certificate: phone apps cannot subscribe; use the web UI or curl with caCert as a trusted CA."
@@ -268,12 +346,8 @@ func chooseRecordName(ctx context.Context, domain, recordName, ip string) (strin
 	return managedset.ChooseRecordName(ctx, domain, recordName, defaultRecordName, ip)
 }
 
-func runWithRetry(nsId, infraId, command string) (string, error) {
-	return managedset.RunScript(nsId, infraId, command, 6, "notifier")
-}
-
-func runOnce(nsId, infraId, command string) (string, error) {
-	return managedset.RunOnce(nsId, infraId, command, 20)
+func runOnAllNodes(nsId, infraId, command string) error {
+	return managedset.RunOnceOnAllNodes(nsId, infraId, command, 20)
 }
 
 func extractCA(stdout string) (string, error) {
@@ -281,6 +355,69 @@ func extractCA(stdout string) (string, error) {
 }
 
 func deleteManagedResources(info *model.NotifierInfo) {
-	managedset.DeleteManagedResources(info.ManagedNsId, info.ManagedVNetId, info.ManagedSecurityGroupIds,
-		info.ManagedSshKeyId, info.ManagedDnsDomain, info.ManagedDnsRecord, "notifier")
+	for _, extraRec := range info.ManagedDnsRecords {
+		if extraRec != "" && extraRec != info.ManagedDnsRecord {
+			managedset.DeleteDnsRecord(info.ManagedDnsDomain, extraRec, "notifier")
+		}
+	}
+	vNets := append([]string{info.ManagedVNetId}, info.ManagedVNetIds...)
+	keys := append([]string{info.ManagedSshKeyId}, info.ManagedSshKeyIds...)
+	managedset.DeleteManagedResourceSet(info.ManagedNsId, vNets, info.ManagedSecurityGroupIds,
+		keys, info.ManagedDnsDomain, info.ManagedDnsRecord, "notifier")
+}
+
+func sortNodesForNotifier(nodes []*model.NodeInfo) {
+	sort.SliceStable(nodes, func(i, j int) bool {
+		return canUsePublicDns(nodes[i]) && !canUsePublicDns(nodes[j])
+	})
+}
+
+// canUsePublicDns reports whether a Node can bind an un-filed Route53 domain and pass Let's Encrypt HTTP-01 (:80).
+// Mainland China CSP regions block inbound TCP 80/443 without ICP Beian filing, whereas Hong Kong/Macau/Taiwan and
+// all global regions allow it.
+func canUsePublicDns(n *model.NodeInfo) bool {
+	if n == nil {
+		return false
+	}
+	provider := strings.ToLower(strings.TrimSpace(n.ConnectionConfig.ProviderName))
+	region := strings.ToLower(strings.TrimSpace(firstNonEmpty(n.Region.Region, n.ConnectionConfig.RegionZoneInfo.AssignedRegion)))
+	if parts := strings.Split(strings.ToLower(n.SpecId), "+"); len(parts) >= 2 {
+		if provider == "" {
+			provider = parts[0]
+		}
+		if region == "" {
+			region = parts[1]
+		}
+	}
+	if (provider == "" || region == "") && n.ConnectionName != "" {
+		if idx := strings.IndexByte(n.ConnectionName, '-'); idx > 0 {
+			if provider == "" {
+				provider = strings.ToLower(n.ConnectionName[:idx])
+			}
+			if region == "" {
+				region = strings.ToLower(n.ConnectionName[idx+1:])
+			}
+		}
+	}
+	if strings.Contains(region, "hongkong") || strings.Contains(region, "macau") || strings.Contains(region, "taipei") || strings.Contains(region, "taiwan") {
+		return true
+	}
+	switch provider {
+	case "alibaba", "aws":
+		if strings.HasPrefix(region, "cn-") {
+			return false
+		}
+	case "tencent":
+		switch {
+		case region == "ap-beijing", region == "ap-shanghai", region == "ap-guangzhou",
+			region == "ap-chengdu", region == "ap-chongqing", region == "ap-nanjing",
+			strings.HasPrefix(region, "ap-shanghai-"), strings.HasPrefix(region, "ap-beijing-"), strings.HasPrefix(region, "ap-shenzhen"):
+			return false
+		}
+	case "azure":
+		if strings.HasPrefix(region, "china") {
+			return false
+		}
+	}
+	return !strings.HasPrefix(region, "cn-")
 }
