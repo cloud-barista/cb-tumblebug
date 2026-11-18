@@ -357,6 +357,30 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 		! $(HELM) status $(HELM_RELEASE) -n $(K8S_NAMESPACE) >/dev/null 2>&1; then \
 		$(MAKE) --no-print-directory k-addons-configure; \
 	fi
+	@# Guard against stale dev-override state files (values-dev-assets.yaml / values-dev-image-*.yaml)
+	@# left on disk after a kind cluster recreation or docker image prune.
+	@if [ -f $(K8S_ASSETS_VALUES) ] && ! $(KUBECTL) get configmap $(K8S_ASSETS_CM) -n $(K8S_NAMESPACE) >/dev/null 2>&1; then \
+		printf '%b\n' '$(KY)\xe2\x9a\xa0 Clearing stale $(K8S_ASSETS_VALUES)$(KX) $(KD)(ConfigMap $(K8S_ASSETS_CM) not found in cluster; re-apply with make k-assets if needed)$(KX)'; \
+		rm -f $(K8S_ASSETS_VALUES); \
+	fi
+	@for f in deployments/helm/cb-tumblebug/values-dev-image-*.yaml; do \
+		[ -f "$$f" ] || continue; \
+		img=$$(awk '/:local-dev/{print $$2; exit}' "$$f"); \
+		[ -n "$$img" ] || continue; \
+		if ! docker image inspect "$$img" >/dev/null 2>&1; then \
+			printf '%b\n' "$(KY)\xe2\x9a\xa0 Clearing stale $$f$(KX) $(KD)($$img not found in local Docker; revert to published image)$(KX)"; \
+			rm -f "$$f"; \
+		else \
+			ctx="$(K8S_CONTEXT)"; [ -n "$$ctx" ] || ctx=$$(kubectl config current-context 2>/dev/null); \
+			case "$$ctx" in kind-*) \
+				repo="$${img%:*}"; tag="$${img##*:}"; \
+				if ! docker exec $(KIND_CLUSTER_NAME)-control-plane crictl images 2>/dev/null | awk '{print $$1":"$$2}' | grep -qF "$$repo:$$tag"; then \
+					printf '%b\n' "$(KD)Loading local dev image $$img into kind cluster '$(KIND_CLUSTER_NAME)'...$(KX)"; \
+					kind load docker-image --name $(KIND_CLUSTER_NAME) "$$img" >/dev/null 2>&1 || rm -f "$$f"; \
+				fi ;; \
+			esac; \
+		fi; \
+	done
 	@# Apply as a sub-make: state files the wizard just wrote (or the k-*-on targets wrote) become
 	@# visible to $(wildcard) in the *_VALUES_FLAG vars only in a fresh recipe expansion, not this one.
 	@$(MAKE) --no-print-directory k-up-apply
