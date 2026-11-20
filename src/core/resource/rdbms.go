@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"slices"
@@ -1781,6 +1782,85 @@ func PruneRDBMS(nsId string) (model.ResourcePruneResults, error) {
 // ErrRDBMSDatabaseValidation marks client-input or capability validation failures on database creation (HTTP 400).
 var ErrRDBMSDatabaseValidation = errors.New("invalid RDBMS database create request")
 
+// ErrRDBMSPrivateAccessUnsupported marks direct SQL/TLS operations rejected on private RDBMS instances (HTTP 422).
+var ErrRDBMSPrivateAccessUnsupported = errors.New("operation requires direct SQL/TLS connection and is not supported for private RDBMS (publicAccess=false)")
+
+// resolveRDBMSProviderName returns the CSP provider name from rdbmsInfo or falls back to ConnectionConfig.
+func resolveRDBMSProviderName(rdbmsInfo model.RDBMSInfo) string {
+	providerName := strings.TrimSpace(rdbmsInfo.ConnectionConfig.ProviderName)
+	if providerName == "" && rdbmsInfo.ConnectionName != "" {
+		if connCfg, err := common.GetConnConfig(rdbmsInfo.ConnectionName); err == nil {
+			providerName = strings.TrimSpace(connCfg.ProviderName)
+		}
+	}
+	return providerName
+}
+
+// rdbmsUsesSQLFallbackForDBOps reports whether all logical database CRUD calls on providerName require direct SQL.
+func rdbmsUsesSQLFallbackForDBOps(providerName string) bool {
+	cspName := strings.ToLower(strings.TrimSpace(providerName))
+	if provider, ok := common.RuntimeRDBMSInfo.DBMS[cspName]; ok && provider.DBOperationMethod != "" {
+		return strings.EqualFold(provider.DBOperationMethod, "sqlFallback")
+	}
+	return cspName == "aws" || cspName == "ibm"
+}
+
+// validatePrivateRDBMSDatabaseCreate fast-fails logical DB creation when direct SQL is needed on a private RDBMS.
+func validatePrivateRDBMSDatabaseCreate(publicAccess bool, providerName, charset, collation string) error {
+	if publicAccess || !rdbmsDatabaseCreateRequiresDBAdminCredentials(providerName, charset, collation) {
+		return nil
+	}
+	cspName := strings.ToLower(strings.TrimSpace(providerName))
+	switch cspName {
+	case "azure":
+		return fmt.Errorf("%w: specifying charset without collation on private Azure RDBMS requires direct SQL lookup; provide both charset and collation (or omit both) to use the native Azure ARM API", ErrRDBMSPrivateAccessUnsupported)
+	case "tencent":
+		return fmt.Errorf("%w: specifying collation on private Tencent RDBMS requires direct SQL; omit collation to use the native TencentDB API", ErrRDBMSPrivateAccessUnsupported)
+	case "ncp", "nhn":
+		return fmt.Errorf("%w: specifying charset/collation on private %s RDBMS requires direct SQL; omit charset and collation to use the native REST API", ErrRDBMSPrivateAccessUnsupported, strings.ToUpper(cspName))
+	default:
+		return fmt.Errorf("%w: %s has no native logical database API; create the database from inside the VPC/VNet (e.g., via a Bastion host)", ErrRDBMSPrivateAccessUnsupported, providerName)
+	}
+}
+
+// validatePrivateRDBMSDatabaseSQLOp fast-fails list/delete DB calls on private RDBMS instances that require direct SQL.
+func validatePrivateRDBMSDatabaseSQLOp(publicAccess bool, providerName, operation string) error {
+	if publicAccess || !rdbmsUsesSQLFallbackForDBOps(providerName) {
+		return nil
+	}
+	return fmt.Errorf("%w: %s has no native API to %s logical databases; run this operation from inside the VPC/VNet (e.g., via a Bastion host)", ErrRDBMSPrivateAccessUnsupported, providerName, operation)
+}
+
+// validatePrivateRDBMSSecureTransport fast-fails secure-transport probes on private RDBMS instances across all CSPs.
+func validatePrivateRDBMSSecureTransport(publicAccess bool, rdbmsId string) error {
+	if publicAccess {
+		return nil
+	}
+	return fmt.Errorf("%w: secure-transport probe for RDBMS '%s' requires direct TLS/SQL access; inspect TLS settings and CA certificate from inside the VPC/VNet (e.g., via a Bastion host)", ErrRDBMSPrivateAccessUnsupported, rdbmsId)
+}
+
+// isNonRetriableRDBMSDatabaseError reports whether a DB delete/verify error is permanent and should stop retries.
+func isNonRetriableRDBMSDatabaseError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, ErrRDBMSPrivateAccessUnsupported) || errors.Is(err, ErrRDBMSDatabaseValidation) {
+		return true
+	}
+	var se *apierr.StatusError
+	if errors.As(err, &se) && se.StatusCode >= 400 && se.StatusCode < 500 &&
+		se.StatusCode != http.StatusRequestTimeout && se.StatusCode != http.StatusTooManyRequests {
+		return true
+	}
+	lower := strings.ToLower(err.Error())
+	for _, pattern := range []string{"private mode", "publicaccess=false", "access denied", "authentication failed", "permission denied"} {
+		if strings.Contains(lower, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 // isValidRDBMSDatabaseName reports whether s is a non-empty identifier containing only ASCII letters, digits, '_', or '-'.
 func isValidRDBMSDatabaseName(s string) bool {
 	if s == "" {
@@ -1894,12 +1974,7 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq,
 		return emptyRet, err
 	}
 
-	providerName := rdbmsInfo.ConnectionConfig.ProviderName
-	if providerName == "" && rdbmsInfo.ConnectionName != "" {
-		if connCfg, connErr := common.GetConnConfig(rdbmsInfo.ConnectionName); connErr == nil {
-			providerName = connCfg.ProviderName
-		}
-	}
+	providerName := resolveRDBMSProviderName(rdbmsInfo)
 	if err := validateRDBMSDatabaseCreateRequest(rdbmsInfo.DBEngine, providerName, req, adminUserName, adminUserPassword); err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1908,6 +1983,11 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq,
 	dbName := strings.TrimSpace(req.DatabaseName)
 	charset := strings.TrimSpace(req.Charset)
 	collation := strings.TrimSpace(req.Collation)
+
+	if err := validatePrivateRDBMSDatabaseCreate(rdbmsInfo.PublicAccess, providerName, charset, collation); err != nil {
+		log.Warn().Err(err).Str("rdbmsId", rdbmsId).Str("provider", providerName).Msg("Fast-fail private RDBMS database creation")
+		return emptyRet, err
+	}
 
 	spReq := spiderRDBMSDatabaseCreateRequest{
 		ConnectionName:     rdbmsInfo.ConnectionName,
@@ -1966,6 +2046,12 @@ func ListRDBMSDatabases(nsId, rdbmsId, adminUserName, adminUserPassword string) 
 		return emptyRet, err
 	}
 
+	providerName := resolveRDBMSProviderName(rdbmsInfo)
+	if err := validatePrivateRDBMSDatabaseSQLOp(rdbmsInfo.PublicAccess, providerName, "list"); err != nil {
+		log.Warn().Err(err).Str("rdbmsId", rdbmsId).Str("provider", providerName).Msg("Fast-fail private RDBMS database listing")
+		return emptyRet, err
+	}
+
 	headers := map[string]string{}
 	if adminUserName != "" {
 		headers["X-Master-User-Name"] = adminUserName
@@ -2014,6 +2100,12 @@ func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserName, adminUserPassword
 
 	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
 	if err != nil {
+		return err
+	}
+
+	providerName := resolveRDBMSProviderName(rdbmsInfo)
+	if err := validatePrivateRDBMSDatabaseSQLOp(rdbmsInfo.PublicAccess, providerName, "delete"); err != nil {
+		log.Warn().Err(err).Str("rdbmsId", rdbmsId).Str("provider", providerName).Msg("Fast-fail private RDBMS database deletion")
 		return err
 	}
 
@@ -2068,6 +2160,10 @@ func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserName, adminUserPassword
 		)
 		if delErr = clientManager.HandleHttpResponse(restyResp, delErr); delErr != nil && !apierr.IsNotFound(delErr) {
 			lastErr = apierr.Wrap(delErr, fmt.Sprintf("failed to delete database '%s' in RDBMS '%s'", dbName, rdbmsId))
+			if isNonRetriableRDBMSDatabaseError(delErr) {
+				log.Warn().Err(lastErr).Msgf("Delete attempt %d/%d failed with non-retriable error; aborting retries", cycle, maxDeleteCycles)
+				break
+			}
 			log.Warn().Err(lastErr).Msgf("Delete attempt %d/%d failed", cycle, maxDeleteCycles)
 			continue
 		}
@@ -2081,6 +2177,10 @@ func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserName, adminUserPassword
 
 		listResp, listErr := ListRDBMSDatabases(nsId, rdbmsId, adminUserName, adminUserPassword)
 		if listErr != nil {
+			if isNonRetriableRDBMSDatabaseError(listErr) {
+				log.Warn().Err(listErr).Msgf("Delete verify: non-retriable list error on cycle %d/%d; stopping verification retries", cycle, maxDeleteCycles)
+				break
+			}
 			log.Warn().Err(listErr).Msgf("Delete verify: failed to list databases on cycle %d/%d", cycle, maxDeleteCycles)
 			continue
 		}
@@ -2116,6 +2216,11 @@ func GetRDBMSSecureTransport(nsId, rdbmsId, adminUserName, adminUserPassword str
 
 	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
 	if err != nil {
+		return emptyRet, err
+	}
+
+	if err := validatePrivateRDBMSSecureTransport(rdbmsInfo.PublicAccess, rdbmsId); err != nil {
+		log.Warn().Err(err).Str("rdbmsId", rdbmsId).Msg("Fast-fail private RDBMS secure-transport probe")
 		return emptyRet, err
 	}
 

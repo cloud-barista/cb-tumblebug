@@ -248,6 +248,46 @@ Enforced client-side by `validateAdminCredentials` before Create reaches CB-Spid
 | **NCP**       | Native REST API (`AddCloudMysqlDatabaseList`) | Direct SQL `CALL sys.ncp_create_db('db', 'charset', '')`  | Direct SQL `CALL sys.ncp_create_db('db', 'charset', 'collation')` | NCP has private VPC endpoints only (`*.vpc-cdb.ntruss.com:3306`). Setting `charset`/`collation` works only when CB-Spider has network reachability to the NCP private VPC. |
 | **NHN**       | Native REST API                               | Direct SQL (`CREATE DATABASE ... CHARACTER SET`)          | Direct SQL (`CREATE DATABASE ... CHARACTER SET ... COLLATE`)      | Setting `charset`/`collation` requires enabling **"Direct Control" (DB 스키마 & 사용자 직접 제어)** in the NHN Cloud Console beforehand and opening the DB Security Group. |
 
+### Private Mode (`publicAccess=false`) Fast-Fail Policy
+
+CB-Tumblebug separates Control Plane operations (CSP Native APIs) from Data Plane database connections. When an RDBMS instance is provisioned with `publicAccess=false`, CB-Tumblebug immediately returns `422 Unprocessable Entity` (`ErrRDBMSPrivateAccessUnsupported`) before calling CB-Spider for any request that requires a direct SQL or TLS connection to the private DB port:
+
+| API Endpoint | Private RDBMS (`publicAccess=false`) Behavior | Recommended Alternative |
+| :--- | :--- | :--- |
+| `GET .../rdbms/{rdbmsId}/secure-transport` | **Fast-Fail (`422`)** on all CSPs | Inspect TLS settings and CA certificate from inside the VPC/VNet (e.g., via a Bastion host). |
+| `POST/GET/DELETE .../rdbms/{rdbmsId}/database` (AWS, IBM) | **Fast-Fail (`422`)** (`sqlFallback` CSPs have no native DB API) | Manage logical databases from inside the VPC/VNet (e.g., via a Bastion host or application node). |
+| `POST .../rdbms/{rdbmsId}/database` (Azure, Tencent, NCP, NHN) | **Allowed** when parameters stay on the CSP Native API path; **Fast-Fail (`422`)** when parameters trigger direct SQL fallback | - **Azure**: specify both `charset` and `collation` (or omit both)<br/>- **Tencent**: omit `collation`<br/>- **NCP / NHN**: omit both `charset` and `collation` |
+| `POST/GET/DELETE .../rdbms/{rdbmsId}/database` (GCP, Alibaba, OpenStack) | **Allowed** (100% CSP Native API) | No extra action needed. |
+
+Additionally, `DELETE .../rdbms/{rdbmsId}/database/{dbName}` aborts its verification retry loop immediately on non-retriable errors (Fast-Fail, HTTP 4xx except `408`/`429`, or authentication failures) instead of retrying for 10 cycles.
+
+#### Direct SQL and TLS Alternatives for Private RDBMS
+
+When a private RDBMS (`publicAccess=false`) returns `422 Unprocessable Entity`, execute the equivalent SQL or TLS commands from any host with network reachability to the private DB endpoint (for example, an in-VPC application VM, a VPN-connected host, an SSH tunnel, or a Bastion VM via `POST /ns/{nsId}/cmd/infra/{infraId}`).
+
+- **Logical Database CRUD** (replaces `POST/GET/DELETE .../database` on AWS/IBM, or custom `charset`/`collation` on private Azure/Tencent/NCP/NHN):
+  ```sql
+  -- Create (standard MySQL / MariaDB)
+  CREATE DATABASE <db_name> CHARACTER SET <charset> COLLATE <collation>;
+
+  -- Create on NCP Cloud DB when setting custom charset/collation
+  CALL sys.ncp_create_db('<db_name>', '<charset>', '<collation>');
+
+  -- List / Delete
+  SHOW DATABASES;
+  DROP DATABASE <db_name>;
+  ```
+- **Secure Transport & CA Certificate Inspection** (replaces `GET .../secure-transport` and maps directly to `RDBMSSecureTransportInfo` fields):
+  ```bash
+  # Check requireSecureTransport and active tlsCipher
+  mysql -h <private-endpoint> -P 3306 -u <admin> -p'<password>' --ssl-mode=REQUIRED \
+    -e "SHOW VARIABLES LIKE 'require_secure_transport'; SHOW STATUS LIKE 'Ssl_cipher';"
+
+  # Inspect server certificate chain (caCertificate)
+  openssl s_client -starttls mysql -connect <private-endpoint>:3306 -showcerts </dev/null
+  ```
+  - If you only need the trusted CA bundle for client connections (rather than live TLS status), most CSPs (AWS, Azure, GCP, etc.) also publish static regional root CA `.pem` bundles in their official documentation.
+
 ### Direct SQL Connection & Reachability (External vs Internal VPC)
 
 About a caller's own application or test client connecting straight to the database endpoint via MySQL wire protocol (port 3306) — distinct from Tumblebug/Spider's REST-based database management (`DB Op. Method`).
