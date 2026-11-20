@@ -12,31 +12,31 @@
       },
       {
         "name": "g2-aws-ap-east-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ap-east-1+t3.nano",
         "imageId": "ami-0228b479ce1349440"
       },
       {
         "name": "g3-aws-ap-northeast-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ap-northeast-1+t3.nano",
         "imageId": "ami-0379a1f991c2beceb"
       },
       {
         "name": "g4-aws-ap-northeast-2",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ap-northeast-2+t3.nano",
         "imageId": "ami-0fde5763b4c293a0b"
       },
       {
         "name": "g5-aws-ap-northeast-3",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ap-northeast-3+t3.nano",
         "imageId": "ami-015848aede63207c3"
       },
       {
         "name": "g6-aws-ap-south-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ap-south-1+t3.nano",
         "imageId": "ami-03f76f0957a44f4ab"
       },
@@ -48,13 +48,13 @@
       },
       {
         "name": "g8-aws-ap-southeast-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ap-southeast-1+t3.nano",
         "imageId": "ami-0a010a0312b1400ee"
       },
       {
         "name": "g9-aws-ap-southeast-2",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ap-southeast-2+t3.nano",
         "imageId": "ami-0e04e402c10e358ef"
       },
@@ -72,25 +72,25 @@
       },
       {
         "name": "g12-aws-ca-central-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ca-central-1+t3.nano",
         "imageId": "ami-0ff4fb44caafc54a6"
       },
       {
         "name": "g13-aws-ca-west-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+ca-west-1+t3.nano",
         "imageId": "ami-08df2ec5bffef601d"
       },
       {
         "name": "g14-aws-eu-central-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+eu-central-1+t3.nano",
         "imageId": "ami-0c905937c14bd22b0"
       },
       {
         "name": "g15-aws-eu-central-2",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 450,
         "specId": "aws+eu-central-2+t3.nano",
         "imageId": "ami-0fe6ea1b187752116"
       },
@@ -114,19 +114,19 @@
       },
       {
         "name": "g19-aws-eu-west-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+eu-west-1+t3.nano",
         "imageId": "ami-0ff6ee91812d27971"
       },
       {
         "name": "g20-aws-eu-west-2",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+eu-west-2+t3.nano",
         "imageId": "ami-054d71fa8b4a0fd06"
       },
       {
         "name": "g21-aws-eu-west-3",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+eu-west-3+t3.nano",
         "imageId": "ami-0e8d619f32b216044"
       },
@@ -138,31 +138,31 @@
       },
       {
         "name": "g24-aws-sa-east-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+sa-east-1+t3.nano",
         "imageId": "ami-07a97e8b2b25e67a8"
       },
       {
         "name": "g25-aws-us-east-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+us-east-1+t3.nano",
         "imageId": "ami-0cf474e33a6362af9"
       },
       {
         "name": "g26-aws-us-east-2",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+us-east-2+t3.nano",
         "imageId": "ami-0fe440fddea4f2eae"
       },
       {
         "name": "g27-aws-us-west-1",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+us-west-1+t3.nano",
         "imageId": "ami-09091a60cac273afc"
       },
       {
         "name": "g28-aws-us-west-2",
-        "nodeGroupSize": 500,
+        "nodeGroupSize": 550,
         "specId": "aws+us-west-2+t3.nano",
         "imageId": "ami-0ababc7e5826abb79"
       }
