@@ -129,6 +129,15 @@ k-tunnel-stop: ## Stop the SSH tunnel opened by k-tunnel
 	@chmod +x ./scripts/misc/ssh-tunnel.sh 2>/dev/null || true
 	@./scripts/misc/ssh-tunnel.sh stop
 
+SSH_NODE_USER = $(if $(filter command line,$(origin USER)),$(USER),$(SSH_USER))
+
+ssh: ## Open an interactive SSH session to any Infra VM node (`make ssh` or `INFRA=<id> NODE=<id> [USER=root] [L=8080:80] [CMD=...]`)
+	@chmod +x ./scripts/misc/ssh-node.sh 2>/dev/null || true
+	@K8S_NAMESPACE="$(K8S_NAMESPACE)" K8S_CONTEXT="$(K8S_CONTEXT)" \
+		NS="$(NS)" INFRA="$(INFRA)" NODE="$(NODE)" IP="$(or $(IP),$(HOST))" \
+		USER_OVERRIDE="$(SSH_NODE_USER)" L="$(L)" CMD="$(CMD)" HOLDER="$(HOLDER)" DRY_RUN="$(DRY_RUN)" \
+		./scripts/misc/ssh-node.sh
+
 # ===== Utility Aliases =====
 # TARGET=k8s switches up/init/down to the Kubernetes (Helm) deployment.
 # Default (no TARGET) keeps the existing docker compose behavior unchanged.
@@ -1373,7 +1382,7 @@ help: ## Display this help screen
 	@grep -E '^(backup-assets|restore-assets):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🔧 Utilities:"
-	@grep -E '^(swag|bcrypt|certs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^(ssh|k-tunnel|k-tunnel-stop|swag|bcrypt|certs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "📦 Binary Build & Run & Cleanup:"
 	@grep -E '^(default|run|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -1387,4 +1396,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init r-init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop gen-cred enc-cred dec-cred bcrypt certs help k-prereqs k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey
+.PHONY: default run clean clean-all swag swagger init r-init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop ssh gen-cred enc-cred dec-cred bcrypt certs help k-prereqs k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey

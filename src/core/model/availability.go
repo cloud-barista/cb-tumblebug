@@ -97,6 +97,29 @@ type ZoneAvailability struct {
 	Reason         string   `json:"reason,omitempty"`         // why not available, when applicable
 }
 
+// AvailabilityQuota is the tightest account quota that applies to the queried instance type,
+// with how many more instances of that type fit. It is reported only when the CSP exposes
+// quotas to the credential in use; a missing value says nothing about the quota itself.
+type AvailabilityQuota struct {
+	Name  string `json:"name" example:"Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances"` // quota name as the CSP calls it
+	Scope string `json:"scope,omitempty" example:"region"`                                                // region, or "zone <id>"
+	Unit  string `json:"unit" example:"vCPU"`
+	Limit int64  `json:"limit" example:"640"`
+	// Used is omitted when the CSP did not report usage; FitCount then assumes nothing is in use
+	Used        *int64 `json:"used,omitempty" example:"0"`
+	PerInstance int64  `json:"perInstance" example:"2"` // what one instance of this type takes from the quota
+	FitCount    int64  `json:"fitCount" example:"320"`  // more instances of this type that fit
+}
+
+// Remaining returns what is left of the quota, taking unreported usage as none
+func (q AvailabilityQuota) Remaining() int64 {
+	rem := q.Limit
+	if q.Used != nil {
+		rem -= *q.Used
+	}
+	return max(rem, 0)
+}
+
 // AvailabilityResult is the provider-agnostic output of a pre-flight
 // availability check. The Available field is the OR of all zones; callers
 // can inspect Zones to choose a specific zone or disk category.
@@ -107,6 +130,7 @@ type AvailabilityResult struct {
 	Available    bool               `json:"available"`
 	Status       AvailabilityStatus `json:"status,omitempty"`       // standardized status: Available, SoldOut, QuotaExceeded, Unsupported, Unverified
 	Zones        []ZoneAvailability `json:"zones,omitempty"`
+	Quota        *AvailabilityQuota `json:"quota,omitempty"`        // tightest account quota for this instance type, when the CSP reports it
 	Reason       string             `json:"reason,omitempty"`       // explanation when Available is false (or when no checker)
 	Source       string             `json:"source,omitempty"`       // checker identifier for tracing (e.g., "alibaba:DescribeAvailableResource")
 	Cached       bool               `json:"cached,omitempty"`       // true if served from cache

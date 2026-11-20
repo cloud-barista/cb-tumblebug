@@ -129,6 +129,8 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 
 	if result.Available {
 		result.Status = model.AvailabilityAvailable
+		// usage comes from a metric that lags by minutes, so the quota informs and does not block here
+		result.Quota = instanceQuota(ctx, region, accessKey, secretKey, instanceType, q.VCPU)
 	} else {
 		result.Status = model.AvailabilityUnsupported
 		result.Reason = fmt.Sprintf("instance type %q is not offered in any AZ of region %q "+

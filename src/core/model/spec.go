@@ -208,6 +208,7 @@ type SpecInfo struct { // Tumblebug
 	AvailabilityReason       string             `json:"availabilityReason,omitempty" gorm:"-"`
 	AvailableZones           []string           `json:"availableZones,omitempty" gorm:"-"`
 	UnavailableZones         []string           `json:"unavailableZones,omitempty" gorm:"-"`
+	AvailabilityQuota        *AvailabilityQuota `json:"availabilityQuota,omitempty" gorm:"-"`
 	AvailabilityCheckedAt    *time.Time         `json:"availabilityCheckedAt,omitempty" gorm:"-"`
 	AvailabilityRefreshAfter *time.Time         `json:"availabilityRefreshAfter,omitempty" gorm:"-"`
 }

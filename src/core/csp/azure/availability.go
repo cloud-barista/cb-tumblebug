@@ -47,6 +47,7 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		Available:    specResult.Available,
 		Status:       specResult.Status,
 		Zones:        specResult.Zones,
+		Quota:        specResult.Quota,
 		Source:       "azure:CheckSpecAvailability",
 	}
 	if !specResult.Available {

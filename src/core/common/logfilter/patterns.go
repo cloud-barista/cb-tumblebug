@@ -84,8 +84,11 @@ var RequestSkipPatterns = []SkipRule{
 	{Patterns: []string{"/tumblebug/request"}},
 	{Patterns: []string{"/tumblebug/requests"}},
 
-	// SSE streaming endpoints — BodyDump and TracingMiddleware interfere with streaming responses
+	// SSE streaming & WebSocket interactive terminal endpoints — BodyDump and TracingMiddleware interfere with streaming/hijacked responses,
+	// and one-time terminal tickets must not be retained in RequestMap history.
 	{Method: "GET", Patterns: []string{"/stream/cmd/"}},
+	{Patterns: []string{"/tumblebug/ws/terminal"}},
+	{Method: "POST", Patterns: []string{"/terminal/ticket"}},
 
 	// High-frequency polling endpoints from UI (cb-mapui)
 	// These are called every 5-10 seconds and storing their large response bodies
@@ -134,6 +137,7 @@ var APISkipPatterns = []SkipRule{
 	{Patterns: []string{"/tumblebug/readyz"}},
 	{Patterns: []string{"/tumblebug/livez"}},
 	{Patterns: []string{"/tumblebug/httpVersion"}},
+	{Patterns: []string{"/tumblebug/ws/terminal"}},
 
 	// Infra polling (very frequent) - GET only; keep control actions (terminate, suspend, ...) logged
 	{Method: "GET", Patterns: []string{"/infra"}, Exclude: []string{"/control/"}},

@@ -18,9 +18,11 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.14
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.56.1
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.296.2
 	github.com/aws/aws-sdk-go-v2/service/pricing v1.41.0
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.62.5
+	github.com/aws/aws-sdk-go-v2/service/servicequotas v1.34.5
 	github.com/cloud-barista/ktcloudvpc-sdk-go v0.0.0-20260713072217-58ff4a0ab139
 	github.com/cloud-barista/mc-terrarium v0.1.4
 	github.com/cloud-barista/nhncloud-sdk-go v0.0.2-0.20260522111605-48d0ba7e7251
@@ -176,7 +178,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.6.11
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/net v0.60.0
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.15.0

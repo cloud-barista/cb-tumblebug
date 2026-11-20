@@ -117,6 +117,10 @@ Static spec catalogs (`spec_infos`) cannot reflect whether a spec is currently i
   "availabilityReason": "zone us-east-1b unavailable/SoldOut (InsufficientInstanceCapacity: ...); available in [us-east-1a, us-east-1c, us-east-1d, us-east-1e, us-east-1f]",
   "availableZones": ["us-east-1a", "us-east-1c", "us-east-1d", "us-east-1e", "us-east-1f"],
   "unavailableZones": ["us-east-1b"],
+  "availabilityQuota": {
+    "name": "Running On-Demand P instances", "scope": "region", "unit": "vCPU",
+    "limit": 76, "used": 16, "perInstance": 16, "fitCount": 3
+  },
   "availabilityCheckedAt": "2026-10-30T00:34:03Z",
   "availabilityRefreshAfter": "2026-10-30T01:04:03Z"
 }
@@ -131,6 +135,33 @@ Static spec catalogs (`spec_infos`) cannot reflect whether a spec is currently i
 | `QuotaExceeded` | Credential holder's regional vCPU or GPU quota is insufficient, or the subscription requires opt-in/quota increase for this family. | Blocked in review with quota details. |
 | `Unsupported` | Spec is retired, restricted, or not offered in any zone of the target region. | Blocked in review. |
 | `Unverified` | Real-time availability has not been queried yet (e.g., beyond the initial active-check batch) or no checker is registered for the CSP (e.g., `openstack`). | Allowed; can be verified on demand via `GET /spec/{specId}`. |
+
+### Account Quota (`availabilityQuota`)
+
+When the CSP reports account quotas to the credential in use, the check also returns the **tightest
+quota** that applies to the spec and how many more instances of that spec fit (`fitCount`). The
+field is optional: it is left out when the CSP has no quota API in use here or the credential may
+not read it, and that never fails the check.
+
+| CSP | Quotas compared | Scope |
+|-----|-----------------|-------|
+| **AWS** | On-Demand vCPU limit of the instance family group (Service Quotas), usage from the CloudWatch metric the quota names | region |
+| **Azure** | VM family vCPUs and total regional vCPUs | region |
+| **GCP** | `INSTANCES`, `CPUS`, family `*_CPUS`, GPU model quota | region |
+| **NHN / KT** | instances, cores, RAM | region / zone |
+| **Tencent** | postpaid instances (the sellable zone with the most room, or the pinned zone) | zone |
+| Alibaba, IBM, NCP, OpenStack | not reported | — |
+
+`used` is omitted when only the limit is readable (for AWS this needs `servicequotas:GetServiceQuota`
+and, for usage, `cloudwatch:GetMetricStatistics`); `fitCount` then assumes nothing is in use.
+On AWS the quota only informs: usage comes from a metric that lags by minutes, so it never turns the
+status into `QuotaExceeded`.
+
+**Review uses the requested node count.** `infraDynamicReview` and `nodeGroupDynamicReview` add up
+`nodeGroupSize × perInstance` for the NodeGroups that draw on the same quota and add a **warning**
+when the total exceeds what is left, for example "500 node(s) need 1000 vCPU, but 640 remain ...
+about 320 node(s) fit". It stays a warning: creation is still allowed, and the nodes beyond the quota
+fail unless the quota is raised at the CSP.
 
 ### Pre-Flight Availability Checkers by CSP
 

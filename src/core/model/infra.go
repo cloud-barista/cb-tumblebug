@@ -802,6 +802,8 @@ type ReviewResourceValidation struct {
 	Status        string `json:"status" example:"Available/Unavailable/Unknown"`
 	Message       string `json:"message,omitempty"`
 	CspResourceId string `json:"cspResourceId,omitempty"`
+	// Quota is the tightest account quota for the spec, when the CSP reports it (spec validation only)
+	Quota *AvailabilityQuota `json:"quota,omitempty"`
 }
 
 // ReviewResourceSummary is struct for overall resource summary
