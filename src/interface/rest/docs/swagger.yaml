@@ -14022,6 +14022,8 @@ paths:
       description: |-
         Lists logical databases inside an RDBMS instance via CB-Spider.
         X-Admin-User-Name and X-Admin-User-Password headers are required.
+        Private RDBMS (publicAccess=false): returns 422 immediately for SQL-only CSPs (AWS, IBM) that have no native logical database API.
+        See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct SQL alternatives.
       operationId: GetRDBMSDatabases
       parameters:
       - name: nsId
@@ -14082,6 +14084,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
     post:
       tags:
       - "[Infra Resource] RDBMS Management"
@@ -14090,6 +14098,8 @@ paths:
         Creates a logical database inside an Available RDBMS instance via CB-Spider.
         Optional charset and collation fields are supported for MySQL and MariaDB instances (Alibaba MariaDB supports charset only).
         X-Admin-User-Name and X-Admin-User-Password headers are required (not persisted by Tumblebug).
+        Private RDBMS (publicAccess=false): returns 422 immediately when the requested CSP/options require direct SQL (AWS, IBM, Azure charset-only, Tencent collation, NCP/NHN charset or collation).
+        See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct SQL alternatives.
         Note: Setting charset/collation on NCP requires CB-Spider network access to the private VPC endpoint (sys.ncp_create_db), and on NHN Cloud requires 'Direct Control' enabled in the NHN Console.
       operationId: PostRDBMSDatabase
       parameters:
@@ -14158,6 +14168,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: reqBody
   /ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}:
     delete:
@@ -14167,6 +14183,8 @@ paths:
       description: |-
         Deletes a logical database inside an RDBMS instance via CB-Spider.
         X-Admin-User-Name and X-Admin-User-Password headers are required.
+        Private RDBMS (publicAccess=false): returns 422 immediately for SQL-only CSPs (AWS, IBM) that have no native logical database API.
+        See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct SQL alternatives.
       operationId: DeleteRDBMSDatabase
       parameters:
       - name: nsId
@@ -14227,6 +14245,12 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "404":
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -14295,8 +14319,10 @@ paths:
       tags:
       - "[Infra Resource] RDBMS Management"
       summary: Get secure transport status and server CA certificate of an RDBMS instance
-      description: "Retrieves live TLS enforcement status, active cipher, and server\
-        \ CA certificate via CB-Spider."
+      description: |-
+        Retrieves live TLS enforcement status, active cipher, and server CA certificate via CB-Spider.
+        Private RDBMS (publicAccess=false): returns 422 immediately because TLS/SQL probing requires direct network reachability to the DB port.
+        See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct TLS/SQL alternatives.
       operationId: GetRDBMSSecureTransport
       parameters:
       - name: nsId
@@ -14353,6 +14379,12 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "404":
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -29272,8 +29304,8 @@ components:
           example: false
         nhnDBSGToAllowAllInbound:
           type: boolean
-          description: "NHNDBSGToAllowAllInbound (NHN only): when true with publicAccess=true,\
-            \ auto-creates/attaches a 0.0.0.0/0 DB SG."
+          description: "NHNDBSGToAllowAllInbound (NHN only): when true, auto-creates/attaches\
+            \ an allow-all (0.0.0.0/0) DB SG for testing."
           example: false
         publicAccess:
           type: boolean

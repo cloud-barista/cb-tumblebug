@@ -428,6 +428,8 @@ func RestPruneRDBMS(c echo.Context) error {
 // @Description Creates a logical database inside an Available RDBMS instance via CB-Spider.
 // @Description Optional charset and collation fields are supported for MySQL and MariaDB instances (Alibaba MariaDB supports charset only).
 // @Description X-Admin-User-Name and X-Admin-User-Password headers are required (not persisted by Tumblebug).
+// @Description Private RDBMS (publicAccess=false): returns 422 immediately when the requested CSP/options require direct SQL (AWS, IBM, Azure charset-only, Tencent collation, NCP/NHN charset or collation).
+// @Description See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct SQL alternatives.
 // @Description Note: Setting charset/collation on NCP requires CB-Spider network access to the private VPC endpoint (sys.ncp_create_db), and on NHN Cloud requires 'Direct Control' enabled in the NHN Console.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
@@ -440,6 +442,7 @@ func RestPruneRDBMS(c echo.Context) error {
 // @Success 200 {object} model.RDBMSDatabaseInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 422 {object} model.SimpleMsg "Unprocessable Entity"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/database [post]
@@ -477,6 +480,9 @@ func RestPostRDBMSDatabase(c echo.Context) error {
 		if errors.Is(err, resource.ErrRDBMSDatabaseValidation) {
 			return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 		}
+		if errors.Is(err, resource.ErrRDBMSPrivateAccessUnsupported) {
+			return c.JSON(http.StatusUnprocessableEntity, model.SimpleMsg{Message: err.Error()})
+		}
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
@@ -488,6 +494,8 @@ func RestPostRDBMSDatabase(c echo.Context) error {
 // @Summary List logical databases inside an RDBMS instance
 // @Description Lists logical databases inside an RDBMS instance via CB-Spider.
 // @Description X-Admin-User-Name and X-Admin-User-Password headers are required.
+// @Description Private RDBMS (publicAccess=false): returns 422 immediately for SQL-only CSPs (AWS, IBM) that have no native logical database API.
+// @Description See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct SQL alternatives.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
@@ -498,6 +506,7 @@ func RestPostRDBMSDatabase(c echo.Context) error {
 // @Success 200 {object} model.RDBMSDatabaseListResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 422 {object} model.SimpleMsg "Unprocessable Entity"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/database [get]
@@ -526,6 +535,9 @@ func RestGetRDBMSDatabases(c echo.Context) error {
 	result, err := resource.ListRDBMSDatabases(nsId, rdbmsId, adminUserName, adminUserPassword)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to list databases in RDBMS '%s'", rdbmsId)
+		if errors.Is(err, resource.ErrRDBMSPrivateAccessUnsupported) {
+			return c.JSON(http.StatusUnprocessableEntity, model.SimpleMsg{Message: err.Error()})
+		}
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
@@ -537,6 +549,8 @@ func RestGetRDBMSDatabases(c echo.Context) error {
 // @Summary Delete a logical database inside an RDBMS instance
 // @Description Deletes a logical database inside an RDBMS instance via CB-Spider.
 // @Description X-Admin-User-Name and X-Admin-User-Password headers are required.
+// @Description Private RDBMS (publicAccess=false): returns 422 immediately for SQL-only CSPs (AWS, IBM) that have no native logical database API.
+// @Description See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct SQL alternatives.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
@@ -548,6 +562,7 @@ func RestGetRDBMSDatabases(c echo.Context) error {
 // @Success 204 "No Content"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 422 {object} model.SimpleMsg "Unprocessable Entity"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName} [delete]
@@ -581,6 +596,9 @@ func RestDeleteRDBMSDatabase(c echo.Context) error {
 
 	if err := resource.DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserName, adminUserPassword); err != nil {
 		log.Error().Err(err).Msgf("Failed to delete database '%s' in RDBMS '%s'", dbName, rdbmsId)
+		if errors.Is(err, resource.ErrRDBMSPrivateAccessUnsupported) {
+			return c.JSON(http.StatusUnprocessableEntity, model.SimpleMsg{Message: err.Error()})
+		}
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
@@ -591,6 +609,8 @@ func RestDeleteRDBMSDatabase(c echo.Context) error {
 // @ID GetRDBMSSecureTransport
 // @Summary Get secure transport status and server CA certificate of an RDBMS instance
 // @Description Retrieves live TLS enforcement status, active cipher, and server CA certificate via CB-Spider.
+// @Description Private RDBMS (publicAccess=false): returns 422 immediately because TLS/SQL probing requires direct network reachability to the DB port.
+// @Description See https://github.com/cloud-barista/cb-tumblebug/blob/main/docs/feature_guide/rdbms-management.md#direct-sql-and-tls-alternatives-for-private-rdbms for direct TLS/SQL alternatives.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
@@ -601,6 +621,7 @@ func RestDeleteRDBMSDatabase(c echo.Context) error {
 // @Success 200 {object} model.RDBMSSecureTransportInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 422 {object} model.SimpleMsg "Unprocessable Entity"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/secure-transport [get]
@@ -629,6 +650,9 @@ func RestGetRDBMSSecureTransport(c echo.Context) error {
 	result, err := resource.GetRDBMSSecureTransport(nsId, rdbmsId, adminUserName, adminUserPassword)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to get secure transport for RDBMS '%s'", rdbmsId)
+		if errors.Is(err, resource.ErrRDBMSPrivateAccessUnsupported) {
+			return c.JSON(http.StatusUnprocessableEntity, model.SimpleMsg{Message: err.Error()})
+		}
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 

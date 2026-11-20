@@ -224,7 +224,7 @@ type RDBMSCreateRequest struct {
 	HighAvailability    bool   `json:"highAvailability,omitempty" example:"false"`
 	BackupRetentionDays int    `json:"backupRetentionDays,omitempty" example:"7"`
 	PublicAccess        bool   `json:"publicAccess,omitempty" example:"false"`
-	// NHNDBSGToAllowAllInbound (NHN only): when true with publicAccess=true, auto-creates/attaches a 0.0.0.0/0 DB SG.
+	// NHNDBSGToAllowAllInbound (NHN only): when true, auto-creates/attaches an allow-all (0.0.0.0/0) DB SG for testing.
 	NHNDBSGToAllowAllInbound bool `json:"nhnDBSGToAllowAllInbound,omitempty" example:"false"`
 	// NCPDBACGToAllowAllInbound (NCP only): when true, auto-configures ACG inbound rule (0.0.0.0/0) for testing.
 	// CAUTION: For test/dev use only. Do not use in production environments.

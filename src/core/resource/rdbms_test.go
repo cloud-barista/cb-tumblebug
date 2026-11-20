@@ -2,9 +2,11 @@ package resource
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/spf13/viper"
 )
@@ -400,6 +402,108 @@ func TestEnrichRDBMSDatabaseCreateError(t *testing.T) {
 	plainErr := enrichRDBMSDatabaseCreateError(rawErr, "ncp", "rdbms-ncp", "sampledb", "", "")
 	if strings.Contains(plainErr.Error(), "sys.ncp_create_db") {
 		t.Errorf("did not expect NCP charset hint when charset/collation are empty, got: %v", plainErr)
+	}
+}
+
+func TestValidatePrivateRDBMSDatabaseCreate(t *testing.T) {
+	tests := []struct {
+		name         string
+		publicAccess bool
+		provider     string
+		charset      string
+		collation    string
+		wantErr      bool
+		wantHint     string
+	}{
+		{name: "Public AWS allowed", publicAccess: true, provider: "aws", wantErr: false},
+		{name: "Private AWS fast-fails", publicAccess: false, provider: "aws", wantErr: true, wantHint: "Bastion"},
+		{name: "Private IBM fast-fails", publicAccess: false, provider: "ibm", wantErr: true, wantHint: "Bastion"},
+		{name: "Private GCP with charset/collation allowed", publicAccess: false, provider: "gcp", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", wantErr: false},
+		{name: "Private Alibaba with charset/collation allowed", publicAccess: false, provider: "alibaba", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", wantErr: false},
+		{name: "Private OpenStack allowed", publicAccess: false, provider: "openstack", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", wantErr: false},
+		{name: "Private Azure default allowed", publicAccess: false, provider: "azure", wantErr: false},
+		{name: "Private Azure charset+collation allowed", publicAccess: false, provider: "azure", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", wantErr: false},
+		{name: "Private Azure charset-only fast-fails", publicAccess: false, provider: "azure", charset: "utf8mb4", wantErr: true, wantHint: "both charset and collation"},
+		{name: "Private Tencent charset-only allowed", publicAccess: false, provider: "tencent", charset: "utf8mb4", wantErr: false},
+		{name: "Private Tencent collation fast-fails", publicAccess: false, provider: "tencent", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", wantErr: true, wantHint: "omit collation"},
+		{name: "Private NCP default allowed", publicAccess: false, provider: "ncp", wantErr: false},
+		{name: "Private NCP charset fast-fails", publicAccess: false, provider: "ncp", charset: "utf8mb4", wantErr: true, wantHint: "omit charset and collation"},
+		{name: "Private NHN default allowed", publicAccess: false, provider: "nhn", wantErr: false},
+		{name: "Private NHN collation fast-fails", publicAccess: false, provider: "nhn", collation: "utf8mb4_unicode_ci", wantErr: true, wantHint: "omit charset and collation"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validatePrivateRDBMSDatabaseCreate(tc.publicAccess, tc.provider, tc.charset, tc.collation)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				if !errors.Is(err, ErrRDBMSPrivateAccessUnsupported) {
+					t.Errorf("expected ErrRDBMSPrivateAccessUnsupported, got: %v", err)
+				}
+				if tc.wantHint != "" && !strings.Contains(err.Error(), tc.wantHint) {
+					t.Errorf("error %q does not contain expected hint %q", err.Error(), tc.wantHint)
+				}
+			} else if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestValidatePrivateRDBMSDatabaseSQLOp(t *testing.T) {
+	for _, provider := range []string{"aws", "ibm"} {
+		err := validatePrivateRDBMSDatabaseSQLOp(false, provider, "delete")
+		if err == nil || !errors.Is(err, ErrRDBMSPrivateAccessUnsupported) {
+			t.Errorf("expected ErrRDBMSPrivateAccessUnsupported for private %s, got: %v", provider, err)
+		}
+		if err := validatePrivateRDBMSDatabaseSQLOp(true, provider, "delete"); err != nil {
+			t.Errorf("unexpected error for public %s: %v", provider, err)
+		}
+	}
+
+	for _, provider := range []string{"gcp", "alibaba", "azure", "tencent", "ncp", "nhn", "openstack"} {
+		if err := validatePrivateRDBMSDatabaseSQLOp(false, provider, "list"); err != nil {
+			t.Errorf("expected native API provider %s to allow private list, got: %v", provider, err)
+		}
+	}
+}
+
+func TestValidatePrivateRDBMSSecureTransport(t *testing.T) {
+	if err := validatePrivateRDBMSSecureTransport(true, "rdbms-01"); err != nil {
+		t.Fatalf("unexpected error for public RDBMS: %v", err)
+	}
+	err := validatePrivateRDBMSSecureTransport(false, "rdbms-01")
+	if err == nil || !errors.Is(err, ErrRDBMSPrivateAccessUnsupported) {
+		t.Fatalf("expected ErrRDBMSPrivateAccessUnsupported for private RDBMS, got: %v", err)
+	}
+}
+
+func TestIsNonRetriableRDBMSDatabaseError(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{name: "Nil error", err: nil, want: false},
+		{name: "Private access sentinel", err: ErrRDBMSPrivateAccessUnsupported, want: true},
+		{name: "Validation sentinel", err: ErrRDBMSDatabaseValidation, want: true},
+		{name: "HTTP 400 StatusError", err: &apierr.StatusError{StatusCode: http.StatusBadRequest, Message: "bad request"}, want: true},
+		{name: "HTTP 403 StatusError", err: &apierr.StatusError{StatusCode: http.StatusForbidden, Message: "forbidden"}, want: true},
+		{name: "HTTP 429 StatusError stays retriable", err: &apierr.StatusError{StatusCode: http.StatusTooManyRequests, Message: "rate limited"}, want: false},
+		{name: "HTTP 408 StatusError stays retriable", err: &apierr.StatusError{StatusCode: http.StatusRequestTimeout, Message: "timeout"}, want: false},
+		{name: "HTTP 500 transient stays retriable", err: &apierr.StatusError{StatusCode: http.StatusInternalServerError, Cause: errors.New("temporary CSP error")}, want: false},
+		{name: "Spider Private Mode text", err: errors.New("direct SQL connection is not supported for a Private Mode (PublicAccess=false) RDBMS instance"), want: true},
+		{name: "MySQL access denied text", err: errors.New("Error 1045: Access denied for user 'dbadmin'"), want: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := isNonRetriableRDBMSDatabaseError(tc.err); got != tc.want {
+				t.Errorf("isNonRetriableRDBMSDatabaseError(%v) = %v, want %v", tc.err, got, tc.want)
+			}
+		})
 	}
 }
 
