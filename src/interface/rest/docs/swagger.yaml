@@ -6937,6 +6937,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/terminal/ticket:
+    post:
+      tags:
+      - "[MC-Infra] Infra Remote Command"
+      summary: Issue a one-time WebSocket ticket for an interactive Node SSH terminal
+      description: "Validates access to the target Infra Node and returns a short-lived,\
+        \ single-use ticket for upgrading GET /ws/terminal to an interactive PTY shell."
+      operationId: PostNodeTerminalTicket
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: nodeId
+        in: path
+        description: Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID
+        schema:
+          type: string
+      requestBody:
+        description: Optional SSH username override
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/infra.TerminalTicketReq'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/infra.TerminalTicketRes'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: req
   /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion:
     get:
       tags:
@@ -21585,6 +21647,19 @@ components:
       type: object
       properties:
         host:
+          type: string
+    infra.TerminalTicketReq:
+      type: object
+      properties:
+        userName:
+          type: string
+          example: cb-user
+    infra.TerminalTicketRes:
+      type: object
+      properties:
+        expiresInSeconds:
+          type: integer
+        ticket:
           type: string
     label.ResourcesResponse:
       type: object
