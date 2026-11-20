@@ -308,7 +308,44 @@ func cloneAvailabilityResult(in model.AvailabilityResult) model.AvailabilityResu
 		out.Zones = make([]model.ZoneAvailability, len(in.Zones))
 		copy(out.Zones, in.Zones)
 	}
+	if in.Quota != nil {
+		quota := *in.Quota
+		out.Quota = &quota
+	}
 	return out
+}
+
+// availabilityTTLWithQuota caps how long a result carrying quota usage is cached: usage moves
+// with every provisioning, unlike whether a type is offered in a zone
+const availabilityTTLWithQuota = 5 * time.Minute
+
+// NewQuota builds one quota candidate for an instance type. used < 0 means the CSP did not report
+// usage. It returns false when the limit or the per-instance need is not a positive number.
+func NewQuota(name, scope, unit string, limit, used, perInstance int64) (model.AvailabilityQuota, bool) {
+	if limit <= 0 || perInstance <= 0 {
+		return model.AvailabilityQuota{}, false
+	}
+	q := model.AvailabilityQuota{Name: name, Scope: scope, Unit: unit, Limit: limit, PerInstance: perInstance}
+	if used >= 0 {
+		q.Used = &used
+	}
+	q.FitCount = q.Remaining() / perInstance
+	return q, true
+}
+
+// TightestQuota returns the candidate that lets the fewest more instances in, or nil without candidates
+func TightestQuota(candidates ...model.AvailabilityQuota) *model.AvailabilityQuota {
+	var tightest *model.AvailabilityQuota
+	for i := range candidates {
+		if tightest == nil || candidates[i].FitCount < tightest.FitCount {
+			tightest = &candidates[i]
+		}
+	}
+	if tightest == nil {
+		return nil
+	}
+	out := *tightest
+	return &out
 }
 
 // LookupCachedAvailability performs a 0ms non-blocking lookup in the availability cache
@@ -654,6 +691,9 @@ func CheckAvailability(ctx context.Context, q model.AvailabilityQuery) model.Ava
 		applyZoneSoldOutOverlay(ctx, provider, q, &r)
 
 		ttl := resolveAvailabilityTTL(q, r.Status)
+		if r.Quota != nil && ttl > availabilityTTLWithQuota {
+			ttl = availabilityTTLWithQuota
+		}
 		expiresAt := r.QueriedAt.Add(ttl)
 		if r.RefreshAfter == nil {
 			r.RefreshAfter = &expiresAt

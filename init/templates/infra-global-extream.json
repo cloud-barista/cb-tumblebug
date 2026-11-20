@@ -30,7 +30,7 @@
       },
       {
         "name": "g5-aws-ap-northeast-3",
-        "nodeGroupSize": 128,
+        "nodeGroupSize": 500,
         "specId": "aws+ap-northeast-3+t3.nano",
         "imageId": "ami-015848aede63207c3"
       },

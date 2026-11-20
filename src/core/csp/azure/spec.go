@@ -48,6 +48,7 @@ type SpecCheckResult struct {
 	QuotaFamily  string                   // vCPU family name (e.g., "standardDSv3Family")
 	QuotaCurrent int64                    // current vCPU usage in this family
 	QuotaLimit   int64                    // vCPU limit for this family
+	Quota        *model.AvailabilityQuota // tighter of the family and total regional vCPU quotas
 	Zones        []model.ZoneAvailability // per-zone availability when Azure reports LocationInfo.Zones
 }
 
@@ -206,6 +207,19 @@ func CheckSpecAvailability(ctx context.Context, region, nodeSize string) (*SpecC
 
 	// Step 2: vCPU quota check (both per-family and total regional "cores")
 	if sku.vcpus > 0 {
+		var quotas []model.AvailabilityQuota
+		for _, name := range []string{sku.family, "cores"} {
+			if name == "" {
+				continue
+			}
+			if usage, err := getQuotaUsage(ctx, creds, credential, cacheKey, region, name); err == nil && usage != nil {
+				if quota, ok := csp.NewQuota(name, "region", "vCPU", usage.limit, usage.currentValue, int64(sku.vcpus)); ok {
+					quotas = append(quotas, quota)
+				}
+			}
+		}
+		result.Quota = csp.TightestQuota(quotas...)
+
 		if sku.family != "" {
 			quota, qErr := getQuotaUsage(ctx, creds, credential, cacheKey, region, sku.family)
 			if qErr != nil {

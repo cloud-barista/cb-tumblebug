@@ -21858,6 +21858,36 @@ components:
           type: integer
         wastedCostPerHour:
           type: number
+    model.AvailabilityQuota:
+      type: object
+      properties:
+        fitCount:
+          type: integer
+          description: more instances of this type that fit
+          example: 320
+        limit:
+          type: integer
+          example: 640
+        name:
+          type: string
+          description: quota name as the CSP calls it
+          example: "Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances"
+        perInstance:
+          type: integer
+          description: what one instance of this type takes from the quota
+          example: 2
+        scope:
+          type: string
+          description: "region, or \"zone <id>\""
+          example: region
+        unit:
+          type: string
+          example: vCPU
+        used:
+          type: integer
+          description: Used is omitted when the CSP did not report usage; FitCount
+            then assumes nothing is in use
+          example: 0
     model.AvailabilityResult:
       type: object
       properties:
@@ -21873,6 +21903,12 @@ components:
         queriedAt:
           type: string
           description: time of original (uncached) query
+        quota:
+          type: object
+          description: "tightest account quota for this instance type, when the CSP\
+            \ reports it"
+          allOf:
+          - $ref: '#/components/schemas/model.AvailabilityQuota'
         reason:
           type: string
           description: explanation when Available is false (or when no checker)
@@ -30489,6 +30525,12 @@ components:
           type: boolean
         message:
           type: string
+        quota:
+          type: object
+          description: "Quota is the tightest account quota for the spec, when the\
+            \ CSP reports it (spec validation only)"
+          allOf:
+          - $ref: '#/components/schemas/model.AvailabilityQuota'
         resourceId:
           type: string
         resourceName:
@@ -31491,6 +31533,8 @@ components:
             type: string
         availabilityCheckedAt:
           type: string
+        availabilityQuota:
+          $ref: '#/components/schemas/model.AvailabilityQuota'
         availabilityReason:
           type: string
         availabilityRefreshAfter:

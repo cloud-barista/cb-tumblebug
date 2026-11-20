@@ -1125,6 +1125,12 @@ func applyAvailabilityResultToSpec(spec *model.SpecInfo, res model.AvailabilityR
 		spec.AvailabilityReason = ""
 	}
 
+	spec.AvailabilityQuota = nil
+	if res.Quota != nil {
+		quota := *res.Quota
+		spec.AvailabilityQuota = &quota
+	}
+
 	if !res.QueriedAt.IsZero() {
 		queriedAt := res.QueriedAt
 		spec.AvailabilityCheckedAt = &queriedAt

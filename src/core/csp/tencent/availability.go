@@ -252,6 +252,21 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		}
 	}
 
+	if quotaEntry != nil {
+		for _, z := range result.Zones {
+			limit, hasLimit := quotaEntry.postPaidLimitByZone[z.ZoneId]
+			rem, hasRem := quotaEntry.postPaidRemainingByZone[z.ZoneId]
+			if !z.Available || !hasLimit || !hasRem || rem > limit {
+				continue
+			}
+			quota, ok := csp.NewQuota("postpaid instances", "zone "+z.ZoneId, "instances", int64(limit), int64(limit-rem), 1)
+			if ok && (result.Quota == nil || quota.FitCount > result.Quota.FitCount) {
+				picked := quota
+				result.Quota = &picked
+			}
+		}
+	}
+
 	if result.Available {
 		result.Status = model.AvailabilityAvailable
 	} else if quotaExhaustedZones > 0 && quotaExhaustedZones == len(result.Zones) {

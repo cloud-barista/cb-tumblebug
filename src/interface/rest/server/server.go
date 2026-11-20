@@ -120,6 +120,13 @@ func RunServer() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Level: 5,
+		Skipper: func(c echo.Context) bool {
+			if strings.EqualFold(c.Request().Header.Get("Upgrade"), "websocket") {
+				return true
+			}
+			p := c.Request().URL.Path
+			return strings.Contains(p, "/stream/") || strings.HasPrefix(p, "/tumblebug/ws/")
+		},
 	}))
 	// Global ceiling per client IP (TB_API_RATE_LIMIT_GLOBAL="rate:burst", default 200:400).
 	e.Use(rateLimiterFromEnv("TB_API_RATE_LIMIT_GLOBAL", 200, 400))
@@ -260,7 +267,8 @@ func RunServer() {
 					if c.Path() == "/tumblebug/livez" ||
 						c.Path() == "/tumblebug/readyz" ||
 						c.Path() == "/tumblebug/readyz/init" ||
-						c.Path() == "/tumblebug/httpVersion" {
+						c.Path() == "/tumblebug/httpVersion" ||
+						c.Path() == "/tumblebug/ws/terminal" {
 						return true
 					}
 
@@ -297,6 +305,7 @@ func RunServer() {
 					{"/tumblebug/readyz"},
 					{"/tumblebug/readyz/init"},
 					{"/tumblebug/httpVersion"},
+					{"/tumblebug/ws/terminal"},
 				}
 				jwtAuthMw = authmw.JwtAuthMw(authSkipPatterns)
 				log.Info().Msg("JWT Auth Middleware is initialized successfully")
@@ -526,6 +535,10 @@ func RunServer() {
 
 	// SSE stream for real-time command execution log streaming
 	g.GET("/:nsId/stream/cmd/infra/:infraId", rest_infra.RestGetCmdInfraStream)
+
+	// Interactive SSH WebSocket terminal (ticket issued via authenticated POST, consumed once on WS upgrade)
+	g.POST("/:nsId/infra/:infraId/node/:nodeId/terminal/ticket", rest_infra.RestPostNodeTerminalTicket)
+	e.GET("/tumblebug/ws/terminal", rest_infra.RestGetNodeTerminalWs)
 
 	// Command Status Management for Nodes
 	g.GET("/:nsId/infra/:infraId/node/:nodeId/commandStatus/:index", rest_infra.RestGetNodeCommandStatus)

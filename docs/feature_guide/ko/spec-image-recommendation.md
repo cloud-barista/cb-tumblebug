@@ -117,6 +117,10 @@ GET /tumblebug/recommendSpecOptions
   "availabilityReason": "zone us-east-1b unavailable/SoldOut (InsufficientInstanceCapacity: ...); available in [us-east-1a, us-east-1c, us-east-1d, us-east-1e, us-east-1f]",
   "availableZones": ["us-east-1a", "us-east-1c", "us-east-1d", "us-east-1e", "us-east-1f"],
   "unavailableZones": ["us-east-1b"],
+  "availabilityQuota": {
+    "name": "Running On-Demand P instances", "scope": "region", "unit": "vCPU",
+    "limit": 76, "used": 16, "perInstance": 16, "fitCount": 3
+  },
   "availabilityCheckedAt": "2026-10-30T00:34:03Z",
   "availabilityRefreshAfter": "2026-10-30T01:04:03Z"
 }
@@ -131,6 +135,23 @@ GET /tumblebug/recommendSpecOptions
 | `QuotaExceeded` | 자격 증명 소유자의 리전별 vCPU 또는 GPU 쿼터가 부족하거나, 해당 패밀리에 대해 구독 옵트인(Opt-in)/쿼터 증설이 필요함. | 쿼터 상세 정보와 함께 검토 단계에서 차단됨. |
 | `Unsupported` | 스펙이 단종되었거나 제한되었거나 대상 리전의 어느 영역에서도 제공되지 않음. | 검토 단계에서 차단됨. |
 | `Unverified` | 실시간 가용성이 아직 조회되지 않았거나(예: 초기 능동 검사 배치를 초과한 후보) 해당 CSP에 등록된 검사기가 없음(예: `openstack`). | 허용됨; `GET /spec/{specId}`를 통해 온디맨드로 검증할 수 있습니다. |
+
+### 계정 쿼터 (`availabilityQuota`)
+
+CSP가 사용 중인 자격증명에 계정 쿼터를 알려 주는 경우, 사전 확인은 해당 스펙에 적용되는 쿼터 중 **가장 빡빡한 것 하나**와 그 스펙을 몇 대 더 넣을 수 있는지(`fitCount`)를 함께 돌려줍니다. 선택 필드이므로 여기서 쓰는 쿼터 API가 없는 CSP이거나 자격증명에 조회 권한이 없으면 생략되며, 그 때문에 확인이 실패하지는 않습니다.
+
+| CSP | 비교하는 쿼터 | 범위 |
+|-----|--------------|------|
+| **AWS** | 인스턴스 계열 묶음의 온디맨드 vCPU 한도(Service Quotas), 사용량은 쿼터가 가리키는 CloudWatch 지표 | 리전 |
+| **Azure** | VM 패밀리 vCPU, 리전 전체 vCPU | 리전 |
+| **GCP** | `INSTANCES`, `CPUS`, 패밀리 `*_CPUS`, GPU 모델 쿼터 | 리전 |
+| **NHN / KT** | 인스턴스 수, 코어, RAM | 리전 / 존 |
+| **Tencent** | 후불 인스턴스 수(판매 중인 존 가운데 여유가 가장 큰 존, 또는 지정한 존) | 존 |
+| Alibaba, IBM, NCP, OpenStack | 제공하지 않음 | — |
+
+한도만 읽을 수 있으면 `used`는 생략되고(AWS는 `servicequotas:GetServiceQuota`, 사용량에는 `cloudwatch:GetMetricStatistics` 권한이 필요), `fitCount`는 사용 중인 것이 없다고 보고 계산합니다. AWS에서는 쿼터가 참고 정보로만 쓰입니다. 사용량 지표가 몇 분 늦게 반영되므로 이 값만으로 상태를 `QuotaExceeded`로 바꾸지 않습니다.
+
+**리뷰는 요청한 노드 수를 반영합니다.** `infraDynamicReview`와 `nodeGroupDynamicReview`는 같은 쿼터를 쓰는 NodeGroup의 `nodeGroupSize × perInstance`를 합산해 남은 양을 넘으면 **경고**를 추가합니다(예: "500 node(s) need 1000 vCPU, but 640 remain ... about 320 node(s) fit"). 경고일 뿐이므로 생성은 그대로 진행할 수 있고, 쿼터를 넘는 노드는 CSP에서 한도를 올리지 않으면 실패합니다.
 
 ### CSP별 사전 가용성 검사기 (Pre-Flight Availability Checkers)
 

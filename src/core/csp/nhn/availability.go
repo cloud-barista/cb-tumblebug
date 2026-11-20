@@ -246,6 +246,20 @@ func (c *nhnAvailabilityChecker) CheckInstance(ctx context.Context, q model.Avai
 	if lErr != nil {
 		log.Warn().Err(lErr).Str("region", region).Msg("[NHN] limits.Get failed; skipping quota check")
 	} else if abs != nil {
+		var quotas []model.AvailabilityQuota
+		for _, c := range []struct {
+			name, unit           string
+			limit, used, perNode int64
+		}{
+			{"instances", "instances", int64(abs.MaxTotalInstances), int64(abs.TotalInstancesUsed), 1},
+			{"cores", "vCPU", int64(abs.MaxTotalCores), int64(abs.TotalCoresUsed), int64(reqVCPUs)},
+			{"ram", "MB", int64(abs.MaxTotalRAMSize), int64(abs.TotalRAMUsed), int64(reqRAMMB)},
+		} {
+			if quota, ok := csp.NewQuota(c.name, "region", c.unit, c.limit, c.used, c.perNode); ok {
+				quotas = append(quotas, quota)
+			}
+		}
+		result.Quota = csp.TightestQuota(quotas...)
 		if abs.MaxTotalInstances > 0 {
 			remInst := max(abs.MaxTotalInstances-abs.TotalInstancesUsed, 0)
 			if remInst < 1 {

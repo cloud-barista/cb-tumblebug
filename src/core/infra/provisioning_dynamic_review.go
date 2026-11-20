@@ -152,6 +152,7 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 				Status:        "Unavailable",
 				Message:       errMsg,
 				CspResourceId: specInfo.CspSpecName,
+				Quota:         availability.Quota,
 			}
 			nodeReview.CanCreate = false
 			viable = false
@@ -163,6 +164,7 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 				Status:        "Available",
 				Message:       availability.Reason,
 				CspResourceId: cspSpecName,
+				Quota:         availability.Quota,
 			}
 			if availability.Reason != "" {
 				nodeReview.Warnings = append(nodeReview.Warnings, fmt.Sprintf("Zone availability notice for '%s': %s", specInfo.CspSpecName, availability.Reason))
@@ -807,6 +809,9 @@ func ReviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, req *mode
 		memoryGiB = specInfo.MemoryGiB
 	}
 	applyInitScriptReview(nsId, "infra", req, nil, memoryGiB, &nodeReview)
+	reviewed := []model.ReviewNodeGroupDynamicReqInfo{nodeReview}
+	applyQuotaReview(reviewed)
+	nodeReview = reviewed[0]
 
 	log.Debug().Msgf("Single VM review completed: %s - %s", nodeReview.Status, nodeReview.Message)
 	return &nodeReview, nil
@@ -1009,6 +1014,13 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 			allViable = allViable && viable
 			hasWarnings = hasWarnings || warned
 		}
+	}
+
+	// Requested node counts against the account quotas the CSPs reported
+	if applyQuotaReview(nodeReviews) {
+		hasWarnings = true
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			"Some NodeGroups ask for more than the account quota has left: lower nodeGroupSize or request a quota increase from the CSP (see the NodeGroup warnings)")
 	}
 
 	// Store VM reviews in result

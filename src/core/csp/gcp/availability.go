@@ -230,6 +230,26 @@ func getGCPRegionMachineTypes(ctx context.Context, svc *compute.Service, project
 
 // resolveFamilyCPUQuotaMetric maps a GCP machine type prefix (e.g. "c2-standard-4" -> "C2_CPUS")
 // to its family-specific regional CPU quota metric name when applicable.
+// tightestRegionQuota picks, among the regional quotas a machine type draws on, the one that
+// fits the fewest more instances
+func tightestRegionQuota(quotas map[string]*compute.Quota, instanceType string, guestCpus int64, q model.AvailabilityQuery) *model.AvailabilityQuota {
+	var candidates []model.AvailabilityQuota
+	add := func(metric, unit string, perInstance int64) {
+		if gq, ok := quotas[metric]; ok && gq != nil && metric != "" {
+			if c, ok := csp.NewQuota(metric, "region", unit, int64(gq.Limit), int64(gq.Usage), perInstance); ok {
+				candidates = append(candidates, c)
+			}
+		}
+	}
+	add("INSTANCES", "instances", 1)
+	add("CPUS", "vCPU", guestCpus)
+	add(resolveFamilyCPUQuotaMetric(instanceType), "vCPU", guestCpus)
+	if q.AcceleratorModel != "" && q.AcceleratorCount > 0 {
+		add(resolveGPUQuotaMetric(q.AcceleratorModel), "GPU", int64(q.AcceleratorCount))
+	}
+	return csp.TightestQuota(candidates...)
+}
+
 func resolveFamilyCPUQuotaMetric(instanceType string) string {
 	parts := strings.Split(strings.ToLower(strings.TrimSpace(instanceType)), "-")
 	if len(parts) == 0 {
@@ -355,6 +375,8 @@ func (c *gcpAvailabilityChecker) CheckInstance(ctx context.Context, q model.Avai
 				Str("region", region).
 				Msg("GCP regional quota check failed; treating as available")
 		} else if quotas != nil {
+			result.Quota = tightestRegionQuota(quotas, instanceType, guestCpus, q)
+
 			// 1. Check INSTANCES quota
 			if instQ, ok := quotas["INSTANCES"]; ok {
 				rem := max(int64(instQ.Limit)-int64(instQ.Usage), 0)
