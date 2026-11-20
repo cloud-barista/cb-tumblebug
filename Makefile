@@ -121,9 +121,9 @@ set-versions: ## Interactively set core component release versions (cb-tumblebug
 	@chmod +x ./scripts/misc/set-release-versions.sh 2>/dev/null || true
 	@./scripts/misc/set-release-versions.sh
 
-k-tunnel: ## Interactively open an SSH tunnel to a remote cb-tumblebug cluster (gateway/direct, TLS-aware); prints browser links
+k-tunnel: ## Open an SSH tunnel to a remote cb-tumblebug cluster (`make k-tunnel` or `HOST=<infraId|ip>`); prints browser links
 	@chmod +x ./scripts/misc/ssh-tunnel.sh 2>/dev/null || true
-	@./scripts/misc/ssh-tunnel.sh
+	@REMOTE_HOST="$(REMOTE_HOST)" NS="$(NS)" SSH_USER="$(SSH_USER)" SSH_KEY="$(SSH_KEY)" SSH_PORT="$(SSH_PORT)" ./scripts/misc/ssh-tunnel.sh
 
 k-tunnel-stop: ## Stop the SSH tunnel opened by k-tunnel
 	@chmod +x ./scripts/misc/ssh-tunnel.sh 2>/dev/null || true
@@ -238,10 +238,20 @@ KD := \033[2m
 KX := \033[0m
 endif
 
-k-prereqs: ## Check &, on confirmation, install missing k-up prerequisites (kubectl/helm/kind + inotify sysctls); Docker is guidance-only
-	@KIND_VERSION='$(KIND_VERSION)' bash scripts/misc/k-prereqs.sh
+k-prereqs: ## Check &, on confirmation, install missing k-up prerequisites (`YES=1 INSTALL_DOCKER=1` for headless VM setup)
+	@YES='$(YES)' INSTALL_DOCKER='$(INSTALL_DOCKER)' KIND_VERSION='$(KIND_VERSION)' bash scripts/misc/k-prereqs.sh
 
-k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no cluster is reachable)
+r-k-up: ## Bootstrap & deploy CB-Tumblebug on a remote Ubuntu VM over SSH (`make k-up HOST=<infraId|ip>`)
+	@chmod +x ./scripts/misc/r-k-up.sh 2>/dev/null || true
+	@REMOTE_HOST="$(REMOTE_HOST)" NS="$(NS)" SSH_USER="$(SSH_USER)" SSH_KEY="$(SSH_KEY)" SSH_PORT="$(SSH_PORT)" HOLDER="$(HOLDER)" \
+		K8S_NAMESPACE="$(K8S_NAMESPACE)" HELM_RELEASE="$(HELM_RELEASE)" KIND_CLUSTER_NAME="$(KIND_CLUSTER_NAME)" \
+		KIND_VERSION="$(KIND_VERSION)" KIND_WORKERS="$(KIND_WORKERS)" KIND_TAINT_CP="$(KIND_TAINT_CP)" \
+		./scripts/misc/r-k-up.sh
+
+k-up: ## Install/upgrade the stack on Kubernetes (`HOST=<infraId|ip>` to bootstrap a remote VM via SSH)
+ifneq ($(REMOTE_HOST),)
+	@$(MAKE) --no-print-directory r-k-up
+else
 	@# Fresh-VM convenience: if core tools are missing, offer the one-shot installer (interactive
 	@# top-level only). Declining or CI falls through to the per-tool errors below (which also gate).
 	@if [ -t 0 ] && [ "$(MAKELEVEL)" = "0" ]; then \
@@ -416,6 +426,7 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 	fi
 	@echo ""
 	@$(MAKE) --no-print-directory k-info
+endif
 
 # Internal: the actual helm apply + readiness wait + status (called by k-up as a sub-make so the
 # *_VALUES_FLAG $(wildcard) checks re-run and see state files written earlier in the same k-up).
@@ -563,7 +574,7 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 	@set -e; \
 	tmp_dir=$$(mktemp -d /tmp/.cb-r-init.XXXXXX); chmod 700 "$$tmp_dir"; \
 	TUNNEL_PID=""; DISC_PF_PID=""; remote_pf=0; \
-	ssh_base_opts="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=12 -o ServerAliveInterval=30 -o ServerAliveCountMax=3"; \
+	ssh_base_opts="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=12 -o ServerAliveInterval=30 -o ServerAliveCountMax=3"; \
 	cleanup() { \
 		trap - EXIT INT TERM; \
 		if [ -n "$$TUNNEL_PID" ]; then \
@@ -577,6 +588,10 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 		rm -rf "$$tmp_dir"; \
 	}; \
 	trap cleanup EXIT INT TERM; \
+	api_u="$${TB_API_USERNAME:-}"; api_p="$${TB_API_PASSWORD:-}"; \
+	if [ -z "$$api_u" ] && [ -f .env ]; then api_u=$$(grep -E '^TB_API_USERNAME=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'"); fi; \
+	if [ -z "$$api_p" ] && [ -f .env ]; then api_p=$$(grep -E '^TB_API_PASSWORD=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'"); fi; \
+	api_u="$${api_u:-default}"; api_p="$${api_p:-default}"; \
 	target="$(REMOTE_HOST)"; user="$(SSH_USER)"; key="$(SSH_KEY)"; port="$(SSH_PORT)"; \
 	if [ -z "$$target" ]; then \
 		if [ -t 0 ]; then \
@@ -591,31 +606,33 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 	[ -n "$$key" ] && key="$${key/#\~/$HOME}"; \
 	if [ -z "$$key" ]; then \
 		local_tb=""; \
-		if curl -sf -u default:default --max-time 2 http://localhost:1323/tumblebug/readyz >/dev/null 2>&1; then \
-			local_tb="http://localhost:1323/tumblebug"; \
-		elif curl -sf -u default:default --max-time 2 http://localhost:8080/tumblebug/readyz >/dev/null 2>&1; then \
-			local_tb="http://localhost:8080/tumblebug"; \
-		elif command -v kubectl >/dev/null 2>&1 && $(KUBECTL) get svc -n $(K8S_NAMESPACE) cb-tumblebug >/dev/null 2>&1; then \
+		for cand in "http://localhost:8080/tumblebug" "https://localhost:8443/tumblebug" "http://localhost:1323/tumblebug"; do \
+			if curl -sf -k -u "$$api_u:$$api_p" --max-time 2 "$$cand/readyz" >/dev/null 2>&1; then \
+				local_tb="$$cand"; break; \
+			fi; \
+		done; \
+		if [ -z "$$local_tb" ] && command -v kubectl >/dev/null 2>&1 && $(KUBECTL) get svc -n $(K8S_NAMESPACE) cb-tumblebug >/dev/null 2>&1; then \
 			disc_port=12323; \
 			while ss -tlnH 2>/dev/null | awk '{print $$4}' | grep -qE "[:.]$$disc_port$$"; do disc_port=$$((disc_port+1)); done; \
 			$(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug $$disc_port:1323 >/dev/null 2>&1 & \
 			DISC_PF_PID=$$!; sleep 1; \
-			if curl -sf -u default:default --max-time 2 http://localhost:$$disc_port/tumblebug/readyz >/dev/null 2>&1; then \
+			if curl -sf -u "$$api_u:$$api_p" --max-time 2 http://localhost:$$disc_port/tumblebug/readyz >/dev/null 2>&1; then \
 				local_tb="http://localhost:$$disc_port/tumblebug"; \
 			fi; \
 		fi; \
 		if [ -n "$$local_tb" ]; then \
-			found=$$(LOCAL_TB="$$local_tb" TARGET_Q="$$host" python3 -c 'exec("import os,sys,json,urllib.request,base64\ntb=os.environ[\"LOCAL_TB\"]; q=os.environ[\"TARGET_Q\"]\nhdr={\"Authorization\":\"Basic \"+base64.b64encode(b\"default:default\").decode()}\nreq=lambda u: json.loads(urllib.request.urlopen(urllib.request.Request(tb+u,headers=hdr),timeout=4).read().decode())\nns_list=[x.get(\"id\") if isinstance(x,dict) else x for x in (req(\"/ns\").get(\"ns\") or [{\"id\":\"default\"}])]\nfor ns in ns_list:\n  try:\n    for inf in (req(f\"/ns/{ns}/infra\").get(\"infra\") or []):\n      iid=inf.get(\"id\",\"\")\n      for v in (inf.get(\"node\") or inf.get(\"vm\") or []):\n        ip=v.get(\"publicIP\") or v.get(\"publicIp\") or \"\"\n        nid=v.get(\"id\",\"\")\n        if ip and (q in (ip, iid, nid)):\n          print(f\"{ip}|{v.get(\x27sshKeyId\x27) or v.get(\x27sshKey\x27) or \x27\x27}|{v.get(\x27nodeUserName\x27) or v.get(\x27vmUserName\x27) or v.get(\x27userName\x27) or \x27cb-user\x27}|{ns}\")\n          sys.exit(0)\n  except Exception: pass\n")' 2>/dev/null || true); \
+			found=$$(LOCAL_TB="$$local_tb" TARGET_Q="$$host" API_U="$$api_u" API_P="$$api_p" python3 -c 'exec("import os,sys,json,subprocess\ntb=os.environ[\"LOCAL_TB\"]; q=os.environ[\"TARGET_Q\"]; u=os.environ[\"API_U\"]; p=os.environ[\"API_P\"]\nreq=lambda path: json.loads(subprocess.check_output([\"curl\",\"-sS\",\"-k\",\"-u\",f\"{u}:{p}\",\"--max-time\",\"8\",tb+path],stderr=subprocess.DEVNULL).decode())\nns_list=[x.get(\"id\") if isinstance(x,dict) else x for x in (req(\"/ns\").get(\"ns\") or [{\"id\":\"default\"}])]\nif \"default\" in ns_list: ns_list.remove(\"default\"); ns_list.insert(0,\"default\")\nfor ns in ns_list:\n  try:\n    infras=req(f\"/ns/{ns}/infra?option=id\").get(\"output\") or []\n    order=([q]+[x for x in infras if x!=q]) if q in infras else infras\n    for iid in order:\n      inf=req(f\"/ns/{ns}/infra/{iid}\")\n      for v in (inf.get(\"node\") or inf.get(\"vm\") or []):\n        ip=v.get(\"publicIP\") or v.get(\"publicIp\") or \"\"\n        nid=v.get(\"id\",\"\")\n        if ip and (q in (ip, iid, nid)):\n          print(f\"{ip}|{v.get(\x27sshKeyId\x27) or v.get(\x27sshKey\x27) or \x27\x27}|{v.get(\x27nodeUserName\x27) or v.get(\x27vmUserName\x27) or v.get(\x27userName\x27) or \x27cb-user\x27}|{v.get(\x27sshPort\x27) or 22}|{ns}\")\n          sys.exit(0)\n  except Exception: pass\n")' 2>/dev/null || true); \
 			if [ -n "$$found" ]; then \
-				IFS='|' read -r res_ip res_skey res_user res_ns <<< "$$found"; \
+				IFS='|' read -r res_ip res_skey res_user res_port res_ns <<< "$$found"; \
 				host="$$res_ip"; \
 				[ -z "$$user" ] && user="$$res_user"; \
+				[ "$$port" = "22" ] && [ -n "$$res_port" ] && port="$$res_port"; \
 				if [ -n "$$res_skey" ]; then \
-					curl -sf -u default:default "$$local_tb/ns/$$res_ns/resources/sshKey/$$res_skey" \
-						| python3 -c "import json,sys; k=json.load(sys.stdin).get('privateKey',''); sys.stdout.write(k if k.endswith('\n') else k+'\n')" > "$$tmp_dir/key.pem" 2>/dev/null || true; \
+					curl -sf -k -u "$$api_u:$$api_p" "$$local_tb/ns/$$res_ns/resources/sshKey/$$res_skey" \
+						| python3 -c "import json,sys; d=json.load(sys.stdin); k=(d.get('privateKey') or '').replace('\\\\n','\n'); sys.stdout.write(k if k.endswith('\n') else k+'\n')" > "$$tmp_dir/key.pem" 2>/dev/null || true; \
 					if [ -s "$$tmp_dir/key.pem" ]; then \
 						chmod 600 "$$tmp_dir/key.pem"; key="$$tmp_dir/key.pem"; \
-						printf '%b\n' "$(KG)\xe2\x9c\x94 Auto-discovered SSH key & target ($(KB)$$user@$$host$(KX)$(KG)) from local CB-Tumblebug$(KX)"; \
+						printf '%b\n' "$(KG)\xe2\x9c\x94 Auto-discovered SSH key & target ($(KB)$$user@$$host:$$port$(KX)$(KG)) from local CB-Tumblebug$(KX)"; \
 					fi; \
 				fi; \
 			fi; \
@@ -637,12 +654,15 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 	fi; \
 	printf '%b\n' "$(KB)$(KC)\xe2\x96\x8c Remote Initialization via Temporary SSH Tunnel$(KX) $(KD)($$user@$$host)$$([ -n "$$key" ] && printf ' [key: %s]' "$$(basename "$$key")")$(KX)"; \
 	remote_port=$$(ssh $$ssh_opts "$$user@$$host" " \
+		export PATH=\"/usr/local/bin:\$$PATH\"; \
 		if ss -tlnH 2>/dev/null | awk '{print \$$4}' | grep -qE '[:.]1323\$$'; then \
 			echo 1323; \
+		elif ss -tlnH 2>/dev/null | awk '{print \$$4}' | grep -qE '[:.]11323\$$'; then \
+			echo 11323; \
 		else \
 			for k in 'kubectl' 'sudo -n kubectl'; do \
 				if \$$k get svc -n $(K8S_NAMESPACE) cb-tumblebug >/dev/null 2>&1; then \
-					nohup \$$k port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug 11323:1323 >/dev/null 2>&1 & \
+					nohup \$$k port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug 11323:1323 </dev/null >/dev/null 2>&1 & \
 					sleep 2; echo 11323:k8s; exit 0; \
 				fi; \
 			done; \
@@ -657,7 +677,7 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 	local_port=$(K8S_INIT_PORT); \
 	while ss -tlnH 2>/dev/null | awk '{print $$4}' | grep -qE "[:.]$$local_port$$"; do local_port=$$((local_port+1)); done; \
 	printf '%b\n' "$(KD)Opening temporary SSH tunnel (localhost:$$local_port -> $$host:$$remote_port)...$(KX)"; \
-	ssh -N $$ssh_opts -o ExitOnForwardFailure=yes -L "127.0.0.1:$$local_port:127.0.0.1:$$remote_port" "$$user@$$host" >/dev/null 2>&1 & \
+	ssh -N $$ssh_opts -o ExitOnForwardFailure=yes -L "127.0.0.1:$$local_port:127.0.0.1:$$remote_port" "$$user@$$host" </dev/null >/dev/null 2>&1 & \
 	TUNNEL_PID=$$!; \
 	sleep 2; \
 	if ! kill -0 "$$TUNNEL_PID" 2>/dev/null; then \
@@ -1352,9 +1372,9 @@ help: ## Display this help screen
 	@echo "  \033[36munseal\033[0m                 Unseal OpenBao (after container restart)"
 	@echo ""
 	@echo "☸️  Kubernetes (Helm):"
-	@echo -e "  \033[36mk-prereqs\033[0m              Check & (on confirm) install kubectl/helm/kind + sysctls (Docker: guidance)"
-	@echo -e "  \033[36mk-up\033[0m                   Install stack via Helm (auto-creates kind cluster if needed)"
-	@echo -e "  \033[36mk-init\033[0m                 Initialize the K8s deployment (port-forward + init flow)"
+	@echo -e "  \033[36mk-prereqs\033[0m              Check & install kubectl/helm/kind + sysctls (YES=1 INSTALL_DOCKER=1 for headless)"
+	@echo -e "  \033[36mk-up\033[0m                   Install stack via Helm (HOST=<infraId|ip> to bootstrap a remote VM via SSH)"
+	@echo -e "  \033[36mk-init\033[0m                 Initialize the K8s deployment (HOST=<infraId|ip> for remote node via SSH)"
 	@echo -e "  \033[36mk-down\033[0m                 Uninstall Helm release (data kept)"
 	@echo -e "  \033[36mk-clean\033[0m                Full K8s reset (PVCs + OpenBao Secret)"
 	@echo -e "  \033[36mk-status (k-ps)\033[0m        Show K8s status (release/pods/services/port-forwards)"
@@ -1396,4 +1416,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init r-init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop ssh gen-cred enc-cred dec-cred bcrypt certs help k-prereqs k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey
+.PHONY: default run clean clean-all swag swagger init r-init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop ssh gen-cred enc-cred dec-cred bcrypt certs help k-prereqs r-k-up k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey
