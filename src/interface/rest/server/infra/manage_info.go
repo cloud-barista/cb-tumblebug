@@ -469,7 +469,8 @@ func RestDelInfraNode(c echo.Context) error {
 	err := infra.DelInfraNode(nsId, infraId, nodeId, option)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("Failed to delete the Node info")
+		// The cause tells the caller whether to retry (termination not confirmed yet) or give up
+		err := fmt.Errorf("failed to delete the Node info: %w", err)
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 

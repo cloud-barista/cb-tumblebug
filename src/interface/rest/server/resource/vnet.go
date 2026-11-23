@@ -254,6 +254,26 @@ func RestDelVNet(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+// RestRestoreVNet godoc
+// @ID RestoreVNet
+// @Summary Restore VNet
+// @Description Cancel a pending deletion and return the VNet to Available. Allowed only while the CSP resource still exists.
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param vNetId path string true "VNet ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 409 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/vNet/{vNetId}/restore [put]
+func RestRestoreVNet(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
 // RestDelAllVNet godoc
 // @ID DelAllVNet
 // @Summary Delete all VNets

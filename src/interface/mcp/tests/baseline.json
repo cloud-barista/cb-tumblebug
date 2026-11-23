@@ -1,0 +1,27 @@
+{
+ "cases": {
+  "create_infra_dynamic:refusal": 818,
+  "get_connections": 4415,
+  "get_connections:minimal": 4306,
+  "get_infra_list": 127,
+  "get_namespaces": 338,
+  "get_platform_services": 198,
+  "get_resources:securityGroup": 121,
+  "get_resources:sshKey": 114,
+  "get_resources:vNet": 112,
+  "get_search_options:spec": 8627,
+  "get_spec_options": 1907,
+  "get_usage_guide:provision": 3078,
+  "instructions": 1004,
+  "list_infra_templates": 7189,
+  "list_init_script_templates": 1456,
+  "list_predefined_scripts": 5617,
+  "recommend_vm_spec": 1102,
+  "recommend_vm_spec:full": 21957,
+  "review_infra_dynamic_request": 1706,
+  "review_spec_image_pair": 2176,
+  "search_images": 821,
+  "tools/list": 79567
+ },
+ "note": "bytes of the full JSON-RPC response over the wire"
+}

@@ -160,6 +160,26 @@ func RestDelDataDisk(c echo.Context) error {
 	return nil
 }
 
+// RestRestoreDataDisk godoc
+// @ID RestoreDataDisk
+// @Summary Restore Data Disk
+// @Description Cancel a pending deletion and return the Data Disk to Available. Allowed only while the CSP resource still exists.
+// @Tags [Infra Resource] Data Disk Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param dataDiskId path string true "Data Disk ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 409 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/dataDisk/{dataDiskId}/restore [put]
+func RestRestoreDataDisk(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
 // RestDeregisterDataDisk godoc
 // @ID DeregisterDataDisk
 // @Summary Deregister Data Disk

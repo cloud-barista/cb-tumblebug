@@ -326,6 +326,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{cspSpecName})"
+// @Param forceRefresh query boolean false "Bypass the availability cache and check the CSP now" default(false)
 // @Success 200 {object} model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg

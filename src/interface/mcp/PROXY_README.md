@@ -1,100 +1,42 @@
 # TB-MCP Proxy Bridge
 
-Transport bridge utilities for CB-Tumblebug MCP server integration with Claude Desktop and other MCP clients.
-
-## Overview
-
-These proxy utilities enable Claude Desktop to connect to the TB-MCP SSE server by bridging HTTP/SSE transport to stdio transport, providing seamless AI assistant integration.
-
-## 🔀 Transport Bridging Architecture
+`mcp-simple-proxy.py` lets an MCP client that only speaks stdio, such as Claude Desktop,
+use the CB-Tumblebug MCP server, which speaks Streamable HTTP.
 
 ```
-Claude Desktop (stdio) ←→ Proxy Bridge (stdio/SSE) ←→ TB-MCP Server (HTTP/SSE)
+Claude Desktop (stdio) <-> mcp-simple-proxy.py <-> TB-MCP server (Streamable HTTP, /mcp)
 ```
 
-The proxy acts as a transport bridge, allowing:
-- **Claude Desktop**: Connects via stdio (standard input/output)
-- **TB-MCP Server**: Runs on HTTP with SSE (Server-Sent Events) transport
-- **Bridge**: Handles protocol translation between stdio and SSE
+The bridge passes on the server's tools, prompts and instructions unchanged. It keeps no
+state of its own: every tool call is a request to the server.
 
-## 📁 Available Proxy Files
+## Configuration
 
-### 1. `mcp-simple-proxy.py` (Recommended for most users)
-**Minimal, reliable proxy for standard use cases**
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `TB_MCP_URL` | `http://127.0.0.1:8000/mcp` | The MCP endpoint |
+| `TB_MCP_TOKEN` | unset | Bearer token, where the endpoint asks for one |
 
-```python
-#!/usr/bin/env python3
-from fastmcp import FastMCP
-from fastmcp.server.proxy import ProxyClient
+| Deployment | `TB_MCP_URL` | `TB_MCP_TOKEN` |
+|------------|--------------|----------------|
+| Docker Compose | `http://127.0.0.1:8000/mcp` (the default) | not needed |
+| Kubernetes (`make k-up`, `make k-port-forward`) | `http://localhost:8080/mcp` | `make k-mcp-token` (valid 30 days by default) |
 
-# Create a simple proxy to TB-MCP server
-proxy = FastMCP.as_proxy(
-    ProxyClient("http://127.0.0.1:8000/mcp"),
-    name="TB-MCP Bridge"
-)
-
-if __name__ == "__main__":
-    proxy.run()  # stdio transport
-```
-
-**Features:**
-- ✅ Minimal configuration
-- ✅ Automatic session management
-- ✅ Error handling via FastMCP defaults
-- ✅ Perfect for Claude Desktop integration
-
-### 2. `mcp-remote-proxy.py` (Enhanced with logging)
-**Enhanced proxy with detailed logging and configuration**
-
-**Features:**
-- ✅ Comprehensive logging
-- ✅ Environment variable configuration
-- ✅ Detailed startup information
-- ✅ Better error messages
-
-### 3. `mcp-advanced-proxy.py` (Development/Debugging)
-**Advanced proxy with explicit session management**
-
-**Features:**
-- ✅ Explicit session management
-- ✅ Custom client factory patterns
-- ✅ Detailed debugging information
-- ✅ Multiple configuration options
-
-## 🚀 Quick Start
-
-### Step 1: Ensure TB-MCP Server is Running
+## Quick start
 
 ```bash
-# Check if TB-MCP server is accessible
-curl http://127.0.0.1:8000/sse
+# 1. The server answers (405 or 406 to a plain GET means it is up; 401 means it wants a token)
+curl -i http://127.0.0.1:8000/mcp
 
-# If not running, start it via Docker Compose
-cd /path/to/cb-tumblebug
-docker compose up cb-tumblebug-mcp-server
-```
-
-### Step 2: Test the Proxy
-
-```bash
-# Test the simple proxy
-cd /path/to/cb-tumblebug
+# 2. The bridge starts
 uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py
 ```
 
-You should see:
-```
-╭─ FastMCP 2.0 ──────────────────────────────────────────────╮
-│    🖥️  Server name:     TB-MCP Bridge                       │
-│    📦 Transport:       STDIO                               │
-│    🏎️  FastMCP version: 2.11.2                              │
-│    🤝 MCP version:     1.12.4                              │
-╰────────────────────────────────────────────────────────────╯
-```
+`uv` installs FastMCP on first use. The bridge then waits on stdin; stop it with Ctrl+C.
 
-## 🔧 Claude Desktop Configuration
+## Claude Desktop
 
-Add this configuration to your Claude Desktop `claude_desktop_config.json`:
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -108,129 +50,38 @@ Add this configuration to your Claude Desktop `claude_desktop_config.json`:
         "/path/to/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
       ],
       "env": {
-        "TB_MCP_URL": "http://127.0.0.1:8000/sse"
+        "TB_MCP_URL": "http://localhost:8080/mcp",
+        "TB_MCP_TOKEN": "<token>"
       }
     }
   }
 }
 ```
 
-**Replace `/path/to/cb-tumblebug` with your actual CB-Tumblebug installation path.**
+Leave `env` out for the Docker Compose endpoint. WSL and Windows variants of the command
+are in the [MCP README](./README.md#-claude-desktop-proxy-bridge).
 
-## ⚙️ Configuration Options
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TB_MCP_URL` | `http://127.0.0.1:8000/sse` | TB-MCP server endpoint |
-| `PROXY_NAME` | `TB-MCP Bridge` | Proxy server name |
-
-### Example with custom configuration:
+## Testing
 
 ```bash
-TB_MCP_URL=http://remote-server:8000/sse \
-PROXY_NAME="Remote TB-MCP" \
-uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py
+# Drive the bridge with MCP Inspector
+npx @modelcontextprotocol/inspector uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py
 ```
 
-## 🔍 Testing and Debugging
+## Troubleshooting
 
-### 1. Test TB-MCP Server Connection
+| Symptom | Cause |
+|---------|-------|
+| `401 Unauthorized` on every call | The endpoint wants a token and `TB_MCP_TOKEN` is unset, or the token expired: `make k-mcp-token` |
+| `Client failed to connect` | The server is not running at `TB_MCP_URL`: `docker compose ps cb-tumblebug-mcp-server`, or `make k-port-forward` |
+| `tools/list` is empty | The bridge started but could not reach the server; see the two rows above |
+| `ModuleNotFoundError: No module named 'fastmcp'` | Start it with `uv run --with fastmcp`, as above |
 
-```bash
-# Check if TB-MCP server responds
-curl -i http://127.0.0.1:8000/sse
+The token gives whoever holds it every tool the server publishes, including the ones that
+create and delete cloud resources. Keep the client configuration file private, and point
+the bridge at a server started with `MCP_READ_ONLY=true` when reads are all it needs.
 
-# Expected: HTTP response (even if "Not Found" - server is running)
-```
+## References
 
-### 2. Test Proxy with MCP Inspector
-
-```bash
-# Install and run MCP Inspector
-npx @modelcontextprotocol/inspector
-
-# Then in another terminal, start the proxy:
-uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py
-```
-
-### 3. Debugging Connection Issues
-
-If you see connection errors:
-
-1. **Check TB-MCP server status:**
-   ```bash
-   docker compose ps cb-tumblebug-mcp-server
-   docker compose logs cb-tumblebug-mcp-server
-   ```
-
-2. **Verify network connectivity:**
-   ```bash
-   curl -v http://127.0.0.1:8000/sse
-   ```
-
-3. **Check firewall/port settings:**
-   ```bash
-   netstat -tlnp | grep :8000
-   ```
-
-## 🏗️ How It Works
-
-### Transport Bridging Process
-
-1. **Claude Desktop** sends MCP requests via stdio (JSON-RPC)
-2. **Proxy Bridge** receives stdio input and converts to HTTP/SSE format
-3. **TB-MCP Server** processes the request and responds via SSE
-4. **Proxy Bridge** converts SSE response back to stdio format
-5. **Claude Desktop** receives the response via stdout
-
-### Session Management
-
-- **Fresh Sessions**: Each request creates a new isolated session (recommended)
-- **Session Isolation**: Prevents context mixing between concurrent requests
-- **Automatic Reconnection**: Proxy handles connection failures gracefully
-
-## 🔒 Security Considerations
-
-- **Local Connection**: Default configuration uses localhost only
-- **No Authentication**: Proxy inherits TB-MCP server authentication
-- **Network Exposure**: Be cautious when exposing to external networks
-- **Process Isolation**: Each proxy run is isolated
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### "ModuleNotFoundError: No module named 'fastmcp'"
-**Solution:** Use `uv run --with fastmcp` to automatically install dependencies
-
-#### "Could not connect to TB-MCP server"
-**Solution:** Ensure TB-MCP server is running on the correct port
-
-#### "Connection refused"
-**Solution:** Check if port 8000 is available and not blocked
-
-#### Proxy hangs or doesn't respond
-**Solution:** 
-1. Stop proxy (Ctrl+C)
-2. Restart TB-MCP server
-3. Restart proxy
-
-### Getting Help
-
-1. Check TB-MCP server logs: `docker compose logs cb-tumblebug-mcp-server`
-2. Test direct connection: `curl http://127.0.0.1:8000/sse`
-3. Verify proxy startup logs for errors
-4. Use the enhanced proxy for detailed debugging information
-
-## 📚 References
-
-- [FastMCP Proxy Documentation](https://gofastmcp.com/servers/proxy)
-- [MCP Transport Bridging](https://gofastmcp.com/servers/proxy#transport-bridging)
-- [Claude Desktop MCP Configuration](https://docs.anthropic.com/claude/docs/claude-desktop)
-- [CB-Tumblebug MCP Server](../README.md)
-
----
-
-This proxy bridge enables seamless integration between Claude Desktop and CB-Tumblebug's multi-cloud infrastructure management capabilities.
+- [FastMCP proxy servers](https://gofastmcp.com/servers/proxy)
+- [CB-Tumblebug MCP server](./README.md)

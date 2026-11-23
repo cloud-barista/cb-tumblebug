@@ -238,38 +238,65 @@ graph TB
 ```mermaid
 mindmap
   root((CB-TB MCP Tools))
-    Namespace Management
+    Namespace and Connections
       get_namespaces
-      create_namespace
-      delete_namespace
-      API_ns_endpoints
-    
-    Image and Spec Discovery
-      get_image_search_options
-      search_images
+      manage_namespace
+      get_connections
+      API_ns_and_connConfig
+
+    Plan
       recommend_vm_spec
-      API_resources_searchImage
-      API_recommendSpec
-    
-    Infra Management
+      search_images
+      review_infra_dynamic_request
+      get_spec_options
+      API_recommendSpec_searchImage_infraDynamicReview
+
+    Provision
       create_infra_dynamic
+      add_nodegroup_dynamic
+      scale_out_nodegroup
+      provision_infra_from_template
+      API_ns_infraDynamic_nodeGroupDynamic
+
+    Init Script and Platform Services
+      list_init_script_templates
+      get_init_script_status
+      get_platform_services
+      API_template_initScript_notifier_observability
+
+    Operate
+      get_infra
       control_infra
-      delete_infra
-      API_ns_infraDynamic
-      API_ns_control_infra
-    
-    Remote Operations
+      control_node
       execute_command_infra
-      transfer_file_infra
-      API_ns_cmd_infra
-      API_ns_transferFile_infra
-    
-    Resource Management
-      get_vnets
-      get_security_groups
+      get_command_result
+      API_ns_infra_control_cmd
+
+    Recover and Clean Up
+      diagnose_infra
+      retry_failed_nodes
+      recommend_alternative_node_config
+      terminate_infra
       release_resources
-      API_ns_resources
-    
+      manage_resource
+      API_retryFailedNodes_sharedResources
+
+    Resources
+      get_resources
+      manage_labels
+      add_security_group_rules
+      inspect_csp_resources
+      API_ns_resources_label_inspectResources
+
+    Services
+      manage_object_storage
+      manage_nlb
+      manage_k8s_cluster
+      manage_rdbms
+      create_custom_image
+      manage_dns_record
+      API_objectStorage_nlb_k8sCluster_rdbms_snapshot_globalDns
+
     Direct Database Access
       PostgreSQL_MCP_Server
       SQL_Queries_Specs_Images

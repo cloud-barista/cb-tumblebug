@@ -811,7 +811,12 @@ func acceleratorEnv(specId string) map[string]string {
 
 // publicKeyCache keeps derived public keys per sshKey so that provisioning thousands of Nodes with one key
 // reads OpenBao once instead of once per Node.
-var publicKeyCache sync.Map // "ns/sshKeyId" -> publicKeyEntry
+var publicKeyCache sync.Map // sshKey secret path -> publicKeyEntry
+
+func init() {
+	// A key re-created under the same id must not be answered from the cache.
+	secret.OnSecretInvalidated(func(path string) { publicKeyCache.Delete(path) })
+}
 
 type publicKeyEntry struct {
 	key string
@@ -824,7 +829,7 @@ func sshPublicKey(nsId, sshKeyId string) (string, error) {
 	if sshKeyId == "" {
 		return "", errors.New("node has no sshKeyId; cannot render the init script access block")
 	}
-	cacheKey := nsId + "/" + sshKeyId
+	cacheKey := secret.BuildSshKeySecretPath(nsId, sshKeyId)
 	if v, ok := publicKeyCache.Load(cacheKey); ok && time.Now().Before(v.(publicKeyEntry).exp) {
 		return v.(publicKeyEntry).key, nil
 	}

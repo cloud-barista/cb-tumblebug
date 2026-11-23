@@ -44,7 +44,7 @@ For detailed system architecture and component interactions, see our comprehensi
 Key architectural components:
 - **[Overall System Architecture](./architecture.md#overall-system-architecture)** - Complete system overview with AI assistants, MCP protocol, and cloud providers
 - **[Docker Compose Network](./architecture.md#docker-compose-network-architecture)** - Container communication and networking
-- **[MCP Protocol Flows](./architecture.md#mcp-protocol-flow-sse-transport)** - Claude Desktop and VS Code integration patterns
+- **[MCP Protocol Flows](./architecture.md#mcp-protocol-flow-streamable-http-transport)** - Claude Desktop and VS Code integration patterns
 - **[Configuration Flow](./architecture.md#configuration-flow)** - Server initialization and client connection types
 
 ## 🚀 Quick Start with Docker Compose (Recommended)
@@ -55,70 +55,28 @@ Key architectural components:
 - CB-Tumblebug source code repository
 - Basic understanding of multi-cloud infrastructure concepts
 
-### Step 1: Enable MCP Server in Docker Compose
+### Step 1: Review the MCP service
 
-The MCP server is included as a **Proof of Concept (PoC)** service in the main `docker-compose.yaml` file but is commented out by default.
+The MCP server is a service in the root `docker-compose.yaml` and is built from
+`src/interface/mcp` when the stack starts. It exposes infrastructure management, so read
+`tb-mcp.py` and decide who can reach port 8000 before running it anywhere shared.
 
-⚠️ **Security Warning**: This is a PoC implementation. Please review the code thoroughly before using in production environments. The MCP server may expose sensitive infrastructure management capabilities.
-
-1. **Navigate to CB-Tumblebug root directory:**
-   ```bash
-   cd /path/to/cb-tumblebug
-   # or if you have the alias configured:
-   cdtb
-   ```
-
-2. **Review and configure the MCP server:**
-
-   ⚠️ **IMPORTANT SECURITY NOTICE:**
-   - **No public Docker image is available** - the service builds from source
-   - **Review the source code** at `src/interface/mcp/tb-mcp.py` before deployment
-   - **This is a Proof of Concept** - use appropriate security measures for production
-
-   **Configuration location:** The MCP server configuration is located in the root `docker-compose.yaml` file.
-
-   **Required configuration steps:**
-   ```bash
-   # 1. Review the MCP server source code
-   cat src/interface/mcp/tb-mcp.py
-   
-   # 2. Edit the main docker-compose.yaml file
-   nano docker-compose.yaml  # or use your preferred editor
-   ```
-
-   **MCP service configuration in `docker-compose.yaml`:**
-   ```yaml
-   # TB-MCP (Tumblebug Model Context Protocol Server)
-   # Provides MCP interface for CB-Tumblebug to work with AI assistants
-   cb-tumblebug-mcp-server:
-     build:
-       context: ./src/interface/mcp
-       dockerfile: Dockerfile
-     container_name: cb-tumblebug-mcp-server
-     networks:
-       - internal_network
-       - external_network
-     ports:
-       - "8000:8000"  # Change if port 8000 is already in use
-     environment:
-       # Tumblebug API Connection
-       - TUMBLEBUG_API_BASE_URL=http://cb-tumblebug:1323/tumblebug
-       - TUMBLEBUG_USERNAME=default      # ⚠️ Change in production
-       - TUMBLEBUG_PASSWORD=default      # ⚠️ Change in production
-       # MCP Server Configuration
-       - MCP_SERVER_HOST=0.0.0.0
-       - MCP_SERVER_PORT=8000
-       - PYTHONUNBUFFERED=1
-     depends_on:
-       - cb-tumblebug
-     restart: unless-stopped
-   ```
-
-   **Security recommendations:**
-   - Change default username/password for production use
-   - Consider using environment files (.env) for sensitive data
-   - Limit network access if not needed externally
-   - Review firewall settings for port 8000
+```yaml
+  cb-tumblebug-mcp-server:
+    build:
+      context: ./src/interface/mcp
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"          # change if 8000 is taken, or remove to keep it internal
+    environment:
+      - TUMBLEBUG_API_BASE_URL=http://cb-tumblebug:1323/tumblebug
+      - TUMBLEBUG_USERNAME=${TB_API_USERNAME}
+      - TUMBLEBUG_PASSWORD=${TB_API_PASSWORD}
+      - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=8000
+      - MCP_LOG_LEVEL=INFO
+      # - MCP_READ_ONLY=true   # serve only the tools and actions that change nothing
+```
 
 ### Step 2: Launch the Environment
 
@@ -154,6 +112,39 @@ curl http://localhost:8000/mcp
 
 The MCP server should be accessible at `http://localhost:8000/mcp` using Streamable HTTP transport.
 
+## ☸️ Quick Start on Kubernetes (Helm)
+
+The Helm chart ships the MCP server switched off. The `k-*` targets turn it on and keep
+the choice across later `make k-up` runs.
+
+```bash
+make k-mcp-on              # deploy the MCP server
+make k-agentgateway-on     # optional: agentgateway in front of it (enables MCP too)
+make k-mcp-auth-on         # optional: require a JWT on the MCP route
+make k-mcp-token           # mint a dev token (Authorization: Bearer <token>)
+make k-port-forward        # http://localhost:8080/mcp through the gateway
+make k-info                # endpoints and client configuration for what is enabled
+make k-build-mcp           # run the local tb-mcp.py in the cluster (kind only)
+```
+
+`mcp.readOnly: true` in the chart values sets `MCP_READ_ONLY`.
+
+### Spend limits
+
+Limits apply to creations requested through MCP only. The agent can ask for an exception;
+only an operator can grant one, with these targets, which write to etcd directly.
+
+```bash
+make mcp-budget                                  # policy and requests
+make mcp-budget-set PER_CREATION=5 PER_DAY=50    # values not given keep their setting
+make mcp-budget-approve ID=req-...               # approve one pending request
+make mcp-budget-off                              # stop enforcing, keep the values
+```
+
+A creation over a limit is refused with `BUDGET_EXCEEDED` and a `request_id`. Once
+approved, the agent repeats the same plan with `budget_ack=<request_id>`. An approval
+covers the plan that was refused, once.
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -162,11 +153,17 @@ The MCP server can be configured using the following environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TUMBLEBUG_API_BASE_URL` | `http://cb-tumblebug:1323/tumblebug` | CB-Tumblebug API endpoint |
+| `TUMBLEBUG_API_BASE_URL` | `http://localhost:1323/tumblebug` | CB-Tumblebug API endpoint (Docker Compose and Helm set it to the `cb-tumblebug` service) |
 | `TUMBLEBUG_USERNAME` | `default` | CB-Tumblebug API username |
 | `TUMBLEBUG_PASSWORD` | `default` | CB-Tumblebug API password |
+| `TUMBLEBUG_CREDENTIAL_HOLDER` | (empty) | Credential holder sent with every request; empty uses the server default |
 | `MCP_SERVER_HOST` | `0.0.0.0` | MCP server bind address |
 | `MCP_SERVER_PORT` | `8000` | MCP server port |
+| `MCP_LOG_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `MCP_DEFAULT_NAMESPACE` | `default` | Namespace used when a tool call names none |
+| `MCP_READ_ONLY` | `false` | `true` serves only the tools that change nothing: no create, command or delete tools are published |
+| `MCP_NODE_LIST_LIMIT` | `50` | Nodes listed by a summary read; past it the response carries counts and lists the nodes that are not Running first |
+| `ETCD_ENDPOINT` | `http://cb-tumblebug-etcd:2379` | Store for the session journal, idempotency keys and spend limits (best effort: tools still work without it) |
 
 ### Custom Configuration
 
@@ -189,7 +186,7 @@ The TB-MCP server supports two integration approaches depending on your AI assis
 2. **Proxy Bridge (Claude Desktop)**: stdio proxy for remote server limitations
 
 For detailed protocol flows and integration patterns, see:
-- **[MCP Protocol Flow (Streamable HTTP)](./architecture.md#mcp-protocol-flow-sse-transport)** - VS Code direct integration workflow
+- **[MCP Protocol Flow (Streamable HTTP)](./architecture.md#mcp-protocol-flow-streamable-http-transport)** - VS Code direct integration workflow
 - **[Proxy Bridge Pattern](./PROXY_README.md)** - Claude Desktop proxy integration
 
 ### 🔧 VS Code MCP Extension (Direct Connection)
@@ -209,6 +206,23 @@ VS Code supports Streamable HTTP transport directly, allowing seamless connectio
 }
 ```
 
+On Kubernetes the endpoint is the gateway and asks for a token (`make k-mcp-token`,
+valid for 30 days by default):
+
+```json
+{
+  "servers": {
+    "tumblebug": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
+A `401` with `ExpiredSignature` means the token ran out: mint a new one.
+
 **Features:**
 - ✅ Direct Streamable HTTP connection
 - ✅ No proxy required
@@ -221,21 +235,13 @@ Claude Desktop has limitations with remote server connections, so we use a proxy
 
 **Step 1: Use the Proxy Bridge**
 
-The `mcp-simple-proxy.py` acts as a stdio bridge:
+`mcp-simple-proxy.py` is a stdio bridge to the HTTP endpoint. It passes on the server's
+tools, prompts and instructions, and reads two environment variables:
 
-```python
-# mcp-simple-proxy.py - Transport bridge for Claude Desktop
-from fastmcp import FastMCP
-from fastmcp.server.proxy import ProxyClient
-
-proxy = FastMCP.as_proxy(
-    ProxyClient("http://127.0.0.1:8000/mcp"),
-    name="TB-MCP Bridge"
-)
-
-if __name__ == "__main__":
-    proxy.run()  # stdio transport
-```
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `TB_MCP_URL` | `http://127.0.0.1:8000/mcp` | The MCP endpoint (`http://localhost:8080/mcp` behind the Kubernetes gateway) |
+| `TB_MCP_TOKEN` | unset | Bearer token, where the endpoint asks for one (`make k-mcp-token`) |
 
 **Step 2: Claude Desktop Configuration**
 
@@ -290,11 +296,17 @@ Add to your `claude_desktop_config.json`:
         "--with",
         "fastmcp",
         "/path/to/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
-      ]
+      ],
+      "env": {
+        "TB_MCP_URL": "http://localhost:8080/mcp",
+        "TB_MCP_TOKEN": "<token>"
+      }
     }
   }
 }
 ```
+
+Leave `env` out for the Docker Compose endpoint, which needs neither.
 
 **Features:**
 - ✅ Claude Desktop compatibility
@@ -314,42 +326,106 @@ Add to your `claude_desktop_config.json`:
 
 ## 📚 Core Capabilities
 
-For a visual overview of all available tools and their API mappings, see:
-**[MCP Tool Categories and API Mapping](./architecture.md#mcp-tool-categories-and-api-mapping)** - Complete tool organization and endpoint mapping
+The tool set follows the CB-Tumblebug REST API and the way CB-MapUI uses it. Long
+explanations are kept out of the tool descriptions: `get_usage_guide(topic)` returns them
+on demand (`provision`, `initscript`, `commands`, `gpu`, `recovery`, `cleanup`,
+`services`, `detail`), and the server's `instructions` give the client the short version.
 
-### 1. Namespace Management
-- Create, read, update, delete namespaces
-- List and manage namespace resources
+### 1. Plan
+- `recommend_vm_spec()`, `search_images()`, `get_search_options()` - pick a spec and an image
+- `get_spec_options()` - zones, root disk types and sizes, and whether the provider can
+  start the spec right now
+- `review_spec_image_pair()`, `get_provisioning_risk()`,
+  `recommend_alternative_node_config()` - check one choice, or find a substitute
+- `review_infra_dynamic_request()` - validate the whole plan: availability, quota headroom,
+  past failure rate, init script size, hourly cost
 
-### 2. Image and Specification Discovery
-- Search cloud images across providers
-- Get VM specification recommendations
-- Filter by OS type, architecture, provider, region
+### 2. Provision
+- `create_infra_dynamic()` - create an Infra. It needs the review first (`force_create`)
+  and a person's agreement (`confirm`); the refusal carries the plan and its cost.
+- `add_nodegroup_dynamic()`, `review_nodegroup_dynamic()`, `scale_out_nodegroup()` - grow an Infra
+- `list_infra_templates()`, `provision_infra_from_template()`, `manage_infra_template()` -
+  replay a saved configuration, or save a running Infra as one
+- `post_script` runs over SSH once the nodes are up; `init_script` runs inside each node at
+  first boot. `list_init_script_templates()`, `manage_init_script_template()`,
+  `get_init_script_status()` and `get_platform_services()` belong to the latter.
 
-### 3. Multi-Cloud Infrastructure (Infra) Management
-- **Complete Infra Creation Workflow**:
-  1. `get_image_search_options()` - Discover available search parameters
-  2. `search_images()` - Find suitable OS images
-  3. `recommend_vm_spec()` - Get optimal VM specifications
-  4. `create_infra_dynamic()` - Create infrastructure with found parameters
+### 3. Operate
+- `get_infra()`, `get_infra_list()`, `get_nodegroups()`, `diagnose_infra()` - state and health
+- `control_infra()`, `control_node()` - suspend, resume, reboot, terminate, refine
+- `execute_command_infra()`, `get_command_result()`, `list_node_command_status()`,
+  `manage_command_task()` - remote commands, synchronous or in the background
+- `list_predefined_scripts()` - the setups CB-MapUI offers (GPU drivers, vLLM, Ollama,
+  Kubernetes, KServe, OpenStack, Ray, ...), with their placeholders and ports
+- `transfer_file_infra()`, `download_file_from_node()` - write and read files on nodes
+- `manage_labels()`, `add_security_group_rules()` (rules already present are skipped),
+  `remove_security_group_rules()`, `manage_bastion()`, `discover_service_endpoints()`
 
-- **Infra Operations**:
-  - Control Infra lifecycle (suspend, resume, reboot, terminate)
-  - Monitor Infra status and health
-  - Scale infrastructure dynamically
+### 4. Services around an Infra
+- `manage_object_storage()` - buckets, object listing, presigned upload and download URLs,
+  versioning and CORS
+- `manage_nlb()` - a provider NLB in front of a node group, or a global one (HAProxy on its
+  own Infra, listener port opened) for a whole Infra
+- `manage_k8s_cluster()` - provider-managed Kubernetes (EKS, GKE, AKS, ...): cluster, node
+  groups, scaling, and a kubeconfig that works without the provider's credential plugin
+- `manage_rdbms()` - provider-managed MySQL or MariaDB in an Infra's network: capabilities,
+  validation, instance, logical databases, TLS state
+- `create_custom_image()` - snapshot a configured node into a reusable image
+- `get_dns_hosted_zones()`, `manage_dns_record()` - one name for a deployment
 
-### 4. Remote Operations
-- Execute commands on cloud instances
-- Transfer files to/from instances
-- Manage instance configurations
+### 5. Recover and clean up
+- `retry_failed_nodes()` - re-create failed nodes in place; previews the server's plan by default
+- `terminate_infra()`, `release_resources()` - remove an Infra and what it left behind.
+  The release is refused while a managed cluster or database still lives in a network it
+  would delete.
+- `get_resources()`, `manage_resource()` - list resources, delete one, or cancel a
+  deletion the provider has not confirmed
+- `inspect_csp_resources()`, `register_csp_resources()` - find and adopt resources that exist
+  at the CSP but are not managed; `resource_type="audit"` asks the provider whether any
+  machine CB-Tumblebug created is still alive
 
-### 5. Resource Management
-- Manage VNets, Security Groups, SSH Keys
-- View cloud connections and regions
-- Resource cleanup and optimization
+### 6. Platform
+- `get_namespaces()`, `manage_namespace()`, `get_connections()`, `list_credential_holders()`
+- `register_csp_definition()`, `register_csp_credential()`, `fetch_assets_for_provider()`,
+  `unregister_csp_definition()` - add a cloud at runtime, e.g. an OpenStack built on a VM
+- `resume_session()`, `clear_session()`, `get_budget_status()`, `request_budget_increase()`
+
+Site-to-site VPN and the autopilot provisioning API are not covered; use CB-MapUI or the
+REST API for those.
+
+### Safety properties
+- Read-only tools are announced with `readOnlyHint`, so a client can run them without asking.
+  `MCP_READ_ONLY=true` publishes only those, plus the reading actions of the `manage_*`
+  tools; every write is refused with `READ_ONLY`.
+- Tools that destroy or spend take `confirm` and refuse without it. A refused creation
+  returns the machines and the hourly cost that would have been created.
+- A failure sets `isError` and carries a code the caller can branch on
+  (`NOT_FOUND`, `INVALID_ARGUMENT`, `NEEDS_CONFIRMATION`, `REVIEW_REQUIRED`,
+  `BUDGET_EXCEEDED`, `CONFLICT`, `TIMEOUT`, ...) with the next step.
+- Secret-looking fields are redacted from every response; `get_ssh_private_key()` is the one
+  deliberate exception.
+- Calls that changed something are journaled per `session_id` (in etcd), without secrets;
+  `resume_session()` reads them back. `idempotency_key` makes a retry return the first result.
+- Reads default to a summary (`detail="summary"`); `detail="full"` returns the raw records.
 
 
 ## 🔍 Testing and Debugging
+
+### Automated checks
+
+| Command | What it does | Needs |
+|---------|--------------|-------|
+| `make mcp-check` | Contract checks: the published tool set against `tests/tools.golden.json`, the size of `tools/list`, every request a tool sends (path, query names, body keys) against `src/interface/rest/docs/swagger.yaml`, read-only mode, spend limits, the session journal | Docker only |
+| `make mcp-check-update` | Rewrites the golden file after an intended tool change | Docker only |
+| `make mcp-scenarios` | Drives real requests through the MCP endpoint: discovery, a reviewed plan, the refusal gates, metadata round trips, reads of existing Infras. Creates nothing billable. | A running cluster (`make k-port-forward`) |
+| `make mcp-scenarios ARGS="--spend"` | Adds a one-node lifecycle: create, command, file, bucket with presigned URLs, label, firewall rule, scale out, node delete, terminate, release | CSP credentials; costs a few cents |
+| `make mcp-scenarios ARGS="--spend --only services"` | Two web nodes behind a regional and a global load balancer, a custom image and a node started from it, a managed database queried from a node | CSP credentials; about 20 minutes |
+| `make mcp-scenarios ARGS="--spend --only kubernetes"` | A managed Kubernetes cluster: create, node group, kubeconfig, scale, delete | CSP credentials; about 30 minutes |
+| `make mcp-bench` | Prints the byte size of the common responses against `tests/baseline.json` | A running cluster |
+
+A new tool needs a sample call in `tests/check_contract.py`; the check fails until one is
+added. After changing a REST model, `make swag` followed by `make mcp-check` shows which
+tools still send the old shape. Details: [tests/README.md](./tests/README.md).
 
 ### MCP Inspector (Official Testing Tool)
 
@@ -465,7 +541,7 @@ For development or testing purposes, you can run the MCP server directly:
 
 4. **Run the server:**
    ```bash
-   uv run --with fastmcp,requests ./src/interface/mcp/tb-mcp.py
+   uv run --with "fastmcp==3.4.5",requests,cryptography,pyyaml ./src/interface/mcp/tb-mcp.py
    ```
 
    This will start the TB-MCP server with Streamable HTTP transport on `http://127.0.0.1:8000/mcp`.
@@ -493,8 +569,7 @@ Due to Claude Desktop's limitations with remote server connections, a proxy brid
 3. **Configure Claude Desktop** with proxy bridge path
 
 **Files provided:**
-- `mcp-simple-proxy.py` - Minimal proxy (recommended)
-- `mcp-advanced-proxy.py` - Enhanced proxy with logging
+- `mcp-simple-proxy.py` - Minimal proxy
 - `claude_desktop_config.json` - Configuration examples
 - `PROXY_README.md` - Detailed proxy documentation
 
@@ -504,14 +579,18 @@ Due to Claude Desktop's limitations with remote server connections, a proxy brid
 src/interface/mcp/
 ├── tb-mcp.py                    # Main MCP server implementation
 ├── mcp-simple-proxy.py          # Proxy bridge for Claude Desktop
-├── mcp-advanced-proxy.py        # Enhanced proxy with logging
-├── mcp-remote-proxy.py          # Alternative proxy implementation
 ├── claude_desktop_config.json   # Claude Desktop configuration examples
-├── .vscode/mcp.json            # VS Code MCP configuration
 ├── Dockerfile                   # Docker container configuration
+├── tests/
+│   ├── check_contract.py        # make mcp-check: tool set, schema budget, requests vs the REST API
+│   ├── scenarios.py             # make mcp-scenarios: real requests through the MCP endpoint
+│   ├── bench.py                 # make mcp-bench: response sizes
+│   ├── mcp_client.py            # Minimal MCP client used by the scripts above
+│   ├── tools.golden.json        # The published tool set, compared by mcp-check
+│   └── baseline.json            # Response sizes, compared by mcp-bench
 ├── README.md                    # This documentation
-├── PROXY_README.md             # Detailed proxy documentation
-└── architecture.md             # System architecture diagrams
+├── PROXY_README.md              # Detailed proxy documentation
+└── architecture.md              # System architecture diagrams
 ```
 
 ## 🚀 Quick Start Guide
@@ -536,7 +615,7 @@ src/interface/mcp/
 
 1. **Start TB-MCP server:**
    ```bash
-   uv run --with fastmcp,requests ./src/interface/mcp/tb-mcp.py
+   uv run --with "fastmcp==3.4.5",requests,cryptography,pyyaml ./src/interface/mcp/tb-mcp.py
    ```
 
 2. **Follow integration steps above based on your AI assistant**

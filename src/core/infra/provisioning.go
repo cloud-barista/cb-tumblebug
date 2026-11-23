@@ -224,6 +224,8 @@ func reserveNodeNames(ctx context.Context, nsId, infraId, nodeGroupId string, no
 		}
 		record = *fresh
 		record.Id, record.Name = nodeGroupId, nodeGroupId
+		// Counted from the reserved names below; the requested size would shift the first index
+		record.NodeGroupSize = 0
 	}
 
 	// Names in use: the Nodes that exist plus the ones the record already reserved
