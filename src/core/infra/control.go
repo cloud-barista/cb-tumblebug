@@ -1005,8 +1005,9 @@ func runBulkControlForRegion(
 			continue
 		}
 
-		// Post-bulk: update StatusStore and launch per-node cleanup.
+		// Post-bulk: update StatusStore and clean up the accepted nodes together.
 		idToEntry := make(map[string]bulkControlEntry, len(hg.entries))
+		accepted := make([]bulkControlEntry, 0, len(hg.entries))
 		for _, be := range hg.entries {
 			idToEntry[be.cspResourceId] = be
 			newStatus, found := statuses[be.cspResourceId]
@@ -1026,8 +1027,9 @@ func runBulkControlForRegion(
 				e.Priority = PollHigh // trigger quick individual follow-up poll
 				e.NextPollAt = time.Now()
 			})
-			go postBulkControlCleanup(nsId, infraId, be, action)
+			accepted = append(accepted, be)
 		}
+		go postBulkControlCleanup(nsId, infraId, accepted, action)
 
 		log.Debug().
 			Str("provider", providerName).
@@ -1193,31 +1195,59 @@ func applyBulkTransitionalStatus(nsId, infraId string, be bulkControlEntry, acti
 	})
 }
 
+// bulkAssocRef identifies a resource whose associated-object list refers to nodes.
+type bulkAssocRef struct {
+	resourceType string
+	resourceId   string
+}
+
+// bulkAssociationKeys groups the node keys of entries by the resources that list them. Image and
+// CustomImage are both included because a node's image id can belong to either.
+func bulkAssociationKeys(nsId, infraId string, entries []bulkControlEntry) map[bulkAssocRef][]string {
+	refs := make(map[bulkAssocRef][]string)
+	for _, be := range entries {
+		key := common.GenInfraKey(nsId, infraId, be.nodeId)
+		add := func(resourceType, resourceId string) {
+			if resourceId != "" {
+				ref := bulkAssocRef{resourceType, resourceId}
+				refs[ref] = append(refs[ref], key)
+			}
+		}
+		ni := be.nodeInfo
+		add(model.StrImage, ni.ImageId)
+		add(model.StrCustomImage, ni.ImageId)
+		add(model.StrSSHKey, ni.SshKeyId)
+		add(model.StrVNet, ni.VNetId)
+		for _, sg := range ni.SecurityGroupIds {
+			add(model.StrSecurityGroup, sg)
+		}
+		for _, disk := range ni.DataDiskIds {
+			add(model.StrDataDisk, disk)
+		}
+	}
+	return refs
+}
+
 // postBulkControlCleanup runs TB metadata cleanup after a successful bulk SDK control call.
-// For Terminate: updates associated-object lists and schedules async Spider IID cleanup.
+// For Terminate: removes the nodes from associated-object lists and schedules async Spider IID cleanup.
 // For Suspend/Resume: no additional TB metadata work needed; StatusAgent handles IP refresh.
-func postBulkControlCleanup(nsId, infraId string, be bulkControlEntry, action string) {
-	if action != model.ActionTerminate {
+func postBulkControlCleanup(nsId, infraId string, entries []bulkControlEntry, action string) {
+	if action != model.ActionTerminate || len(entries) == 0 {
 		return
 	}
-	key := common.GenInfraKey(nsId, infraId, be.nodeId)
-	ni := be.nodeInfo
-	_, err := resource.UpdateAssociatedObjectList(nsId, model.StrImage, ni.ImageId, model.StrDelete, key)
-	if err != nil {
-		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, ni.ImageId, model.StrDelete, key) //nolint:errcheck
-	}
-	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, ni.SshKeyId, model.StrDelete, key) //nolint:errcheck
-	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, ni.VNetId, model.StrDelete, key)     //nolint:errcheck
-	for _, sg := range ni.SecurityGroupIds {
-		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, sg, model.StrDelete, key) //nolint:errcheck
-	}
-	for _, disk := range ni.DataDiskIds {
-		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, disk, model.StrDelete, key) //nolint:errcheck
+	// One write per resource: a per-node update rewrites the whole list each time, which for a
+	// region of hundreds of nodes multiplies both the etcd write volume and the memory held.
+	for ref, keys := range bulkAssociationKeys(nsId, infraId, entries) {
+		if err := resource.BatchRemoveFromAssociatedObjectList(nsId, ref.resourceType, ref.resourceId, keys); err != nil {
+			log.Warn().Err(err).Msgf("[BulkControl] failed to remove %d node(s) from %s '%s' associations", len(keys), ref.resourceType, ref.resourceId)
+		}
 	}
 	// Spider IID cleanup: async, non-blocking.
-	// The instance is already terminating in AWS; Spider force-delete just removes
-	// the vm_iid_infos record. We fire-and-forget through globalControlSem to rate-limit.
-	asyncSpiderForceDeleteVM(be.connectionName, be.cspResourceName)
+	// The instances are already terminating in the CSP; Spider force-delete just removes
+	// the vm_iid_infos records. Fire-and-forget through globalControlSem to rate-limit.
+	for _, be := range entries {
+		asyncSpiderForceDeleteVM(be.connectionName, be.cspResourceName)
+	}
 }
 
 // asyncSpiderForceDeleteVM removes Spider's stale vm_iid_infos record for a VM already terminated

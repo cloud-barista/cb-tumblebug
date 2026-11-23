@@ -15,16 +15,21 @@ SHELL := /bin/bash
 REMOTE_HOST := $(or $(HOST),$(IP))
 SSH_USER ?=
 SSH_KEY ?=
-SSH_PORT ?= 22
+SSH_PORT ?=
 
-init: ## Run initialization sequence (`make init ARGS="-y"` for headless; `HOST=<ip>` for remote via SSH; `TARGET=k8s` or `make k-init` for Kubernetes)
-ifneq ($(REMOTE_HOST),)
-	@$(MAKE) --no-print-directory r-init
-else ifeq ($(TARGET),k8s)
-	@$(MAKE) k-init
+ONLY ?=
+PROVIDERS ?=
+YES ?=
+
+init: ## Interactive initialization wizard (`ONLY=cred|assets|templates`, `HOST=<id|ip>`, `YES=1`)
+ifeq ($(TARGET),k8s)
+	@$(MAKE) --no-print-directory k-init
 else
-	@chmod +x ./init/multi-init.sh 2>/dev/null || true
-	@./init/multi-init.sh $(ARGS)
+	@chmod +x ./scripts/misc/init-wizard.sh 2>/dev/null || true
+	@INIT_MODE=compose REMOTE_HOST="$(REMOTE_HOST)" SSH_USER="$(SSH_USER)" SSH_KEY="$(SSH_KEY)" SSH_PORT="$(SSH_PORT)" \
+		ONLY="$(ONLY)" PROVIDERS="$(PROVIDERS)" YES="$(YES)" ARGS="$(ARGS)" \
+		K8S_NAMESPACE="$(K8S_NAMESPACE)" K8S_CONTEXT="$(K8S_CONTEXT)" K8S_INIT_PORT="$(K8S_INIT_PORT)" \
+		./scripts/misc/init-wizard.sh
 endif
 
 init-profile: ## Maintainer-only: run make init with elapsed/memory profiling outputs under tmp/init-profile/
@@ -138,6 +143,14 @@ ssh: ## Open an interactive SSH session to any Infra VM node (`make ssh` or `INF
 		USER_OVERRIDE="$(SSH_NODE_USER)" L="$(L)" CMD="$(CMD)" HOLDER="$(HOLDER)" DRY_RUN="$(DRY_RUN)" \
 		./scripts/misc/ssh-node.sh
 
+ssh-config: ## Export or import password-encrypted SSH config (`make ssh-config` | `HOST=<id>` | `IMPORT=1`)
+	@chmod +x ./scripts/misc/ssh-config.sh 2>/dev/null || true
+	@K8S_NAMESPACE="$(K8S_NAMESPACE)" K8S_CONTEXT="$(K8S_CONTEXT)" \
+		NS="$(NS)" INFRA="$(INFRA)" NODE="$(NODE)" REMOTE_HOST="$(REMOTE_HOST)" ALIAS="$(ALIAS)" \
+		USER_OVERRIDE="$(SSH_NODE_USER)" IMPORT="$(IMPORT)" FILE="$(FILE)" REMOVE="$(REMOVE)" OUT="$(OUT)" \
+		PASS="$(PASS)" HOLDER="$(HOLDER)" \
+		./scripts/misc/ssh-config.sh
+
 # ===== Utility Aliases =====
 # TARGET=k8s switches up/init/down to the Kubernetes (Helm) deployment.
 # Default (no TARGET) keeps the existing docker compose behavior unchanged.
@@ -243,15 +256,45 @@ k-prereqs: ## Check &, on confirmation, install missing k-up prerequisites (`YES
 
 r-k-up: ## Bootstrap & deploy CB-Tumblebug on a remote Ubuntu VM over SSH (`make k-up HOST=<infraId|ip>`)
 	@chmod +x ./scripts/misc/r-k-up.sh 2>/dev/null || true
-	@REMOTE_HOST="$(REMOTE_HOST)" NS="$(NS)" SSH_USER="$(SSH_USER)" SSH_KEY="$(SSH_KEY)" SSH_PORT="$(SSH_PORT)" HOLDER="$(HOLDER)" \
+	@REMOTE_HOST="$(REMOTE_HOST)" NS="$(NS)" SSH_USER="$(SSH_USER)" SSH_KEY="$(SSH_KEY)" SSH_PORT="$(SSH_PORT)" HOLDER="$(HOLDER)" YES="$(YES)" \
 		K8S_NAMESPACE="$(K8S_NAMESPACE)" HELM_RELEASE="$(HELM_RELEASE)" KIND_CLUSTER_NAME="$(KIND_CLUSTER_NAME)" \
 		KIND_VERSION="$(KIND_VERSION)" KIND_WORKERS="$(KIND_WORKERS)" KIND_TAINT_CP="$(KIND_TAINT_CP)" \
 		./scripts/misc/r-k-up.sh
 
-k-up: ## Install/upgrade the stack on Kubernetes (`HOST=<infraId|ip>` to bootstrap a remote VM via SSH)
+k-up: ## Install/upgrade stack on Kubernetes (interactive wizard when VMs exist, or `HOST=<infraId|ip>`)
 ifneq ($(REMOTE_HOST),)
 	@$(MAKE) --no-print-directory r-k-up
 else
+	@# Bootstrapper convenience: if local CB-Tumblebug already manages running VMs, let interactive
+	@# top-level `make k-up` pick Local vs Remote VM (Enter = Local).
+	@if [ -t 0 ] && [ "$(MAKELEVEL)" = "0" ] && [ -z "$(NO_ADDON_WIZARD)" ] && [ -z "$(PF_DEFER)" ] && [ "$(YES)" != "1" ]; then \
+		vms=$$(python3 -c 'import json,os,re,subprocess; \
+			cands=["http://localhost:8080/tumblebug","https://localhost:8443/tumblebug","http://localhost:1323/tumblebug"]; \
+			tb=next((c for c in cands if subprocess.call(["curl","-sf","-k","-u","default:default","--max-time","1",c+"/readyz"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)==0),""); \
+			out=[]; seen=set(); \
+			exec("if tb:\n  get=lambda p: json.loads(subprocess.check_output([\"curl\",\"-sS\",\"-k\",\"-u\",\"default:default\",\"--max-time\",\"3\",tb+p],stderr=subprocess.DEVNULL).decode())\n  ns_list=[x.get(\"id\") for x in (get(\"/ns\").get(\"ns\") or []) if x.get(\"id\")]\n  if \"default\" in ns_list: ns_list.remove(\"default\"); ns_list.insert(0,\"default\")\n  for ns in ns_list:\n    for iid in (get(f\"/ns/{ns}/infra?option=id\").get(\"output\") or []):\n      for v in (get(f\"/ns/{ns}/infra/{iid}\").get(\"node\") or []):\n        ip=v.get(\"publicIP\") or \"\"; st=(v.get(\"status\") or \"\").lower()\n        if ip and (\"run\" in st or st==\"\"):\n          nid=v.get(\x27id\x27,\x27\x27); out.append(f\"{ns}/{iid}|{nid}|{ip}|{iid if ns==\x27default\x27 else ip}\"); seen.update([iid,nid,ip])\n"); \
+			cfg=os.path.expanduser("~/.ssh/config"); \
+			exec("if os.path.isfile(cfg):\n  for blk in open(cfg).read().split(\"# >>> cb-tumblebug:\")[1:]:\n    al=blk.split(\" >>>\",1)[0].strip(); body=blk.split(\"# <<< cb-tumblebug:\",1)[0]\n    ips=[l.split()[1] for l in body.splitlines() if l.strip().lower().startswith(\"hostname \")]\n    ip=ips[-1] if ips else \"\"\n    if al and ip and al not in seen and ip not in seen:\n      out.append(f\"{al}|~/.ssh/config|{ip}|{al}\"); seen.update([al,ip])\n"); \
+			print("\n".join(out))' 2>/dev/null || true); \
+		if [ -n "$$vms" ]; then \
+			printf '\n%b\n' '$(KB)$(KC)\xe2\x96\x8c Select Kubernetes deployment target$(KX)'; \
+			printf '  $(KC)1)$(KX) Local Kubernetes (this machine) $(KD)[default]$(KX)\n'; \
+			i=2; while IFS='|' read -r label nid ip handle; do \
+				printf '  $(KC)%d)$(KX) Remote VM: $(KB)%s$(KX) $(KD)(%s \xc2\xb7 %s)$(KX)\n' "$$i" "$$label" "$$nid" "$$ip"; \
+				i=$$((i+1)); \
+			done <<< "$$vms"; \
+			printf '  $(KC)%d)$(KX) Enter remote host / IP manually\n' "$$i"; \
+			printf 'Target # $(KD)[1]$(KX): '; read -r tsel </dev/tty 2>/dev/null || tsel="1"; \
+			tsel="$${tsel:-1}"; \
+			if [ "$$tsel" = "$$i" ]; then \
+				printf 'Remote host / SSH alias / IP: '; read -r rhost </dev/tty 2>/dev/null || rhost=""; \
+				[ -n "$$rhost" ] && exec $(MAKE) --no-print-directory r-k-up HOST="$$rhost"; \
+			elif [ "$$tsel" != "1" ] && [ "$$tsel" -ge 2 ] 2>/dev/null && [ "$$tsel" -lt "$$i" ] 2>/dev/null; then \
+				rhandle=$$(printf '%s\n' "$$vms" | sed -n "$$((tsel-1))p" | cut -d'|' -f4); \
+				[ -n "$$rhandle" ] && exec $(MAKE) --no-print-directory r-k-up HOST="$$rhandle"; \
+			fi; \
+		fi; \
+	fi
 	@# Fresh-VM convenience: if core tools are missing, offer the one-shot installer (interactive
 	@# top-level only). Declining or CI falls through to the per-tool errors below (which also gate).
 	@if [ -t 0 ] && [ "$(MAKELEVEL)" = "0" ]; then \
@@ -554,21 +597,12 @@ k-addons-configure:
 	case "$$p" in [nN]*) pf=none;; *) pf=auto;; esac; \
 	printf 'OBS=%s\nPF=%s\nAUTH=%s\n' "$$obs" "$$pf" "$$auth" > $(K8S_ADDONS_ANSWERS)
 
-k-init: ## Run initialization against the Kubernetes deployment (`HOST=<ip>` for remote node via SSH; else local port-forward)
-ifneq ($(REMOTE_HOST),)
-	@$(MAKE) --no-print-directory r-init
-else
-	@printf '%b\n' '$(KD)Port-forwarding cb-tumblebug ($(K8S_INIT_PORT) -> 1323)...$(KX)'
-	@$(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug $(K8S_INIT_PORT):1323 >/dev/null 2>&1 & \
-	PF_PID=$$!; \
-	trap "kill $$PF_PID 2>/dev/null" EXIT; \
-	sleep 2; \
-	chmod +x ./init/multi-init.sh 2>/dev/null || true; \
-	TUMBLEBUG_SERVER=localhost:$(K8S_INIT_PORT) \
-	ASSETS_PG_BACKEND=kubectl \
-	TB_K8S_NAMESPACE=$(K8S_NAMESPACE) \
-	./init/multi-init.sh $(ARGS)
-endif
+k-init: ## Interactive K8s initialization wizard (`HOST=<id|ip>`, `ONLY=cred|assets|templates`, `YES=1`)
+	@chmod +x ./scripts/misc/init-wizard.sh 2>/dev/null || true
+	@INIT_MODE=k8s REMOTE_HOST="$(REMOTE_HOST)" SSH_USER="$(SSH_USER)" SSH_KEY="$(SSH_KEY)" SSH_PORT="$(SSH_PORT)" \
+		ONLY="$(ONLY)" PROVIDERS="$(PROVIDERS)" YES="$(YES)" ARGS="$(ARGS)" \
+		K8S_NAMESPACE="$(K8S_NAMESPACE)" K8S_CONTEXT="$(K8S_CONTEXT)" K8S_INIT_PORT="$(K8S_INIT_PORT)" \
+		./scripts/misc/init-wizard.sh
 
 r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tunnel (`make init HOST=<ip|user@ip|infraId>`)
 	@set -e; \
@@ -582,8 +616,8 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 			printf '%b\n' "$(KD)\xe2\x9c\x94 Temporary SSH tunnel closed (PID $$TUNNEL_PID) and temporary files cleaned up.$(KX)"; \
 		fi; \
 		[ -n "$$DISC_PF_PID" ] && kill "$$DISC_PF_PID" 2>/dev/null || true; \
-		if [ "$$remote_pf" = "1" ] && [ -n "$$user" ] && [ -n "$$host" ]; then \
-			ssh $$ssh_opts "$$user@$$host" "pkill -f 'port-forward .*svc/cb-tumblebug 11323:1323'" >/dev/null 2>&1 || true; \
+		if [ "$$remote_pf" = "1" ] && [ -n "$${ssh_target:-}" ]; then \
+			ssh $$ssh_opts "$$ssh_target" "pkill -f 'port-forward .*svc/cb-tumblebug 11323:1323'" >/dev/null 2>&1 || true; \
 		fi; \
 		rm -rf "$$tmp_dir"; \
 	}; \
@@ -626,34 +660,51 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 				IFS='|' read -r res_ip res_skey res_user res_port res_ns <<< "$$found"; \
 				host="$$res_ip"; \
 				[ -z "$$user" ] && user="$$res_user"; \
-				[ "$$port" = "22" ] && [ -n "$$res_port" ] && port="$$res_port"; \
+				[ -z "$$port" ] && [ -n "$$res_port" ] && port="$$res_port"; \
 				if [ -n "$$res_skey" ]; then \
 					curl -sf -k -u "$$api_u:$$api_p" "$$local_tb/ns/$$res_ns/resources/sshKey/$$res_skey" \
 						| python3 -c "import json,sys; d=json.load(sys.stdin); k=(d.get('privateKey') or '').replace('\\\\n','\n'); sys.stdout.write(k if k.endswith('\n') else k+'\n')" > "$$tmp_dir/key.pem" 2>/dev/null || true; \
 					if [ -s "$$tmp_dir/key.pem" ]; then \
 						chmod 600 "$$tmp_dir/key.pem"; key="$$tmp_dir/key.pem"; \
-						printf '%b\n' "$(KG)\xe2\x9c\x94 Auto-discovered SSH key & target ($(KB)$$user@$$host:$$port$(KX)$(KG)) from local CB-Tumblebug$(KX)"; \
+						printf '%b\n' "$(KG)\xe2\x9c\x94 Auto-discovered SSH key & target ($(KB)$$user@$$host:$${port:-22}$(KX)$(KG)) from local CB-Tumblebug$(KX)"; \
 					fi; \
 				fi; \
 			fi; \
 		fi; \
 		if [ -n "$$DISC_PF_PID" ]; then kill "$$DISC_PF_PID" 2>/dev/null || true; DISC_PF_PID=""; fi; \
 	fi; \
-	user="$${user:-cb-user}"; \
-	ssh_opts="$$ssh_base_opts -p $$port"; \
+	in_ssh_cfg=0; \
+	if [ -z "$$key" ] && [ -n "$$host" ]; then \
+		for f in "$$HOME/.ssh/config" "$$HOME"/.ssh/config.d/*; do \
+			[ -f "$$f" ] || continue; \
+			if awk -v t="$$host" 'tolower($$1)=="host"{for(i=2;i<=NF;i++) if($$i!="*" && $$i!~/[*?!]/ && $$i==t){f=1;exit 0}} END{exit(f?0:1)}' "$$f" 2>/dev/null; then \
+				in_ssh_cfg=1; break; \
+			fi; \
+		done; \
+	fi; \
+	if [ "$$in_ssh_cfg" = "1" ]; then \
+		ssh_target="$${user:+$$user@}$$host"; \
+	else \
+		user="$${user:-cb-user}"; \
+		port="$${port:-22}"; \
+		ssh_target="$$user@$$host"; \
+	fi; \
+	ssh_opts="$$ssh_base_opts"; \
+	[ -n "$$port" ] && ssh_opts="$$ssh_opts -p $$port"; \
 	[ -n "$$key" ] && ssh_opts="$$ssh_opts -i $$key"; \
-	if ! ssh $$ssh_opts -o BatchMode=yes "$$user@$$host" true >/dev/null 2>&1; then \
-		if [ -z "$$key" ] && [ -t 0 ]; then \
-			printf '%b\n' "$(KY)\xe2\x9a\xa0 Could not connect to $$user@$$host with default SSH credentials.$(KX)"; \
+	if ! ssh $$ssh_opts -o BatchMode=yes "$$ssh_target" true >/dev/null 2>&1; then \
+		if [ -z "$$key" ] && [ -t 0 ] && [ "$(YES)" != "1" ]; then \
+			printf '%b\n' "$(KY)\xe2\x9a\xa0 Could not connect to $$ssh_target with default SSH credentials.$(KX)"; \
 			read -rp "  SSH private key path [$$HOME/.ssh/id_rsa]: " k_in; \
 			key="$${k_in:-$$HOME/.ssh/id_rsa}"; key="$${key/#\~/$HOME}"; \
-			read -rp "  SSH user [$$user]: " u_in; \
-			user="$${u_in:-$$user}"; \
-			ssh_opts="$$ssh_base_opts -p $$port -i $$key"; \
+			read -rp "  SSH user [$${user:-cb-user}]: " u_in; \
+			user="$${u_in:-$${user:-cb-user}}"; \
+			ssh_target="$$user@$$host"; \
+			ssh_opts="$$ssh_base_opts $${port:+-p $$port} -i $$key"; \
 		fi; \
 	fi; \
-	printf '%b\n' "$(KB)$(KC)\xe2\x96\x8c Remote Initialization via Temporary SSH Tunnel$(KX) $(KD)($$user@$$host)$$([ -n "$$key" ] && printf ' [key: %s]' "$$(basename "$$key")")$(KX)"; \
-	remote_port=$$(ssh $$ssh_opts "$$user@$$host" " \
+	printf '%b\n' "$(KB)$(KC)\xe2\x96\x8c Remote Initialization via Temporary SSH Tunnel$(KX) $(KD)($$ssh_target)$$([ -n "$$key" ] && printf ' [key: %s]' "$$(basename "$$key")")$(KX)"; \
+	remote_port=$$(ssh $$ssh_opts "$$ssh_target" " \
 		export PATH=\"/usr/local/bin:\$$PATH\"; \
 		if ss -tlnH 2>/dev/null | awk '{print \$$4}' | grep -qE '[:.]1323\$$'; then \
 			echo 1323; \
@@ -671,23 +722,23 @@ r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tu
 		*:k8s) remote_port="$${remote_port%:k8s}"; remote_pf=1 ;; \
 	esac; \
 	if [ -z "$$remote_port" ]; then \
-		printf '%b\n' "$(KR)\xe2\x9c\x96 Could not detect CB-Tumblebug (:1323 or K8s svc/cb-tumblebug) on $$user@$$host.$(KX)"; \
+		printf '%b\n' "$(KR)\xe2\x9c\x96 Could not detect CB-Tumblebug (:1323 or K8s svc/cb-tumblebug) on $$ssh_target.$(KX)"; \
 		exit 1; \
 	fi; \
 	local_port=$(K8S_INIT_PORT); \
 	while ss -tlnH 2>/dev/null | awk '{print $$4}' | grep -qE "[:.]$$local_port$$"; do local_port=$$((local_port+1)); done; \
 	printf '%b\n' "$(KD)Opening temporary SSH tunnel (localhost:$$local_port -> $$host:$$remote_port)...$(KX)"; \
-	ssh -N $$ssh_opts -o ExitOnForwardFailure=yes -L "127.0.0.1:$$local_port:127.0.0.1:$$remote_port" "$$user@$$host" </dev/null >/dev/null 2>&1 & \
+	ssh -N $$ssh_opts -o ExitOnForwardFailure=yes -L "127.0.0.1:$$local_port:127.0.0.1:$$remote_port" "$$ssh_target" </dev/null >/dev/null 2>&1 & \
 	TUNNEL_PID=$$!; \
 	sleep 2; \
 	if ! kill -0 "$$TUNNEL_PID" 2>/dev/null; then \
-		printf '%b\n' "$(KR)\xe2\x9c\x96 Failed to establish SSH tunnel to $$user@$$host.$(KX)"; \
+		printf '%b\n' "$(KR)\xe2\x9c\x96 Failed to establish SSH tunnel to $$ssh_target.$(KX)"; \
 		exit 1; \
 	fi; \
 	chmod +x ./init/multi-init.sh 2>/dev/null || true; \
 	TUMBLEBUG_SERVER="localhost:$$local_port" \
 	ASSETS_PG_BACKEND="ssh" \
-	TB_SSH_TARGET="$$user@$$host" \
+	TB_SSH_TARGET="$$ssh_target" \
 	TB_SSH_KEY="$$key" \
 	TB_SSH_PORT="$$port" \
 	./init/multi-init.sh $(ARGS)
@@ -1018,14 +1069,37 @@ mcp-budget-off: ## Disable spend limits
 	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/policy/budget '{"enabled":false}'
 	@printf '%b\n' 'Spend limits disabled.'
 
-k-build: ## Build LOCAL source and run it in the cluster (C=tb|mapui|mcp|sp) — compose `--build` equivalent
-	@$(MAKE) --no-print-directory k-port-forward-save
-	@case "$(C)" in \
+k-build: ## Build LOCAL source into the cluster (interactive menu if C= omitted; C=tb|mapui|mcp|sp|all)
+	@comp="$(C)"; \
+	if [ -z "$$comp" ] && [ -t 0 ]; then \
+		printf '\n%b\n' '$(KB)$(KC)\xe2\x96\x8c Select component to build into local cluster$(KX)'; \
+		printf '  $(KC)1)$(KX) cb-tumblebug (tb) $(KD)[default]$(KX)\n'; \
+		printf '  $(KC)2)$(KX) cb-mapui (mapui)\n'; \
+		printf '  $(KC)3)$(KX) mcp (cb-tumblebug-mcp-server)\n'; \
+		printf '  $(KC)4)$(KX) cb-spider (sp)\n'; \
+		printf '  $(KC)5)$(KX) all (tb + mapui + mcp + sp)\n'; \
+		printf 'Select # $(KD)[1]$(KX): '; read -r bsel </dev/tty 2>/dev/null || bsel="1"; \
+		case "$${bsel:-1}" in \
+			1|tb|cb-tumblebug) comp="tb" ;; \
+			2|mapui|cb-mapui)  comp="mapui" ;; \
+			3|mcp)             comp="mcp" ;; \
+			4|sp|cb-spider)    comp="sp" ;; \
+			5|all)             comp="all" ;; \
+			*) echo "Invalid selection: $$bsel"; exit 1 ;; \
+		esac; \
+		printf '  %b\n\n' "$(KD)\xf0\x9f\x92\xa1 Direct command: $(KX)$(KC)make k-build C=$$comp$(KX)"; \
+	fi; \
+	if [ "$$comp" = "all" ]; then \
+		for x in tb mapui mcp sp; do $(MAKE) --no-print-directory k-build C=$$x || exit 1; done; \
+		exit 0; \
+	fi; \
+	$(MAKE) --no-print-directory k-port-forward-save; \
+	case "$$comp" in \
 		cb-tumblebug|tb)      canon="cb-tumblebug"; ctx="."; key="tumblebug"; deploy="cb-tumblebug" ;; \
 		cb-mapui|mapui)       canon="cb-mapui"; ctx="../cb-mapui"; key="mapui"; deploy="cb-mapui" ;; \
 		mcp)                  canon="mcp"; ctx="src/interface/mcp"; key="mcp"; deploy="cb-tumblebug-mcp-server" ;; \
 		cb-spider|sp|spider)  canon="cb-spider"; ctx="../cb-spider"; key="spider"; deploy="cb-spider" ;; \
-		*) echo "Usage: make k-build C=tb|mapui|mcp|sp   (or: make k-build-tb / k-build-mapui / k-build-mcp / k-build-sp)"; exit 1 ;; \
+		*) echo "Usage: make k-build [C=tb|mapui|mcp|sp|all]   (or run 'make k-build' interactively)"; exit 1 ;; \
 	esac; \
 	ctx2="$$ctx"; key2="$$key"; deploy2="$$deploy"; \
 	img="cloudbaristaorg/$$canon:local-dev"; \
@@ -1279,21 +1353,39 @@ k-status: ## Show K8s deployment status (release/pods/services/port-forwards)
 k-ps: ## Show K8s deployment status (alias for k-status)
 	@$(MAKE) --no-print-directory k-status
 
-k-logs: ## Show per-component log commands (`make k-logs C=cb-spider` to follow one)
+k-logs: ## Interactive log viewer (or pass `C=cb-tumblebug|cb-spider|cb-mapui|mcp|agentgateway|all`)
 ifeq ($(C),)
-	@echo "Per-component logs (namespace: $(K8S_NAMESPACE)) — follow one with: make k-logs C=<name>"
-	@echo ""
-	@echo "  cb-tumblebug   $(KUBECTL) logs -n $(K8S_NAMESPACE) -f deploy/cb-tumblebug"
-	@echo "  cb-spider      $(KUBECTL) logs -n $(K8S_NAMESPACE) -f deploy/cb-spider"
-	@echo "  mc-terrarium   $(KUBECTL) logs -n $(K8S_NAMESPACE) -f deploy/mc-terrarium"
-	@echo "  cb-mapui       $(KUBECTL) logs -n $(K8S_NAMESPACE) -f deploy/cb-mapui"
-	@echo "  etcd           $(KUBECTL) logs -n $(K8S_NAMESPACE) -f sts/cb-tumblebug-etcd"
-	@echo "  tb-postgres    $(KUBECTL) logs -n $(K8S_NAMESPACE) -f sts/cb-tumblebug-postgres"
-	@echo "  sp-postgres    $(KUBECTL) logs -n $(K8S_NAMESPACE) -f sts/cb-spider-postgres"
-	@echo "  openbao        $(KUBECTL) logs -n $(K8S_NAMESPACE) -f openbao-0 -c openbao"
-	@echo "  openbao-init   $(KUBECTL) logs -n $(K8S_NAMESPACE) job/openbao-init"
-	@echo ""
-	@echo "  all (merged)   $(KUBECTL) logs -n $(K8S_NAMESPACE) -f -l app.kubernetes.io/part-of=cb-tumblebug --prefix --max-log-requests=10"
+	@echo "Per-component logs (namespace: $(K8S_NAMESPACE)):"
+	@echo "   1) cb-tumblebug             6) agentgateway"
+	@echo "   2) cb-spider                7) etcd"
+	@echo "   3) cb-mapui                 8) tb-postgres"
+	@echo "   4) mc-terrarium             9) sp-postgres"
+	@echo "   5) cb-tumblebug-mcp-server 10) openbao"
+	@echo "  11) all (merged live stream)"
+	@if [ -t 0 ]; then \
+		printf '\nFollow component (# or name, Enter to exit): '; read -r lsel </dev/tty 2>/dev/null || lsel=""; \
+		case "$$lsel" in \
+			"") exit 0 ;; \
+			1|tb|cb-tumblebug) comp="cb-tumblebug" ;; \
+			2|sp|cb-spider)    comp="cb-spider" ;; \
+			3|mapui|cb-mapui)  comp="cb-mapui" ;; \
+			4|terrarium|mc-terrarium) comp="mc-terrarium" ;; \
+			5|mcp|cb-tumblebug-mcp-server) comp="cb-tumblebug-mcp-server" ;; \
+			6|agw|agentgateway) comp="agentgateway" ;; \
+			7|etcd)            comp="etcd" ;; \
+			8|tb-postgres)     comp="tb-postgres" ;; \
+			9|sp-postgres)     comp="sp-postgres" ;; \
+			10|openbao)        comp="openbao" ;; \
+			11|all)            comp="all" ;; \
+			*)                 comp="$$lsel" ;; \
+		esac; \
+		printf '  %b\n\n' "$(KD)\xf0\x9f\x92\xa1 Direct command: $(KX)$(KC)make k-logs C=$$comp$(KX)"; \
+		exec $(MAKE) --no-print-directory k-logs C="$$comp"; \
+	fi
+else ifeq ($(C),all)
+	$(KUBECTL) logs -n $(K8S_NAMESPACE) -f -l app.kubernetes.io/part-of=cb-tumblebug --prefix --max-log-requests=15
+else ifeq ($(C),mcp)
+	$(KUBECTL) logs -n $(K8S_NAMESPACE) -f deploy/cb-tumblebug-mcp-server
 else ifeq ($(C),etcd)
 	$(KUBECTL) logs -n $(K8S_NAMESPACE) -f sts/cb-tumblebug-etcd
 else ifeq ($(C),tb-postgres)
@@ -1371,15 +1463,15 @@ help: ## Display this help screen
 	@echo "  \033[36minit-openbao\033[0m           Initialize OpenBao (one-time setup)"
 	@echo "  \033[36munseal\033[0m                 Unseal OpenBao (after container restart)"
 	@echo ""
-	@echo "☸️  Kubernetes (Helm):"
+	@echo "☸️  Kubernetes (Helm) — multi-option commands open an interactive menu when run with no args:"
 	@echo -e "  \033[36mk-prereqs\033[0m              Check & install kubectl/helm/kind + sysctls (YES=1 INSTALL_DOCKER=1 for headless)"
-	@echo -e "  \033[36mk-up\033[0m                   Install stack via Helm (HOST=<infraId|ip> to bootstrap a remote VM via SSH)"
-	@echo -e "  \033[36mk-init\033[0m                 Initialize the K8s deployment (HOST=<infraId|ip> for remote node via SSH)"
+	@echo -e "  \033[36mk-up\033[0m                   Deploy stack (interactive Local/Remote target & add-ons; or HOST=<id|ip> YES=1)"
+	@echo -e "  \033[36mk-init\033[0m                 Initialize stack (interactive Target & Scope menu; or HOST=<id|ip> ONLY=cred|assets|templates YES=1)"
 	@echo -e "  \033[36mk-down\033[0m                 Uninstall Helm release (data kept)"
 	@echo -e "  \033[36mk-clean\033[0m                Full K8s reset (PVCs + OpenBao Secret)"
 	@echo -e "  \033[36mk-status (k-ps)\033[0m        Show K8s status (release/pods/services/port-forwards)"
 	@echo -e "  \033[36mk-info\033[0m                 Show access endpoints & LLM-client setup for enabled features"
-	@echo -e "  \033[36mk-logs\033[0m                 Per-component log commands (k-logs C=<name> to follow)"
+	@echo -e "  \033[36mk-logs\033[0m                 Interactive component log picker (or k-logs C=<name|all>)"
 	@echo -e "  \033[36mk-port-forward\033[0m         Start port-forwards; auto gateway :8080 if on, else per-service :1323/:1324 (PF_MODE=gateway|service)"
 	@echo -e "  \033[36mk-port-forward-stop\033[0m    Stop port-forwards for the deployment namespace"
 	@echo -e "  \033[36mk-token\033[0m                Create admin token file for K8s UIs (e.g., Headlamp)"
@@ -1389,7 +1481,7 @@ help: ## Display this help screen
 	@echo -e "  \033[36mk-mcp-token\033[0m            Mint a dev JWT for the MCP endpoint"
 	@echo -e "  \033[36mk-gateway-on/-off\033[0m      Enable/disable the Gateway API single entrypoint"
 	@echo -e "  \033[36mk-gateway-forward\033[0m      Alias: k-port-forward PF_MODE=gateway (:8080/+:8443)"
-	@echo -e "  \033[36mk-build-tb/-mapui/-mcp/-sp\033[0m Build LOCAL source into the cluster (compose --build equiv.)"
+	@echo -e "  \033[36mk-build\033[0m                Interactive local build picker (or k-build C=tb|mapui|mcp|sp|all / k-build-tb)"
 	@echo -e "  \033[36mk-build-off [C=]\033[0m       Revert to published images"
 	@echo -e "  \033[36mk-assets / k-assets-off\033[0m   Apply LOCAL assets/ (cloudinfo.yaml etc.) without an image rebuild"
 	@echo "  (aliases: make up/init/down TARGET=k8s)"
@@ -1402,7 +1494,7 @@ help: ## Display this help screen
 	@grep -E '^(backup-assets|restore-assets):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🔧 Utilities:"
-	@grep -E '^(ssh|k-tunnel|k-tunnel-stop|swag|bcrypt|certs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^(ssh|ssh-config|k-tunnel|k-tunnel-stop|swag|bcrypt|certs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "📦 Binary Build & Run & Cleanup:"
 	@grep -E '^(default|run|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -1416,4 +1508,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init r-init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop ssh gen-cred enc-cred dec-cred bcrypt certs help k-prereqs r-k-up k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey
+.PHONY: default run clean clean-all swag swagger init r-init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop ssh ssh-config gen-cred enc-cred dec-cred bcrypt certs help k-prereqs r-k-up k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey

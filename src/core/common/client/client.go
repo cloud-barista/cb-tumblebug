@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -216,11 +217,7 @@ func redactBodyForLog(body []byte) []byte {
 				continue
 			}
 			note := []byte(fmt.Sprintf("[%d bytes redacted]", valEnd-valStart))
-			redacted := make([]byte, 0, len(body)-(valEnd-valStart)+len(note))
-			redacted = append(redacted, body[:valStart]...)
-			redacted = append(redacted, note...)
-			redacted = append(redacted, body[valEnd:]...)
-			body = redacted
+			body = slices.Concat(body[:valStart], note, body[valEnd:])
 			from = valStart + len(note)
 		}
 	}

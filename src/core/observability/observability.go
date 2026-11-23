@@ -18,6 +18,7 @@ package observability
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -195,13 +196,13 @@ func health(info *model.ObservabilityInfo) error {
 	if err != nil {
 		return err
 	}
-	resp, err := client.Get(info.OtlpEndpoint + "/v1/metrics")
+	resp, err := client.Do(context.Background(), http.MethodGet, info.OtlpEndpoint+"/v1/metrics", nil, nil)
 	if err != nil {
 		return fmt.Errorf("otlp endpoint: %w", err)
 	}
 	resp.Body.Close()
 	if info.GrafanaUrl != "" {
-		resp, err := client.Get(info.GrafanaUrl + "/api/health")
+		resp, err := client.Do(context.Background(), http.MethodGet, info.GrafanaUrl+"/api/health", nil, nil)
 		if err != nil {
 			return fmt.Errorf("grafana: %w", err)
 		}
@@ -279,22 +280,19 @@ func postOtlp(info *model.ObservabilityInfo, path, body string) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, info.OtlpEndpoint+path, bytes.NewReader([]byte(body)))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if info.WriteToken != "" {
-		req.Header.Set("Authorization", "Bearer "+info.WriteToken)
-	}
-	resp, err := client.Do(req)
+	resp, err := client.Do(context.Background(), http.MethodPost, info.OtlpEndpoint+path, bytes.NewReader([]byte(body)), func(req *http.Request) {
+		req.Header.Set("Content-Type", "application/json")
+		if info.WriteToken != "" {
+			req.Header.Set("Authorization", "Bearer "+info.WriteToken)
+		}
+	})
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("%s %s", resp.Status, strings.TrimSpace(string(raw)))
+		return fmt.Errorf("%s %s", resp.Status, managedset.ErrorBody(raw))
 	}
 	return nil
 }
@@ -312,36 +310,33 @@ func grafanaDo(info *model.ObservabilityInfo, method, path, body string) (string
 	if err != nil {
 		return "", err
 	}
-	req, err := http.NewRequest(method, info.GrafanaUrl+path, strings.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	req.SetBasicAuth(info.GrafanaAdminUser, info.GrafanaAdminPassword)
-	if body != "" {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	resp, err := client.Do(req)
+	resp, err := client.Do(context.Background(), method, info.GrafanaUrl+path, strings.NewReader(body), func(req *http.Request) {
+		req.SetBasicAuth(info.GrafanaAdminUser, info.GrafanaAdminPassword)
+		if body != "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+	})
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("grafana %s %s: %s %s", method, path, resp.Status, strings.TrimSpace(string(raw)))
+		return "", fmt.Errorf("grafana %s %s: %s %s", method, path, resp.Status, managedset.ErrorBody(raw))
 	}
 	return string(raw), nil
 }
 
-func httpClient(info *model.ObservabilityInfo, timeout time.Duration) (*http.Client, error) {
-	transport := &http.Transport{Proxy: http.ProxyFromEnvironment}
+func httpClient(info *model.ObservabilityInfo, timeout time.Duration) (*managedset.ServerClient, error) {
+	var tlsConfig *tls.Config
 	if info.CaCert != "" {
 		pool := x509.NewCertPool()
 		if !pool.AppendCertsFromPEM([]byte(info.CaCert)) {
 			return nil, errors.New("caCert is not a valid PEM certificate")
 		}
-		transport.TLSClientConfig = &tls.Config{RootCAs: pool}
+		tlsConfig = &tls.Config{RootCAs: pool}
 	}
-	return &http.Client{Transport: transport, Timeout: timeout}, nil
+	return managedset.NewServerClient(tlsConfig, timeout), nil
 }
 
 func load() (*model.ObservabilityInfo, error) {

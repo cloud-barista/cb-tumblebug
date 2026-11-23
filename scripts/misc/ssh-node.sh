@@ -367,6 +367,19 @@ if [ ! -s "$TARGET_KEY_FILE" ]; then
 fi
 
 LOGIN_USER="${USER_ARG:-${KEY_USER:-${TARGET_NODE_USER:-cb-user}}}"
+
+# Interactive quick options when invoked with `make ssh` (no NODE/IP/CMD/USER/L passed on CLI)
+if [ -t 0 ] && [ "$DRY_RUN" != "1" ] && [ -z "$CMD_ARG" ] && [ -z "$USER_ARG" ] && [ -z "$PORT_FWD_ARG" ] && [ -z "${NODE:-}" ] && [ -z "${IP:-${HOST:-}}" ]; then
+  u_ans="$(ask "  Login user" "$LOGIN_USER")"
+  [ -n "$u_ans" ] && LOGIN_USER="$u_ans"
+  l_ans="$(ask "  Local port-forward (e.g. 8080:80, Enter=none)" "")"
+  [ -n "$l_ans" ] && PORT_FWD_ARG="$l_ans"
+  tip_ssh="make ssh NODE=${TARGET_NODE}"
+  [ "$LOGIN_USER" != "${KEY_USER:-${TARGET_NODE_USER:-cb-user}}" ] && tip_ssh+=" USER=${LOGIN_USER}"
+  [ -n "$PORT_FWD_ARG" ] && tip_ssh+=" L=${PORT_FWD_ARG}"
+  printf '  %b\n' "${DM}💡 Direct command: ${RS}${CY}${tip_ssh}${RS}"
+fi
+
 SSH_BASE_OPTS=(
   -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null
