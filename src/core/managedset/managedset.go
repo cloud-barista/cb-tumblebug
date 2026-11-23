@@ -22,7 +22,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"net"
 	"net/url"
 	"sort"
 	"strings"
@@ -321,11 +320,8 @@ func ValidateServerUrl(rawUrl string) (string, error) {
 	if u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
 		return "", fmt.Errorf("invalid url: expected scheme://host[:port][/path] without credentials, query or fragment")
 	}
-	if ip := net.ParseIP(u.Hostname()); ip != nil && (ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified()) {
-		return "", fmt.Errorf("invalid url: link-local and metadata addresses are not allowed")
-	}
-	if strings.EqualFold(u.Hostname(), "metadata.google.internal") || strings.EqualFold(u.Hostname(), "metadata") {
-		return "", fmt.Errorf("invalid url: metadata hosts are not allowed")
+	if err := checkHost(u.Hostname()); err != nil {
+		return "", fmt.Errorf("invalid url: %w", err)
 	}
 	return strings.TrimRight(u.String(), "/"), nil
 }

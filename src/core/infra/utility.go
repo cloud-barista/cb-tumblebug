@@ -1728,6 +1728,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 				} else {
 					// Create new Infra (either first Node in single Infra mode, or each Node in separate Infra mode)
 					req := model.InfraReq{
+						Name: infraName, Description: "Infra for CSP managed Nodes",
 						NodeGroups: []model.CreateNodeGroupReq{{
 							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempNodeGroupName,
 							Description: "Ref name: " + r.RefNameOrId + ". CSP managed Node (registered to CB-TB)",

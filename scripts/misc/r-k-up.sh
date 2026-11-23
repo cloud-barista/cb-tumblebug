@@ -21,13 +21,14 @@
 #   WITH_OBS=0       (1=also install Prometheus + Grafana stack in monitoring namespace)
 #   KIND_WORKERS=0   (0=single-node kind, N=1 control-plane + N workers)
 
+{
 set -euo pipefail
 
 TARGET_RAW="${REMOTE_HOST:-${HOST:-${IP:-}}}"
 NS_FILTER="${NS:-}"
 USER_IN="${SSH_USER:-}"
 KEY_IN="${SSH_KEY:-}"
-PORT_IN="${SSH_PORT:-22}"
+PORT_IN="${SSH_PORT:-}"
 HOLDER_IN="${HOLDER:-}"
 
 K8S_NAMESPACE="${K8S_NAMESPACE:-cb-tumblebug}"
@@ -37,12 +38,16 @@ KIND_VERSION="${KIND_VERSION:-v0.32.0}"
 KIND_WORKERS="${KIND_WORKERS:-0}"
 KIND_TAINT_CP="${KIND_TAINT_CP:-false}"
 
+WITH_GATEWAY_SET="${WITH_GATEWAY+x}"
+WITH_OBS_SET="${WITH_OBS+x}"
 WITH_GATEWAY="${WITH_GATEWAY:-1}"
 WITH_TLS="${WITH_TLS:-1}"
 WITH_MCP="${WITH_MCP:-1}"
 WITH_AGW="${WITH_AGW:-1}"
 WITH_MCP_AUTH="${WITH_MCP_AUTH:-1}"
 WITH_OBS="${WITH_OBS:-0}"
+AUTO_YES="${YES:-0}"
+OPEN_TUNNEL="${OPEN_TUNNEL:-}"
 
 CY=$'\033[36m'; GN=$'\033[32m'; YL=$'\033[33m'; RD=$'\033[31m'; DM=$'\033[2m'; BD=$'\033[1m'; RS=$'\033[0m'
 
@@ -173,7 +178,7 @@ PY
       IFS=$'\t' read -r RES_IP RES_SKEY RES_USER RES_PORT RES_NS RES_INFRA RES_NODE <<< "$FOUND"
       HOST_VAL="$RES_IP"
       [ -z "$USER_VAL" ] && USER_VAL="$RES_USER"
-      [ "$PORT_IN" = "22" ] && [ -n "$RES_PORT" ] && PORT_IN="$RES_PORT"
+      [ -z "$PORT_IN" ] && [ -n "$RES_PORT" ] && PORT_IN="$RES_PORT"
       if [ -n "$RES_SKEY" ]; then
         CURL_KEY=(-sS -k -u "${API_USER}:${API_PASS}" --max-time 8)
         [ -n "$HOLDER_IN" ] && CURL_KEY+=(-H "X-Credential-Holder: ${HOLDER_IN}")
@@ -195,7 +200,7 @@ sys.stdout.write(pk)
         if [ -s "${TMP_DIR}/key.pem" ]; then
           chmod 600 "${TMP_DIR}/key.pem"
           KEY_VAL="${TMP_DIR}/key.pem"
-          printf '%b\n' "${GN}✔ Auto-discovered target from local CB-Tumblebug:${RS} ${BD}${USER_VAL}@${HOST_VAL}:${PORT_IN}${RS} ${DM}(${RES_NS}/${RES_INFRA}/${RES_NODE})${RS}"
+          printf '%b\n' "${GN}✔ Auto-discovered target from local CB-Tumblebug:${RS} ${BD}${USER_VAL}@${HOST_VAL}:${PORT_IN:-22}${RS} ${DM}(${RES_NS}/${RES_INFRA}/${RES_NODE})${RS}"
         fi
       fi
     fi
@@ -203,7 +208,31 @@ sys.stdout.write(pk)
   if [ -n "$DISC_PF_PID" ]; then kill "$DISC_PF_PID" 2>/dev/null || true; DISC_PF_PID=""; fi
 fi
 
-USER_VAL="${USER_VAL:-cb-user}"
+ssh_config_has_host() {
+  local h="$1" f
+  [ -n "$h" ] || return 1
+  for f in "$HOME/.ssh/config" "$HOME"/.ssh/config.d/*; do
+    [ -f "$f" ] || continue
+    awk -v t="$h" '
+      tolower($1)=="host" {
+        for (i=2; i<=NF; i++) {
+          if ($i != "*" && $i !~ /[*?!]/ && $i == t) { found=1; exit 0 }
+        }
+      }
+      END { exit(found ? 0 : 1) }
+    ' "$f" 2>/dev/null && return 0
+  done
+  return 1
+}
+
+if [ -z "$KEY_VAL" ] && ssh_config_has_host "$HOST_VAL"; then
+  SSH_TARGET="${USER_VAL:+${USER_VAL}@}${HOST_VAL}"
+else
+  USER_VAL="${USER_VAL:-cb-user}"
+  PORT_IN="${PORT_IN:-22}"
+  SSH_TARGET="${USER_VAL}@${HOST_VAL}"
+fi
+
 SSH_OPTS=(
   -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null
@@ -211,28 +240,48 @@ SSH_OPTS=(
   -o ConnectTimeout=15
   -o ServerAliveInterval=30
   -o ServerAliveCountMax=6
-  -p "$PORT_IN"
 )
+[ -n "$PORT_IN" ] && SSH_OPTS+=(-p "$PORT_IN")
 [ -n "$KEY_VAL" ] && SSH_OPTS+=(-i "$KEY_VAL")
 
-if ! ssh "${SSH_OPTS[@]}" -o BatchMode=yes "${USER_VAL}@${HOST_VAL}" true >/dev/null 2>&1; then
+if ! ssh "${SSH_OPTS[@]}" -o BatchMode=yes "$SSH_TARGET" true >/dev/null 2>&1; then
   if [ -z "$KEY_VAL" ] && [ -t 0 ]; then
-    printf '%b\n' "${YL}⚠ Could not connect to ${USER_VAL}@${HOST_VAL} without an SSH key.${RS}"
+    printf '%b\n' "${YL}⚠ Could not connect to ${SSH_TARGET} without an SSH key.${RS}"
     read -rp "  SSH private key path [$HOME/.ssh/id_rsa]: " k_in
     KEY_VAL="${k_in:-$HOME/.ssh/id_rsa}"; KEY_VAL="${KEY_VAL/#\~/$HOME}"
     SSH_OPTS+=(-i "$KEY_VAL")
   else
-    printf '%b\n' "${RD}✖ Cannot reach ${USER_VAL}@${HOST_VAL}:${PORT_IN} over SSH.${RS}"
+    printf '%b\n' "${RD}✖ Cannot reach ${SSH_TARGET}${PORT_IN:+:$PORT_IN} over SSH.${RS}"
     exit 1
   fi
 fi
 
-printf '%b\n' "${BD}${CY}▌ Remote CB-Tumblebug Kubernetes Bootstrap${RS} ${DM}(target: ${USER_VAL}@${HOST_VAL})${RS}"
+printf '%b\n' "${BD}${CY}▌ Remote CB-Tumblebug Kubernetes Bootstrap${RS} ${DM}(target: ${SSH_TARGET})${RS}"
+
+# Interactive profile selection when running in a terminal without YES=1 or explicit WITH_* overrides
+if [ -t 0 ] && [ "$AUTO_YES" != "1" ] && [ -z "$WITH_GATEWAY_SET" ] && [ -z "$WITH_OBS_SET" ]; then
+  printf '\n  %b\n' "${BD}Select remote deployment profile:${RS}"
+  printf "    ${CY}1)${RS} Standard (Recommended) ${DM}— Envoy Gateway (:8080/:8443) + MCP + agentgateway [default]${RS}\n"
+  printf "    ${CY}2)${RS} Full                   ${DM}— Standard + Observability (Prometheus + Grafana)${RS}\n"
+  printf "    ${CY}3)${RS} Minimal                ${DM}— Core CB-Tumblebug + Spider + MapUI + OpenBao only${RS}\n"
+  read -rp "  Profile # [1]: " prof_ans </dev/tty || prof_ans="1"
+  case "${prof_ans:-1}" in
+    2) WITH_GATEWAY=1; WITH_TLS=1; WITH_MCP=1; WITH_AGW=1; WITH_MCP_AUTH=1; WITH_OBS=1 ;;
+    3) WITH_GATEWAY=0; WITH_TLS=0; WITH_MCP=0; WITH_AGW=0; WITH_MCP_AUTH=0; WITH_OBS=0 ;;
+    *) WITH_GATEWAY=1; WITH_TLS=1; WITH_MCP=1; WITH_AGW=1; WITH_MCP_AUTH=1; WITH_OBS=0 ;;
+  esac
+  if [ -z "$OPEN_TUNNEL" ]; then
+    read -rp "  Open local browser SSH tunnel automatically after deploy? [Y/n]: " tun_ans </dev/tty || tun_ans="y"
+    case "$tun_ans" in [nN]*) OPEN_TUNNEL=0 ;; *) OPEN_TUNNEL=1 ;; esac
+  fi
+  printf '\n  %b\n\n' "${DM}💡 Direct non-interactive command: ${RS}${CY}make k-up HOST=${TARGET_RAW} YES=1${RS}"
+fi
+[ -z "$OPEN_TUNNEL" ] && OPEN_TUNNEL=1
 
 # --- 2) Install remote host prerequisites + clone/sync repo ------------------
 printf '%b\n' "${CY}[1/3]${RS} Installing host prerequisites (Docker, kubectl, helm, kind, uv, sysctls) on ${HOST_VAL}..."
-ssh "${SSH_OPTS[@]}" "${USER_VAL}@${HOST_VAL}" "cat > /tmp/cb-k-prereqs.sh" < ./scripts/misc/k-prereqs.sh
-ssh "${SSH_OPTS[@]}" "${USER_VAL}@${HOST_VAL}" "
+ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "cat > /tmp/cb-k-prereqs.sh" < ./scripts/misc/k-prereqs.sh
+ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
   set -e
   YES=1 INSTALL_DOCKER=1 KIND_VERSION='${KIND_VERSION}' bash /tmp/cb-k-prereqs.sh
   rm -f /tmp/cb-k-prereqs.sh
@@ -244,7 +293,7 @@ ssh "${SSH_OPTS[@]}" "${USER_VAL}@${HOST_VAL}" "
 "
 
 printf '%b\n' "${CY}[2/3]${RS} Preparing CB-Tumblebug repository & syncing bootstrapper scripts on ${HOST_VAL}..."
-ssh "${SSH_OPTS[@]}" "${USER_VAL}@${HOST_VAL}" '
+ssh "${SSH_OPTS[@]}" "$SSH_TARGET" '
   set -e
   CB_DIR="$HOME/go/src/github.com/cloud-barista/cb-tumblebug"
   mkdir -p "$(dirname "$CB_DIR")" "$HOME/.cloud-barista"
@@ -262,9 +311,11 @@ ssh "${SSH_OPTS[@]}" "${USER_VAL}@${HOST_VAL}" '
   fi
 '
 
-# Overlay up-to-date local orchestration files (never copies local .env, credentials, or values-*.yaml state)
+# Overlay up-to-date local orchestration files & tracked release chart values
+# (never copies local .env, credentials, or gitignored values-*.yaml dev-build overrides)
 tar -cf - \
   Makefile \
+  deployments/helm/cb-tumblebug/values.yaml \
   scripts/set-tb.sh \
   scripts/restore-assets.sh \
   scripts/backup-assets.sh \
@@ -273,13 +324,15 @@ tar -cf - \
   scripts/misc/pf-watch.sh \
   scripts/misc/ssh-tunnel.sh \
   scripts/misc/ssh-node.sh \
+  scripts/misc/ssh-config.sh \
+  scripts/misc/init-wizard.sh \
   scripts/misc/r-k-up.sh 2>/dev/null \
-  | ssh "${SSH_OPTS[@]}" "${USER_VAL}@${HOST_VAL}" 'tar -xf - -C "$HOME/go/src/github.com/cloud-barista/cb-tumblebug"'
+  | ssh "${SSH_OPTS[@]}" "$SSH_TARGET" 'tar -xf - -C "$HOME/go/src/github.com/cloud-barista/cb-tumblebug"'
 
 # --- 3) Deploy kind + Envoy Gateway + CB-Tumblebug Helm stack + port-forward --
 printf '%b\n' "${CY}[3/3]${RS} Deploying Kubernetes cluster & CB-Tumblebug stack on ${HOST_VAL}..."
 
-ssh "${SSH_OPTS[@]}" "${USER_VAL}@${HOST_VAL}" \
+ssh "${SSH_OPTS[@]}" "$SSH_TARGET" \
   "K8S_NAMESPACE='${K8S_NAMESPACE}' HELM_RELEASE='${HELM_RELEASE}' KIND_CLUSTER_NAME='${KIND_CLUSTER_NAME}' \
    KIND_WORKERS='${KIND_WORKERS}' KIND_TAINT_CP='${KIND_TAINT_CP}' \
    WITH_GATEWAY='${WITH_GATEWAY}' WITH_TLS='${WITH_TLS}' WITH_MCP='${WITH_MCP}' \
@@ -365,7 +418,16 @@ else
 fi
 REMOTE_EOF
 
-printf '\n%b\n' "${GN}✔ Remote CB-Tumblebug Kubernetes deployment is Ready on ${USER_VAL}@${HOST_VAL}!${RS}"
-printf '%b\n' "${BD}Next steps from THIS bootstrapper machine:${RS}"
-printf '%b\n' "  1) Initialize credentials, DB backup & templates:  ${CY}make k-init HOST=${TARGET_RAW} ARGS=\"-y\"${RS}"
-printf '%b\n' "  2) Open local browser tunnel (MapUI / API / MCP):  ${CY}make k-tunnel HOST=${TARGET_RAW}${RS}"
+printf '\n%b\n' "${GN}✔ Remote CB-Tumblebug Kubernetes deployment is Ready on ${SSH_TARGET}!${RS}"
+printf '%b\n' "${DM}  (Note: ports :8080/:8443 printed above bind to 127.0.0.1 inside the remote VM; local tunnel maps them to +10000 ports below so they never collide with your local cluster.)${RS}"
+
+if [ "${OPEN_TUNNEL:-1}" = "1" ]; then
+  echo ""
+  REMOTE_HOST="$TARGET_RAW" NS="$NS_FILTER" SSH_USER="$USER_IN" SSH_KEY="$KEY_IN" SSH_PORT="$PORT_IN" ./scripts/misc/ssh-tunnel.sh || true
+fi
+
+printf '\n%b\n' "${BD}Next step from THIS bootstrapper machine:${RS}"
+printf '%b\n' "  1) Initialize credentials, DB backup & templates:  ${CY}make k-init${RS}  ${DM}(or: make k-init HOST=${TARGET_RAW} YES=1)${RS}"
+printf '%b\n' "  2) Share SSH/tunnel access to another workstation: ${CY}make ssh-config HOST=${TARGET_RAW}${RS}"
+exit 0
+}

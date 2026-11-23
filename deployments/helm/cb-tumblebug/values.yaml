@@ -6,11 +6,11 @@
 # Install ONE release per namespace.
 
 images:
-  tumblebug: cloudbaristaorg/cb-tumblebug:0.13.9
-  spider: cloudbaristaorg/cb-spider:0.13.24
+  tumblebug: cloudbaristaorg/cb-tumblebug:0.13.10
+  spider: cloudbaristaorg/cb-spider:0.14.0
   terrarium: cloudbaristaorg/mc-terrarium:0.1.4
-  mapui: cloudbaristaorg/cb-mapui:0.13.19
-  mcp: cloudbaristaorg/cb-tumblebug-mcp-server:0.13.9
+  mapui: cloudbaristaorg/cb-mapui:0.14.0
+  mcp: cloudbaristaorg/cb-tumblebug-mcp-server:0.13.10
   etcd: gcr.io/etcd-development/etcd:v3.6.11
   postgres: postgres:16-alpine
   openbao: openbao/openbao:2.5.1

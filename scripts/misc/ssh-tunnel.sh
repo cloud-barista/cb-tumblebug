@@ -56,10 +56,53 @@ detect_local_tb() {
   return 1
 }
 
+# Check whether an explicit (non-wildcard) Host stanza exists in ~/.ssh/config(.d)
+ssh_config_has_host() {
+  local h="$1" f
+  [ -n "$h" ] || return 1
+  for f in "$HOME/.ssh/config" "$HOME"/.ssh/config.d/*; do
+    [ -f "$f" ] || continue
+    awk -v t="$h" '
+      tolower($1)=="host" {
+        for (i=2; i<=NF; i++) {
+          if ($i != "*" && $i !~ /[*?!]/ && $i == t) { found=1; exit 0 }
+        }
+      }
+      END { exit(found ? 0 : 1) }
+    ' "$f" 2>/dev/null && return 0
+  done
+  return 1
+}
+
+# List `# >>> cb-tumblebug:<alias> >>>` entries exported via `make ssh-config`
+list_ssh_config_cb_hosts() {
+  [ -f "$HOME/.ssh/config" ] || return 0
+  awk '
+    /^# >>> cb-tumblebug:/ {
+      alias=$3; sub(/^cb-tumblebug:/, "", alias)
+      hn=""; usr="cb-user"; prt="22"; in_blk=1; main_host=0; next
+    }
+    /^# <<< cb-tumblebug:/ {
+      if (in_blk && alias != "" && hn != "") {
+        printf "ssh-config\t%s\t%s\t%s\t%s\t%s\t\n", alias, alias, hn, usr, prt
+      }
+      in_blk=0; alias=""; next
+    }
+    in_blk {
+      k=tolower($1)
+      if (k=="host") { main_host = ($2 == alias ? 1 : 0) }
+      else if (main_host && k=="hostname") { hn=$2 }
+      else if (main_host && k=="user")     { usr=$2 }
+      else if (main_host && k=="port")     { prt=$2 }
+    }
+  ' "$HOME/.ssh/config" 2>/dev/null || true
+}
+
 # --- 1) remote target: non-interactive HOST=... or interactive discovery ------
 TARGET_ARG="${REMOTE_HOST:-${HOST:-${IP:-}}}"
-HOST=""; USER="${SSH_USER:-cb-user}"; KEY="${SSH_KEY:-}"; PORT="${SSH_PORT:-22}"
+HOST=""; USER="${SSH_USER:-}"; KEY="${SSH_KEY:-}"; PORT="${SSH_PORT:-}"
 [ -n "$KEY" ] && KEY="${KEY/#\~/$HOME}"
+RESOLVED_FROM_TB=0
 
 if [ -n "$TARGET_ARG" ]; then
   case "$TARGET_ARG" in
@@ -98,67 +141,135 @@ PY
       IFS=$'\t' read -r RES_IP RES_SKEY RES_USER RES_PORT RES_NS <<< "$FOUND"
       HOST="$RES_IP"
       [ -z "${SSH_USER:-}" ] && USER="$RES_USER"
-      [ "${SSH_PORT:-22}" = "22" ] && PORT="$RES_PORT"
+      [ -z "${SSH_PORT:-}" ] && PORT="$RES_PORT"
       if [ -n "$RES_SKEY" ]; then
         KEY="$STATE/key.pem"
         curl -sS -k -u "${API_USER}:${API_PASS}" "${LOCAL_TB}/ns/${RES_NS}/resources/sshKey/${RES_SKEY}" \
           | python3 -c "import json,sys;d=json.load(sys.stdin);k=(d.get('privateKey') or '').replace('\\\\n','\n');sys.stdout.write(k if k.endswith('\n') else k+'\n')" > "$KEY" 2>/dev/null || true
         chmod 600 "$KEY" 2>/dev/null || true
       fi
+      RESOLVED_FROM_TB=1
     fi
   fi
-  [ -n "$KEY" ] || KEY="$HOME/.ssh/id_rsa"
 else
-  DEF_TB="$(detect_local_tb || echo "http://localhost:1323/tumblebug")"
-  if [ "$(ask "Discover target from a cb-tumblebug server? (y/n)" "y")" = "y" ]; then
-    TB_IN=$(ask "  cb-tumblebug base URL" "$DEF_TB")
-    TB_IN="${TB_IN%/}"
-    [[ "$TB_IN" == http* ]] || TB_IN="http://${TB_IN}"
-    [[ "$TB_IN" == */tumblebug ]] || TB_IN="${TB_IN}/tumblebug"
-    NS=$(ask "  namespace" "default")
-    mapfile -t INFRAS < <(curl -s -k -u "${API_USER}:${API_PASS}" "${TB_IN}/ns/${NS}/infra?option=id" 2>/dev/null \
-        | python3 -c "import json,sys;print('\n'.join(json.load(sys.stdin).get('output') or []))" 2>/dev/null || true)
-    if [ "${#INFRAS[@]}" -eq 0 ]; then
-      printf '%b\n' "${YL}⚠ no infras found via $TB_IN — switch to manual entry${RS}"
-    else
-      if [ "${#INFRAS[@]}" -eq 1 ]; then INFRA="${INFRAS[0]}"; else
-        echo "  infras:"; i=1; for x in "${INFRAS[@]}"; do printf "   %d) %s\n" "$i" "$x"; i=$((i+1)); done
-        sel=$(ask "  pick" "1"); INFRA="${INFRAS[$((sel-1))]}"
+  LOCAL_TB="$(detect_local_tb || true)"
+  VM_CANDIDATES=()
+  if [ -n "$LOCAL_TB" ]; then
+    mapfile -t VM_CANDIDATES < <(
+      LOCAL_TB="$LOCAL_TB" API_USER="$API_USER" API_PASS="$API_PASS" python3 - <<'PY' 2>/dev/null || true
+import json, os, subprocess
+tb = os.environ["LOCAL_TB"]; u = os.environ["API_USER"]; pw = os.environ["API_PASS"]
+def get_json(p):
+    try:
+        return json.loads(subprocess.check_output(["curl","-sS","-k","-u",f"{u}:{pw}","--max-time","4",tb+p], stderr=subprocess.DEVNULL).decode())
+    except Exception:
+        return {}
+ns_list = [x.get("id") for x in (get_json("/ns").get("ns") or []) if x.get("id")]
+if "default" in ns_list:
+    ns_list.remove("default"); ns_list.insert(0, "default")
+for ns in ns_list:
+    for iid in (get_json(f"/ns/{ns}/infra?option=id").get("output") or []):
+        d = get_json(f"/ns/{ns}/infra/{iid}")
+        for v in (d.get("node") or d.get("vm") or []):
+            ip = v.get("publicIP") or v.get("publicIp") or ""
+            if ip:
+                nid = v.get("id") or ""
+                usr = v.get("nodeUserName") or v.get("vmUserName") or "cb-user"
+                prt = v.get("sshPort") or 22
+                skey = v.get("sshKeyId") or v.get("sshKey") or ""
+                print(f"{ns}\t{iid}\t{nid}\t{ip}\t{usr}\t{prt}\t{skey}")
+PY
+    )
+  fi
+
+  # Also append cb-tumblebug hosts from ~/.ssh/config (for other workstations via `make ssh-config`)
+  while IFS= read -r cfg_row; do
+    [ -n "$cfg_row" ] || continue
+    IFS=$'\t' read -r _ cfg_alias _ cfg_ip _ _ _ <<< "$cfg_row"
+    dup=0
+    for existing in "${VM_CANDIDATES[@]}"; do
+      IFS=$'\t' read -r _ e_inf e_nid e_ip _ _ _ <<< "$existing"
+      if [ "$cfg_alias" = "$e_inf" ] || [ "$cfg_alias" = "$e_nid" ] || [ "$cfg_ip" = "$e_ip" ]; then
+        dup=1; break
       fi
-      printf '%b\n' "  ${DM}using infra:${RS} $INFRA"
-      NODE_JSON=$(curl -s -k -u "${API_USER}:${API_PASS}" "${TB_IN}/ns/${NS}/infra/${INFRA}" 2>/dev/null || true)
-      NODE_LINE=$(printf '%s' "$NODE_JSON" | python3 -c "
-import json,sys
-try: d=json.load(sys.stdin)
-except Exception: sys.exit(0)
-for v in (d.get('node') or d.get('vm') or []):
-    ip=v.get('publicIP') or v.get('publicIp')
-    if ip:
-        print(ip, v.get('sshKeyId') or v.get('sshKey') or '', v.get('nodeUserName') or v.get('vmUserName') or v.get('userName') or 'cb-user', v.get('sshPort') or 22); break
-" 2>/dev/null || true)
-      SKEY=""; NUSER=""; NPORT=""
-      read -r HOST SKEY NUSER NPORT <<< "$NODE_LINE" || true
-      [ -n "${NUSER:-}" ] && USER="$NUSER"
-      [ -n "${NPORT:-}" ] && PORT="$NPORT"
-      if [ -n "${SKEY:-}" ]; then
-        KEY="$STATE/key.pem"
-        curl -s -k -u "${API_USER}:${API_PASS}" "${TB_IN}/ns/${NS}/resources/sshKey/${SKEY}" 2>/dev/null \
-          | python3 -c "import json,sys;d=json.load(sys.stdin);k=(d.get('privateKey') or '').replace('\\\\n','\n');sys.stdout.write(k if k.endswith('\n') else k+'\n')" > "$KEY" 2>/dev/null || true
-        chmod 600 "$KEY" 2>/dev/null || true
-        [ -s "$KEY" ] && printf '%b\n' "  ${DM}ssh key fetched → $KEY${RS}"
+    done
+    [ "$dup" = "0" ] && VM_CANDIDATES+=("$cfg_row")
+  done < <(list_ssh_config_cb_hosts)
+
+  if [ "${#VM_CANDIDATES[@]}" -gt 0 ]; then
+    printf '\n  %b\n' "${BD}Select remote CB-Tumblebug VM:${RS}"
+    idx=1
+    for row in "${VM_CANDIDATES[@]}"; do
+      IFS=$'\t' read -r c_ns c_inf c_nid c_ip c_usr c_prt _ <<< "$row"
+      if [ "$c_ns" = "ssh-config" ]; then
+        printf "    ${CY}%d)${RS} ${BD}%s${RS} ${DM}(~/.ssh/config · %s@%s:%s)${RS}\n" "$idx" "$c_inf" "$c_usr" "$c_ip" "$c_prt"
+      else
+        printf "    ${CY}%d)${RS} ${BD}%s/%s${RS} ${DM}(%s · %s@%s:${c_prt})${RS}\n" "$idx" "$c_ns" "$c_inf" "$c_nid" "$c_usr" "$c_ip"
       fi
+      idx=$((idx + 1))
+    done
+    manual_idx=$idx
+    printf "    ${CY}%d)${RS} Enter remote host / IP manually\n" "$manual_idx"
+    sel=$(ask "  Target #" "1")
+    if [[ "$sel" =~ ^[0-9]+$ ]] && [ "$sel" -ge 1 ] && [ "$sel" -lt "$manual_idx" ]; then
+      picked="${VM_CANDIDATES[$((sel - 1))]}"
+      IFS=$'\t' read -r c_ns c_inf c_nid c_ip c_usr c_prt c_skey <<< "$picked"
+      TARGET_ARG="$c_inf"
+      if [ "$c_ns" = "ssh-config" ]; then
+        HOST="$c_inf"
+      else
+        HOST="$c_ip"; USER="$c_usr"; PORT="$c_prt"
+        RESOLVED_FROM_TB=1
+        if [ -n "$c_skey" ]; then
+          KEY="$STATE/key.pem"
+          curl -s -k -u "${API_USER}:${API_PASS}" "${LOCAL_TB}/ns/${c_ns}/resources/sshKey/${c_skey}" 2>/dev/null \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);k=(d.get('privateKey') or '').replace('\\\\n','\n');sys.stdout.write(k if k.endswith('\n') else k+'\n')" > "$KEY" 2>/dev/null || true
+          chmod 600 "$KEY" 2>/dev/null || true
+        fi
+      fi
+      printf '  %b\n' "${DM}💡 Direct command: ${RS}${CY}make k-tunnel HOST=${c_inf}${RS}"
     fi
   fi
-  [ -n "$HOST" ] || HOST=$(ask "  remote host / public IP" "")
-  [ -n "$KEY" ]  || { KEY=$(ask "  ssh private key path" "$HOME/.ssh/id_rsa"); KEY="${KEY/#\~/$HOME}"; }
-  USER=$(ask "  ssh user" "$USER")
+
+  if [ -z "$HOST" ]; then
+    HOST=$(ask "  remote host / SSH alias / public IP" "")
+    if ! ssh_config_has_host "$HOST"; then
+      KEY=$(ask "  ssh private key path" "$HOME/.ssh/id_rsa"); KEY="${KEY/#\~/$HOME}"
+      USER=$(ask "  ssh user" "${USER:-cb-user}")
+    fi
+  fi
 fi
 
-printf '%b\n' "  ${DM}target:${RS} $USER@$HOST:$PORT  ${DM}key:${RS} $KEY"
+# Build final SSH target & options (respecting ~/.ssh/config when HOST is a configured alias)
+if [ "$RESOLVED_FROM_TB" = "0" ] && ssh_config_has_host "$HOST"; then
+  SSH_DEST="${USER:+${USER}@}${HOST}"
+else
+  USER="${USER:-cb-user}"
+  PORT="${PORT:-22}"
+  SSH_DEST="${USER}@${HOST}"
+fi
+
+SSH_CALL=(ssh $SSH_OPTS)
+[ -n "$PORT" ] && SSH_CALL+=(-p "$PORT")
+[ -n "$KEY" ]  && SSH_CALL+=(-i "$KEY")
+
+if [ "${DRY_RUN:-}" != "1" ] && ! "${SSH_CALL[@]}" -o BatchMode=yes "$SSH_DEST" true >/dev/null 2>&1; then
+  if [ -z "$KEY" ] && [ -t 0 ]; then
+    printf '%b\n' "  ${YL}⚠ Could not connect to ${SSH_DEST} automatically.${RS}"
+    KEY=$(ask "  ssh private key path" "$HOME/.ssh/id_rsa"); KEY="${KEY/#\~/$HOME}"
+    USER=$(ask "  ssh user" "${USER:-cb-user}")
+    SSH_DEST="${USER}@${HOST}"
+    SSH_CALL=(ssh $SSH_OPTS)
+    [ -n "$PORT" ] && SSH_CALL+=(-p "$PORT")
+    [ -n "$KEY" ]  && SSH_CALL+=(-i "$KEY")
+  fi
+fi
+
+printf '%b\n' "  ${DM}target:${RS} ${SSH_DEST}${PORT:+:$PORT}  ${DM}key:${RS} ${KEY:-(ssh-config / default)}"
 
 # --- 2) detect which services are listening on the remote node ---------------
 printf '%b' "  detecting remote services... "
-DETECTED=$(ssh $SSH_OPTS -p "$PORT" -i "$KEY" "$USER@$HOST" \
+DETECTED=$("${SSH_CALL[@]}" "$SSH_DEST" \
   "ss -tlnH 2>/dev/null | awk '{print \$4}' | grep -oE '[0-9]+\$' | sort -u" 2>/dev/null \
   | grep -E '^(8443|8080|1323|1324|3000)$' | sort -u | tr '\n' ' ' || true)
 printf '%b\n' "${DETECTED:-none}"
@@ -167,16 +278,16 @@ has(){ printf ' %s ' "$DETECTED" | grep -q " $1 "; }
 # If nothing is forwarded yet on a remote K8s cluster, auto-start k-port-forward once!
 if [ -z "$DETECTED" ]; then
   printf '%b\n' "  ${YL}↳ No active forwards detected; attempting to start remote k-port-forward...${RS}"
-  ssh $SSH_OPTS -p "$PORT" -i "$KEY" "$USER@$HOST" \
+  "${SSH_CALL[@]}" "$SSH_DEST" \
     'cd "$HOME/go/src/github.com/cloud-barista/cb-tumblebug" 2>/dev/null && make --no-print-directory k-port-forward </dev/null >/dev/null 2>&1 || true' || true
   sleep 2
-  DETECTED=$(ssh $SSH_OPTS -p "$PORT" -i "$KEY" "$USER@$HOST" \
+  DETECTED=$("${SSH_CALL[@]}" "$SSH_DEST" \
     "ss -tlnH 2>/dev/null | awk '{print \$4}' | grep -oE '[0-9]+\$' | sort -u" 2>/dev/null \
     | grep -E '^(8443|8080|1323|1324|3000)$' | sort -u | tr '\n' ' ' || true)
   printf '%b\n' "  re-detected remote services: ${DETECTED:-none}"
 fi
 
-MCPBK=$(ssh $SSH_OPTS -p "$PORT" -i "$KEY" "$USER@$HOST" \
+MCPBK=$("${SSH_CALL[@]}" "$SSH_DEST" \
   "kubectl get svc -A -o name 2>/dev/null | grep -oE 'agentgateway|cb-tumblebug-mcp-server' | head -1" 2>/dev/null || true)
 
 # --- 3) choose what to tunnel (default from detection) -----------------------
@@ -215,14 +326,19 @@ for i in "${!RP[@]}"; do LP+=("$(free_port $(( ${RP[$i]} + 10000 )) )"); done
 
 # --- 5) open the tunnel ------------------------------------------------------
 FWD=(); for i in "${!RP[@]}"; do FWD+=(-L "${LP[$i]}:127.0.0.1:${RP[$i]}"); done
+TUN_SSH=(ssh -N $SSH_OPTS)
+[ -n "$PORT" ] && TUN_SSH+=(-p "$PORT")
+TUN_SSH+=(-o ExitOnForwardFailure=yes "${FWD[@]}")
+[ -n "$KEY" ]  && TUN_SSH+=(-i "$KEY")
+TUN_SSH+=("$SSH_DEST")
 if [ "${DRY_RUN:-}" = "1" ]; then
-  printf '%b\n' "${DM}(dry-run) would open:${RS} ssh -N -p $PORT ${FWD[*]} $USER@$HOST"
+  printf '%b\n' "${DM}(dry-run) would open:${RS} ssh -N ${PORT:+-p $PORT }${FWD[*]} $SSH_DEST"
 else
-  printf '%b\n' "${DM}opening tunnel:${RS} ssh -N -p $PORT ${FWD[*]} $USER@$HOST"
+  printf '%b\n' "${DM}opening tunnel:${RS} ssh -N ${PORT:+-p $PORT }${FWD[*]} $SSH_DEST"
   if command -v setsid >/dev/null 2>&1; then
-    setsid ssh -N $SSH_OPTS -p "$PORT" -o ExitOnForwardFailure=yes "${FWD[@]}" -i "$KEY" "$USER@$HOST" </dev/null > "$LOG" 2>&1 &
+    setsid "${TUN_SSH[@]}" </dev/null > "$LOG" 2>&1 &
   else
-    nohup ssh -N $SSH_OPTS -p "$PORT" -o ExitOnForwardFailure=yes "${FWD[@]}" -i "$KEY" "$USER@$HOST" </dev/null > "$LOG" 2>&1 &
+    nohup "${TUN_SSH[@]}" </dev/null > "$LOG" 2>&1 &
   fi
   echo $! > "$PIDFILE"
   sleep 3

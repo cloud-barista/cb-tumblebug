@@ -327,25 +327,18 @@ func buildPublishPayload(kind string, data json.RawMessage) ([]byte, error) {
 }
 
 func publishToUrl(info *model.NotifierInfo, targetUrl string, payload []byte) (string, error) {
-	req, err := http.NewRequest(http.MethodPost, targetUrl+"/"+info.Topic, bytes.NewReader(payload))
-	if err != nil {
-		return "", err
-	}
-	if info.WriteToken != "" {
-		req.Header.Set("Authorization", "Bearer "+info.WriteToken)
-	}
 	client, err := httpClientForUrl(info, targetUrl, 15*time.Second)
 	if err != nil {
 		return "", err
 	}
-	resp, err := client.Do(req)
+	resp, err := client.Do(context.Background(), http.MethodPost, targetUrl+"/"+info.Topic, bytes.NewReader(payload), bearer(info.WriteToken))
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-	raw, _ := io.ReadAll(resp.Body)
+	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("ntfy publish failed (%s): %s %s", targetUrl, resp.Status, strings.TrimSpace(string(raw)))
+		return "", fmt.Errorf("ntfy publish failed (%s): %s %s", targetUrl, resp.Status, managedset.ErrorBody(raw))
 	}
 	var out struct {
 		Id string `json:"id"`
@@ -483,7 +476,7 @@ func health(info *model.NotifierInfo) error {
 		if err != nil {
 			return err
 		}
-		resp, err := client.Get(targetUrl + "/v1/health")
+		resp, err := client.Do(context.Background(), http.MethodGet, targetUrl+"/v1/health", nil, nil)
 		if err != nil {
 			return fmt.Errorf("%s: %w", targetUrl, err)
 		}
@@ -495,8 +488,16 @@ func health(info *model.NotifierInfo) error {
 	return nil
 }
 
-func httpClientForUrl(info *model.NotifierInfo, targetUrl string, timeout time.Duration) (*http.Client, error) {
-	transport := &http.Transport{Proxy: http.ProxyFromEnvironment}
+// bearer returns a request preparer that sets the token, or nil when there is none.
+func bearer(token string) func(*http.Request) {
+	if token == "" {
+		return nil
+	}
+	return func(req *http.Request) { req.Header.Set("Authorization", "Bearer "+token) }
+}
+
+func httpClientForUrl(info *model.NotifierInfo, targetUrl string, timeout time.Duration) (*managedset.ServerClient, error) {
+	var tlsConfig *tls.Config
 	if info.CaCert != "" {
 		pinned := x509.NewCertPool()
 		if !pinned.AppendCertsFromPEM([]byte(info.CaCert)) {
@@ -510,9 +511,9 @@ func httpClientForUrl(info *model.NotifierInfo, targetUrl string, timeout time.D
 				pool = sysPool
 			}
 		}
-		transport.TLSClientConfig = &tls.Config{RootCAs: pool}
+		tlsConfig = &tls.Config{RootCAs: pool}
 	}
-	return &http.Client{Transport: transport, Timeout: timeout}, nil
+	return managedset.NewServerClient(tlsConfig, timeout), nil
 }
 
 func startSubscriber(info *model.NotifierInfo) {
@@ -610,18 +611,11 @@ func streamOnce(ctx context.Context, info *model.NotifierInfo, targetUrl string)
 	if since := lastMessageIdFor(targetUrl); since != "" {
 		u += "?since=" + url.QueryEscape(since)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return err
-	}
-	if info.ReadToken != "" {
-		req.Header.Set("Authorization", "Bearer "+info.ReadToken)
-	}
 	client, err := httpClientForUrl(info, targetUrl, 0)
 	if err != nil {
 		return err
 	}
-	resp, err := client.Do(req)
+	resp, err := client.Do(ctx, http.MethodGet, u, nil, bearer(info.ReadToken))
 	if err != nil {
 		return err
 	}
