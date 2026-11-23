@@ -253,42 +253,56 @@ SSH_CALL=(ssh $SSH_OPTS)
 [ -n "$PORT" ] && SSH_CALL+=(-p "$PORT")
 [ -n "$KEY" ]  && SSH_CALL+=(-i "$KEY")
 
-if [ "${DRY_RUN:-}" != "1" ] && ! "${SSH_CALL[@]}" -o BatchMode=yes "$SSH_DEST" true >/dev/null 2>&1; then
-  if [ -z "$KEY" ] && [ -t 0 ]; then
-    printf '%b\n' "  ${YL}⚠ Could not connect to ${SSH_DEST} automatically.${RS}"
-    KEY=$(ask "  ssh private key path" "$HOME/.ssh/id_rsa"); KEY="${KEY/#\~/$HOME}"
-    USER=$(ask "  ssh user" "${USER:-cb-user}")
-    SSH_DEST="${USER}@${HOST}"
-    SSH_CALL=(ssh $SSH_OPTS)
-    [ -n "$PORT" ] && SSH_CALL+=(-p "$PORT")
-    [ -n "$KEY" ]  && SSH_CALL+=(-i "$KEY")
+# Single combined SSH probe (avoids rapid 4x SSH handshakes hitting sshd MaxStartups / NAT limits)
+probe_remote() {
+  "${SSH_CALL[@]}" -o BatchMode=yes "$SSH_DEST" '
+    export PATH="/usr/local/bin:$PATH"
+    ports=$(ss -tlnH 2>/dev/null | awk "{print \$4}" | grep -oE "[0-9]+$" | grep -E "^(8443|8080|1323|1324|3000)$" | sort -u | tr "\n" " ")
+    mcp=$(kubectl get svc -A -o name 2>/dev/null | grep -oE "agentgateway|cb-tumblebug-mcp-server" | head -1 || true)
+    printf "PORTS=%s\nMCP=%s\n" "$ports" "$mcp"
+  ' 2>/dev/null
+}
+
+PROBE_OUT=""
+if [ "${DRY_RUN:-}" != "1" ]; then
+  if ! PROBE_OUT="$(probe_remote)"; then
+    if [ -z "$KEY" ] && [ -t 0 ]; then
+      printf '%b\n' "  ${YL}⚠ Could not connect to ${SSH_DEST} automatically.${RS}"
+      KEY=$(ask "  ssh private key path" "$HOME/.ssh/id_rsa"); KEY="${KEY/#\~/$HOME}"
+      USER=$(ask "  ssh user" "${USER:-cb-user}")
+      SSH_DEST="${USER}@${HOST}"
+      SSH_CALL=(ssh $SSH_OPTS)
+      [ -n "$PORT" ] && SSH_CALL+=(-p "$PORT")
+      [ -n "$KEY" ]  && SSH_CALL+=(-i "$KEY")
+      PROBE_OUT="$(probe_remote || true)"
+    else
+      # One quick retry on transient SSH handshake blip
+      sleep 1
+      PROBE_OUT="$(probe_remote || true)"
+    fi
   fi
 fi
 
 printf '%b\n' "  ${DM}target:${RS} ${SSH_DEST}${PORT:+:$PORT}  ${DM}key:${RS} ${KEY:-(ssh-config / default)}"
 
-# --- 2) detect which services are listening on the remote node ---------------
+# --- 2) parse detected services listening on the remote node -----------------
 printf '%b' "  detecting remote services... "
-DETECTED=$("${SSH_CALL[@]}" "$SSH_DEST" \
-  "ss -tlnH 2>/dev/null | awk '{print \$4}' | grep -oE '[0-9]+\$' | sort -u" 2>/dev/null \
-  | grep -E '^(8443|8080|1323|1324|3000)$' | sort -u | tr '\n' ' ' || true)
+DETECTED="$(printf '%s\n' "$PROBE_OUT" | sed -n 's/^PORTS=//p' | head -1 || true)"
+MCPBK="$(printf '%s\n' "$PROBE_OUT" | sed -n 's/^MCP=//p' | head -1 || true)"
 printf '%b\n' "${DETECTED:-none}"
 has(){ printf ' %s ' "$DETECTED" | grep -q " $1 "; }
 
 # If nothing is forwarded yet on a remote K8s cluster, auto-start k-port-forward once!
-if [ -z "$DETECTED" ]; then
+if [ -z "$DETECTED" ] && [ "${DRY_RUN:-}" != "1" ]; then
   printf '%b\n' "  ${YL}↳ No active forwards detected; attempting to start remote k-port-forward...${RS}"
   "${SSH_CALL[@]}" "$SSH_DEST" \
     'cd "$HOME/go/src/github.com/cloud-barista/cb-tumblebug" 2>/dev/null && make --no-print-directory k-port-forward </dev/null >/dev/null 2>&1 || true' || true
   sleep 2
-  DETECTED=$("${SSH_CALL[@]}" "$SSH_DEST" \
-    "ss -tlnH 2>/dev/null | awk '{print \$4}' | grep -oE '[0-9]+\$' | sort -u" 2>/dev/null \
-    | grep -E '^(8443|8080|1323|1324|3000)$' | sort -u | tr '\n' ' ' || true)
+  PROBE_OUT="$(probe_remote || true)"
+  DETECTED="$(printf '%s\n' "$PROBE_OUT" | sed -n 's/^PORTS=//p' | head -1 || true)"
+  MCPBK="$(printf '%s\n' "$PROBE_OUT" | sed -n 's/^MCP=//p' | head -1 || true)"
   printf '%b\n' "  re-detected remote services: ${DETECTED:-none}"
 fi
-
-MCPBK=$("${SSH_CALL[@]}" "$SSH_DEST" \
-  "kubectl get svc -A -o name 2>/dev/null | grep -oE 'agentgateway|cb-tumblebug-mcp-server' | head -1" 2>/dev/null || true)
 
 # --- 3) choose what to tunnel (default from detection) -----------------------
 RP=(); SCHEME=(); LABEL=()
@@ -335,15 +349,38 @@ if [ "${DRY_RUN:-}" = "1" ]; then
   printf '%b\n' "${DM}(dry-run) would open:${RS} ssh -N ${PORT:+-p $PORT }${FWD[*]} $SSH_DEST"
 else
   printf '%b\n' "${DM}opening tunnel:${RS} ssh -N ${PORT:+-p $PORT }${FWD[*]} $SSH_DEST"
-  if command -v setsid >/dev/null 2>&1; then
-    setsid "${TUN_SSH[@]}" </dev/null > "$LOG" 2>&1 &
-  else
-    nohup "${TUN_SSH[@]}" </dev/null > "$LOG" 2>&1 &
-  fi
-  echo $! > "$PIDFILE"
-  sleep 3
-  if ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
-    printf '%b\n' "${YL}✖ tunnel failed to start — log:${RS}"; grep -vi "Permanently added" "$LOG" | head; exit 1
+  start_tunnel_once() {
+    : > "$LOG"
+    if command -v setsid >/dev/null 2>&1; then
+      setsid "${TUN_SSH[@]}" </dev/null > "$LOG" 2>&1 &
+    else
+      nohup "${TUN_SSH[@]}" </dev/null > "$LOG" 2>&1 &
+    fi
+    local tpid=$!
+    echo "$tpid" > "$PIDFILE"
+    # Wait up to 15s for the forwarded local port to actually bind (do not report 'up' while SSH is still handshaking)
+    local w=0
+    while [ "$w" -lt 60 ]; do
+      if ! kill -0 "$tpid" 2>/dev/null; then
+        return 1
+      fi
+      if port_used "${LP[0]}"; then
+        return 0
+      fi
+      sleep 0.25
+      w=$((w + 1))
+    done
+    kill "$tpid" 2>/dev/null || true
+    return 1
+  }
+  if ! start_tunnel_once; then
+    sleep 1
+    if ! start_tunnel_once; then
+      rm -f "$PIDFILE"
+      printf '%b\n' "${YL}✖ tunnel failed to start — log:${RS}"
+      grep -vi "Permanently added" "$LOG" | head || true
+      exit 1
+    fi
   fi
 fi
 
@@ -353,7 +390,8 @@ if [ "${DRY_RUN:-}" = "1" ]; then printf '%b\n' "" "${DM}(dry-run — tunnel not
 else printf '%b\n' "" "${GN}✔ tunnel up${RS} ${DM}(stop: make k-tunnel-stop)${RS}"; fi
 
 vfy(){ [ "${DRY_RUN:-}" = "1" ] && return 0
-  local code; code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 6 "$1" 2>/dev/null || echo 000)
+  local code; code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 6 "$1" 2>/dev/null || true)
+  [ -n "$code" ] || code="000"
   case "$code" in 2*|3*|401) printf " ${GN}✓${RS}";; *) printf " ${YL}⚠ %s${RS}" "$code";; esac; }
 link(){ printf "  ${CY}%-7s${RS} %s%b\n" "$1" "$2" "$(vfy "$2")" | tee -a "$LINKS"; }
 
