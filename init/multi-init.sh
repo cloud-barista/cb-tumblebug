@@ -8,9 +8,22 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "CB-Tumblebug Initialization"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+# Skip the password prompt when credentials are not being registered
+# (e.g. --load-assets-only / --load-templates-only / --fetch-price-only without --credentials)
+NEEDS_CRED_PWD=1
+case " $* " in
+    *" --load-assets"*|*" --load-templates"*|*" --fetch-price"*)
+        case " $* " in
+            *" --credentials"*) NEEDS_CRED_PWD=1 ;;
+            *)                  NEEDS_CRED_PWD=0 ;;
+        esac ;;
+esac
+
 # Skip the password prompt when a decryption key source already exists
-# (MULTI_INIT_PWD env, ~/.cloud-barista/.tmp_enc_key, or non-interactive stdin)
-if [ -n "$MULTI_INIT_PWD" ]; then
+# (MULTI_INIT_PWD env, ~/.cloud-barista/.tmp_enc_key, non-credential run, or non-interactive stdin)
+if [ "$NEEDS_CRED_PWD" = "0" ]; then
+    :
+elif [ -n "$MULTI_INIT_PWD" ]; then
     echo "Using password from MULTI_INIT_PWD environment variable."
 elif [ -f "$HOME/.cloud-barista/.tmp_enc_key" ]; then
     echo "Using decryption key file: ~/.cloud-barista/.tmp_enc_key"

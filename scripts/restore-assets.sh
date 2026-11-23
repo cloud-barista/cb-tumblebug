@@ -71,11 +71,18 @@ fi
 
 echo ""
 
-# Decompress if needed
+# Decompress if needed (for ssh backend, pass original .gz directly to avoid local 400MB gunzip + re-gzip)
 TEMP_FILE="/tmp/tumblebug_restore_$$.dump"
+export PG_SOURCE_GZ=""
 if [[ "$BACKUP_FILE" == *.gz ]]; then
-    echo -e "${YELLOW}Step 1/3: Decompressing backup...${NC}"
-    gunzip -c "$BACKUP_FILE" > "$TEMP_FILE"
+    export PG_SOURCE_GZ="$BACKUP_FILE"
+    if [ "$PG_BACKEND" != "ssh" ]; then
+        echo -e "${YELLOW}Step 1/3: Decompressing backup...${NC}"
+        gunzip -c "$BACKUP_FILE" > "$TEMP_FILE"
+    else
+        echo -e "${YELLOW}Step 1/3: Preparing compressed backup for remote SSH transfer...${NC}"
+        TEMP_FILE="$BACKUP_FILE"
+    fi
 else
     TEMP_FILE="$BACKUP_FILE"
 fi
@@ -110,7 +117,7 @@ pg_psql "$PG_DB" "$TRUNCATE_SQL"
 pg_restore_file "$TEMP_FILE" "$PG_DB"
 
 # Cleanup
-if [[ "$BACKUP_FILE" == *.gz ]]; then
+if [[ "$BACKUP_FILE" == *.gz ]] && [ "$TEMP_FILE" != "$BACKUP_FILE" ]; then
     rm -f "$TEMP_FILE"
 fi
 

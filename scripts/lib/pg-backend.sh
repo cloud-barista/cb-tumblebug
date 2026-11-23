@@ -109,7 +109,7 @@ _pg_direct_check() {
 #   TB_SSH_PORT    (optional SSH port, default: 22)
 
 _pg_ssh() {
-    local opts=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=12 -o ServerAliveInterval=30 -o ServerAliveCountMax=3)
+    local opts=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=12 -o ServerAliveInterval=30 -o ServerAliveCountMax=3)
     [ -n "$TB_SSH_PORT" ] && opts+=(-p "$TB_SSH_PORT")
     [ -n "$TB_SSH_KEY" ]  && opts+=(-i "$TB_SSH_KEY")
     ssh "${opts[@]}" "$TB_SSH_TARGET" "$@"
@@ -273,17 +273,41 @@ pg_restore_file() {
         direct)
             pg_restore -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" --data-only -v "$dump" ;;
         ssh)
-            local exec_prefix
-            if [ "$PG_SSH_MODE" = "docker" ]; then
-                exec_prefix="$PG_SSH_CLI exec -i $PG_CONTAINER"
+            local host_gz="/tmp/tb_host_restore_$$.dump.gz" host_dump="/tmp/tb_host_restore_$$.dump"
+            if [ -n "${PG_SOURCE_GZ:-}" ] && [ -f "$PG_SOURCE_GZ" ]; then
+                _pg_ssh "cat > $host_gz" < "$PG_SOURCE_GZ"
             else
-                exec_prefix="$PG_SSH_CLI exec -i -n $PG_K8S_NS $PG_POD --"
+                gzip -1 -c "$dump" | _pg_ssh "cat > $host_gz"
             fi
-            _pg_ssh "$exec_prefix sh -c 'cat > $remote'" < "$dump"
-            _pg_ssh "$exec_prefix pg_restore -U $PG_USER -d $db --data-only -v $remote"
-            local rc=$?
-            _pg_ssh "$exec_prefix rm -f $remote"
-            return $rc ;;
+            if [ "$PG_SSH_MODE" = "docker" ]; then
+                _pg_ssh "
+                    set -e
+                    trap 'rm -f $host_gz $host_dump' EXIT
+                    gunzip -c $host_gz > $host_dump
+                    rm -f $host_gz
+                    $PG_SSH_CLI cp $host_dump $PG_CONTAINER:$remote
+                    rm -f $host_dump
+                    $PG_SSH_CLI exec $PG_CONTAINER pg_restore -U $PG_USER -d $db --data-only -v $remote
+                    rc=\$?
+                    $PG_SSH_CLI exec $PG_CONTAINER rm -f $remote || true
+                    exit \$rc
+                "
+            else
+                _pg_ssh "
+                    set -e
+                    export PATH=/usr/local/bin:\$PATH
+                    trap 'rm -f $host_gz $host_dump' EXIT
+                    gunzip -c $host_gz > $host_dump
+                    rm -f $host_gz
+                    $PG_SSH_CLI cp $host_dump $PG_K8S_NS/$PG_POD:$remote
+                    rm -f $host_dump
+                    $PG_SSH_CLI exec -n $PG_K8S_NS $PG_POD -- pg_restore -U $PG_USER -d $db --data-only -v $remote
+                    rc=\$?
+                    $PG_SSH_CLI exec -n $PG_K8S_NS $PG_POD -- rm -f $remote || true
+                    exit \$rc
+                "
+            fi
+            return $? ;;
     esac
 }
 
