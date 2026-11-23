@@ -165,8 +165,14 @@ The MCP server can be configured using the following environment variables:
 | `TUMBLEBUG_API_BASE_URL` | `http://cb-tumblebug:1323/tumblebug` | CB-Tumblebug API endpoint |
 | `TUMBLEBUG_USERNAME` | `default` | CB-Tumblebug API username |
 | `TUMBLEBUG_PASSWORD` | `default` | CB-Tumblebug API password |
+| `TUMBLEBUG_CREDENTIAL_HOLDER` | (empty) | Credential holder sent with every request; empty uses the server default |
 | `MCP_SERVER_HOST` | `0.0.0.0` | MCP server bind address |
 | `MCP_SERVER_PORT` | `8000` | MCP server port |
+| `MCP_LOG_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `MCP_DEFAULT_NAMESPACE` | `default` | Namespace used when a tool call names none |
+| `MCP_READ_ONLY` | `false` | `true` serves only the tools that change nothing: no create, command or delete tools are published |
+| `MCP_NODE_LIST_LIMIT` | `50` | Nodes listed by a summary read; past it the response carries counts and lists the nodes that are not Running first |
+| `ETCD_ENDPOINT` | `http://cb-tumblebug-etcd:2379` | Store for the session journal, idempotency keys and spend limits (best effort: tools still work without it) |
 
 ### Custom Configuration
 
@@ -314,42 +320,65 @@ Add to your `claude_desktop_config.json`:
 
 ## 📚 Core Capabilities
 
-For a visual overview of all available tools and their API mappings, see:
-**[MCP Tool Categories and API Mapping](./architecture.md#mcp-tool-categories-and-api-mapping)** - Complete tool organization and endpoint mapping
+The tool set follows the CB-Tumblebug REST API. Long explanations are kept out of the
+tool descriptions: `get_usage_guide(topic)` returns them on demand (`provision`,
+`initscript`, `commands`, `gpu`, `recovery`, `detail`).
 
-### 1. Namespace Management
-- Create, read, update, delete namespaces
-- List and manage namespace resources
+### 1. Plan
+- `recommend_vm_spec()`, `search_images()`, `get_search_options()` - pick a spec and an image
+- `review_spec_image_pair()`, `get_spec_disk_options()`, `get_provisioning_risk()` - check one choice
+- `review_infra_dynamic_request()` - validate the whole plan: availability, quota headroom,
+  init script size, hourly cost
 
-### 2. Image and Specification Discovery
-- Search cloud images across providers
-- Get VM specification recommendations
-- Filter by OS type, architecture, provider, region
+### 2. Provision
+- `create_infra_dynamic()` - create an Infra. It needs the review first (`force_create`)
+  and a person's agreement (`confirm`); the refusal carries the plan and its cost.
+- `add_nodegroup_dynamic()`, `scale_out_nodegroup()` - grow an Infra
+- `list_infra_templates()`, `provision_infra_from_template()` - replay a saved configuration
+- `post_script` runs over SSH once the nodes are up; `init_script` runs inside each node at
+  first boot. `list_init_script_templates()`, `get_init_script_status()` and
+  `get_platform_services()` (notifier, observability) belong to the latter.
 
-### 3. Multi-Cloud Infrastructure (Infra) Management
-- **Complete Infra Creation Workflow**:
-  1. `get_image_search_options()` - Discover available search parameters
-  2. `search_images()` - Find suitable OS images
-  3. `recommend_vm_spec()` - Get optimal VM specifications
-  4. `create_infra_dynamic()` - Create infrastructure with found parameters
+### 3. Operate
+- `get_infra()`, `get_infra_list()`, `check_infra_status_and_handle_failures()` - state and health
+- `control_infra()`, `control_node()` - suspend, resume, reboot, terminate
+- `execute_command_infra()`, `get_command_result()`, `list_node_command_status()`,
+  `download_file_from_node()` - remote commands, synchronous or in the background
+- `manage_labels()`, `add_security_group_rules()`, `set_bastion_node()`, `manage_dns_record()`
 
-- **Infra Operations**:
-  - Control Infra lifecycle (suspend, resume, reboot, terminate)
-  - Monitor Infra status and health
-  - Scale infrastructure dynamically
+### 4. Recover and clean up
+- `retry_failed_nodes()` - re-create failed nodes in place; previews the server's plan by default
+- `recommend_alternative_node_config()` - the closest spec and image in another cloud or region
+- `terminate_infra()`, `release_resources()` - remove an Infra and what it left behind
+- `inspect_csp_resources()`, `register_csp_resources()` - find and adopt resources that exist
+  at the CSP but are not managed
 
-### 4. Remote Operations
-- Execute commands on cloud instances
-- Transfer files to/from instances
-- Manage instance configurations
-
-### 5. Resource Management
-- Manage VNets, Security Groups, SSH Keys
-- View cloud connections and regions
-- Resource cleanup and optimization
+### Safety properties
+- Read-only tools are announced with `readOnlyHint`, so a client can run them without asking.
+  `MCP_READ_ONLY=true` publishes nothing else.
+- Tools that destroy or spend take `confirm` and refuse without it.
+- A backend failure sets `isError` and carries a code the caller can branch on
+  (`NOT_FOUND`, `INVALID_ARGUMENT`, `NEEDS_CONFIRMATION`, `REVIEW_REQUIRED`, ...).
+- Secret-looking fields are redacted from every response; `get_ssh_private_key()` is the one
+  deliberate exception.
+- Reads default to a summary (`detail="summary"`); `detail="full"` returns the raw records.
 
 
 ## 🔍 Testing and Debugging
+
+### Automated checks
+
+| Command | What it does | Needs |
+|---------|--------------|-------|
+| `make mcp-check` | Contract checks: the published tool set against `tests/tools.golden.json`, the size of `tools/list`, and every request a tool sends (path, query names, body keys) against `src/interface/rest/docs/swagger.yaml` | Docker only |
+| `make mcp-check-update` | Rewrites the golden file after an intended tool change | Docker only |
+| `make mcp-scenarios` | Drives real requests through the MCP endpoint: discovery, a reviewed plan, the refusal gates, reads of existing Infras. Creates nothing. | A running cluster (`make k-port-forward`) |
+| `make mcp-scenarios ARGS="--spend"` | Adds a one-node lifecycle: create, command, label, firewall rule, scale out, node delete, terminate | CSP credentials; costs a few cents |
+| `make mcp-bench` | Prints the byte size of the common responses | A running cluster |
+
+A new tool needs a sample call in `tests/check_contract.py`; the check fails until one is
+added. After changing a REST model, `make swag` followed by `make mcp-check` shows which
+tools still send the old shape.
 
 ### MCP Inspector (Official Testing Tool)
 
@@ -504,14 +533,18 @@ Due to Claude Desktop's limitations with remote server connections, a proxy brid
 src/interface/mcp/
 ├── tb-mcp.py                    # Main MCP server implementation
 ├── mcp-simple-proxy.py          # Proxy bridge for Claude Desktop
-├── mcp-advanced-proxy.py        # Enhanced proxy with logging
-├── mcp-remote-proxy.py          # Alternative proxy implementation
 ├── claude_desktop_config.json   # Claude Desktop configuration examples
-├── .vscode/mcp.json            # VS Code MCP configuration
+├── .vscode/mcp.json             # VS Code MCP configuration
 ├── Dockerfile                   # Docker container configuration
+├── tests/
+│   ├── check_contract.py        # make mcp-check: tool set, schema budget, requests vs the REST API
+│   ├── scenarios.py             # make mcp-scenarios: real requests through the MCP endpoint
+│   ├── bench.py                 # make mcp-bench: response sizes
+│   ├── mcp_client.py            # Minimal MCP client used by the scripts above
+│   └── tools.golden.json        # The published tool set, compared by mcp-check
 ├── README.md                    # This documentation
-├── PROXY_README.md             # Detailed proxy documentation
-└── architecture.md             # System architecture diagrams
+├── PROXY_README.md              # Detailed proxy documentation
+└── architecture.md              # System architecture diagrams
 ```
 
 ## 🚀 Quick Start Guide

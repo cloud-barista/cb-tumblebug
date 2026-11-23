@@ -1018,12 +1018,12 @@ k-build-sp: ## Build local cb-spider source into the cluster (shortcut)
 # needs no cluster and no cloud credentials. Seconds, not minutes.
 MCP_TEST_IMAGE ?= cloudbaristaorg/mcp:local-dev
 
-mcp-check: ## Tier 1 contract checks for the MCP server (tools golden file, endpoints, schema budget, secrets, errors)
+mcp-check: ## Tier 1 contract checks for the MCP server (tools golden file, requests vs the REST API, schema budget, secrets, errors)
 	@docker image inspect $(MCP_TEST_IMAGE) >/dev/null 2>&1 || \
 		docker build -q -t $(MCP_TEST_IMAGE) src/interface/mcp >/dev/null
 	@docker run --rm \
 		-v "$(PWD)/src/interface/mcp:/repo/src/interface/mcp:ro" \
-		-v "$(PWD)/src/interface/rest/docs/swagger.json:/repo/src/interface/rest/docs/swagger.json:ro" \
+		-v "$(PWD)/src/interface/rest/docs/swagger.yaml:/repo/src/interface/rest/docs/swagger.yaml:ro" \
 		-w /repo $(MCP_TEST_IMAGE) \
 		python3 /repo/src/interface/mcp/tests/check_contract.py
 
@@ -1032,14 +1032,14 @@ mcp-check-update: ## Rewrite the MCP tools golden file after an intended tool ch
 		docker build -q -t $(MCP_TEST_IMAGE) src/interface/mcp >/dev/null
 	@docker run --rm --user "$$(id -u):$$(id -g)" \
 		-v "$(PWD)/src/interface/mcp:/repo/src/interface/mcp" \
-		-v "$(PWD)/src/interface/rest/docs/swagger.json:/repo/src/interface/rest/docs/swagger.json:ro" \
+		-v "$(PWD)/src/interface/rest/docs/swagger.yaml:/repo/src/interface/rest/docs/swagger.yaml:ro" \
 		-w /repo $(MCP_TEST_IMAGE) \
 		python3 /repo/src/interface/mcp/tests/check_contract.py --update
 
 mcp-bench: ## Measure MCP response sizes through the gateway (needs: make k-port-forward)
-	@python3 src/interface/mcp/tests/bench.py
+	@python3 src/interface/mcp/tests/bench.py $(ARGS)
 
-mcp-scenarios: ## Tier 2: drive real requests through MCP alone, stopping before any spend
+mcp-scenarios: ## Tier 2: drive real requests through MCP alone, no spend (ARGS="--spend" adds a one-node lifecycle)
 	@python3 src/interface/mcp/tests/scenarios.py $(ARGS)
 
 # --- MCP spend limits ---------------------------------------------------------

@@ -147,6 +147,8 @@ mapui:
 mcp:
   # Requires a published cb-tumblebug-mcp-server image (compose builds it locally)
   enabled: false
+  # Serve only the tools that change nothing (no create, command, or delete tools)
+  readOnly: false
   resources: {}
 
 agentgateway:

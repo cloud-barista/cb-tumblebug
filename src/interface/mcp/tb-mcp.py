@@ -148,7 +148,12 @@ logger.info(f"MCP Server will start on {host}:{port}")
 mcp = FastMCP("cb-tumblebug", mask_error_details=True)
 
 
-def tool(*d_args, redact=True, mutating=False, **d_kwargs):
+# MCP_READ_ONLY=true serves only the tools that change nothing, so an exploratory agent is
+# safe by construction rather than by instruction.
+READ_ONLY_MODE = os.environ.get("MCP_READ_ONLY", "").strip().lower() in ("1", "true", "yes")
+
+
+def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, **d_kwargs):
     """Register an MCP tool that returns its payload exactly once.
 
     FastMCP renders a structured return value twice - escaped inside content[0].text and
@@ -167,7 +172,15 @@ def tool(*d_args, redact=True, mutating=False, **d_kwargs):
     in the session journal so work survives a lost connection, and an idempotency_key makes
     a retry return the first result instead of acting twice. Recording is automatic because
     leaving it to the model is why the previous attempt captured almost nothing.
+
+    read_only defaults to "not mutating". Pass read_only=False on a tool that is not
+    journaled as mutating but can still change something through one of its arguments.
+    Read-only tools are announced as such (readOnlyHint), which is what lets a client
+    run them without asking. additive=True marks a tool that only creates; the other
+    tools that take confirm are announced as destructive.
     """
+    is_read_only = (not mutating) if read_only is None else read_only
+
     def decorate(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -243,7 +256,14 @@ def tool(*d_args, redact=True, mutating=False, **d_kwargs):
         for param in extra:
             wrapper.__annotations__[param.name] = param.annotation
         wrapper.__annotations__["return"] = ToolResult
-        mcp.tool(*d_args, **d_kwargs)(wrapper)
+        if is_read_only:
+            d_kwargs.setdefault("annotations", {"readOnlyHint": True})
+        elif additive:
+            d_kwargs.setdefault("annotations", {"destructiveHint": False})
+        elif "confirm" in base.parameters:
+            d_kwargs.setdefault("annotations", {"destructiveHint": True})
+        if is_read_only or not READ_ONLY_MODE:
+            mcp.tool(*d_args, **d_kwargs)(wrapper)
 
         # Register the wrapper with FastMCP but leave the plain function in the module
         # namespace. Tools call each other internally, and those callers want the dict the
@@ -284,6 +304,15 @@ _ERROR_CODE_PATTERNS = (
     ("not found", "NOT_FOUND"),
     ("not valid namespace", "NOT_FOUND"),
     ("already exists", "ALREADY_EXISTS"),
+    # A rejected argument is the caller's to fix; reporting it as an upstream failure
+    # invites a retry of the same call.
+    ("unknown kind", "INVALID_ARGUMENT"),
+    ("unknown topic", "INVALID_ARGUMENT"),
+    ("unknown action", "INVALID_ARGUMENT"),
+    ("unsupported action", "INVALID_ARGUMENT"),
+    ("invalid resource type", "INVALID_ARGUMENT"),
+    (" is required", "INVALID_ARGUMENT"),
+    ("expected one of", "INVALID_ARGUMENT"),
     ("timeout", "TIMEOUT"),
     ("timed out", "TIMEOUT"),
     ("connection", "UPSTREAM_UNREACHABLE"),
@@ -304,6 +333,7 @@ _ERROR_NEXT_STEPS = {
                      "batch reads instead of calling per resource"],
     "NOT_FOUND": ["list the parent resource to check the id"],
     "ALREADY_EXISTS": ["read the existing resource instead of creating it"],
+    "INVALID_ARGUMENT": ["correct the argument named in the message and call again"],
     "TIMEOUT": ["retry", "the operation may still be running - check status before retrying"],
     "UPSTREAM_UNREACHABLE": ["check CB-Tumblebug is reachable", "retry"],
     "UNSUPPORTED": ["this provider or option is not implemented"],
@@ -338,8 +368,11 @@ def _as_structured_error(payload):
     for k, v in payload.items():
         if k != "error":
             detail[k] = v
+    # A code the tool set itself wins over one guessed from the wording.
+    code = detail.get("code") if detail.get("code") in _ERROR_NEXT_STEPS else None
+    if code is None:
+        code = _classify_error(message)
     # The review gate reports its marker in the detail body rather than the message.
-    code = _classify_error(message)
     if code == "UPSTREAM_ERROR" and detail:
         code = _classify_error(json.dumps(detail, default=str))
     err = {"code": code, "message": message}
@@ -395,9 +428,19 @@ def _collapse_command_status(entries):
 
 
 _NODE_MINIMAL = ("id", "status")
-_NODE_SUMMARY = ("id", "name", "status", "publicIP", "privateIP", "sshPort", "nodeUserName",
+# Addresses appear under both spellings: the full record says publicIP, the status view
+# publicIp. uid is what manage_labels addresses a node by.
+_NODE_SUMMARY = ("id", "uid", "name", "status", "publicIP", "privateIP", "publicIp", "privateIp",
+                 "sshPort", "nodeUserName",
                  "specId", "imageId", "connectionName", "nodeGroupId", "vNetId", "subnetId",
                  "securityGroupIds", "sshKeyId", "region", "systemMessage", "createdTime")
+# Kept at summary only when they say something: most nodes have no failure and no
+# init script message.
+_NODE_SUMMARY_IF_SET = ("initScriptStatus", "initScriptMessage", "failure")
+
+# A 10,000-node Infra is several megabytes even at summary. Past this many nodes a read
+# returns counts plus the nodes that need attention.
+NODE_LIST_LIMIT = int(os.environ.get("MCP_NODE_LIST_LIMIT", "50"))
 
 
 def _shape_node(node, detail):
@@ -408,11 +451,42 @@ def _shape_node(node, detail):
     else:
         keys = _NODE_MINIMAL if detail == "minimal" else _NODE_SUMMARY
         out = {k: node[k] for k in keys if k in node}
-        if detail == "summary" and node.get("label"):
-            out["label"] = node["label"]
+        if detail == "summary":
+            for k in _NODE_SUMMARY_IF_SET:
+                if node.get(k):
+                    out[k] = node[k]
+            if node.get("label"):
+                out["label"] = node["label"]
     if detail != "full" and "commandStatus" in node:
         out["commandStatus"] = _collapse_command_status(node.get("commandStatus"))
     return out
+
+
+def _cap_nodes(nodes, limit):
+    """Pick the nodes worth listing from a large Infra, and count the rest.
+
+    Nodes that are not Running come first: they are what a caller is looking for when
+    something went wrong, and they are the ones a plain head of the list would hide.
+    """
+    by_status, by_group = {}, {}
+    for n in nodes:
+        status = n.get("status") or "Undefined"
+        by_status[status] = by_status.get(status, 0) + 1
+        group = n.get("nodeGroupId") or (n.get("id") or "").rsplit("-", 1)[0]
+        by_group[group] = by_group.get(group, 0) + 1
+    attention = [n for n in nodes if (n.get("status") or "") != "Running"]
+    running = [n for n in nodes if (n.get("status") or "") == "Running"]
+    shown = (attention + running)[:limit]
+    largest = sorted(by_group.items(), key=lambda kv: -kv[1])[:30]
+    return shown, {
+        "total": len(nodes),
+        "shown": len(shown),
+        "byStatus": by_status,
+        "nodeGroupCount": len(by_group),
+        "largestNodeGroups": dict(largest),
+        "note": ("node list capped; nodes that are not Running are listed first. Narrow with "
+                 "get_nodes_in_nodegroup() or control_node(), or pass detail='full' for every node"),
+    }
 
 
 _INFRA_DROP_AT_SUMMARY = ("newNodeList", "configureCloudAdaptiveNetwork", "systemLabel",
@@ -428,8 +502,22 @@ def _shape_infra(infra, detail):
     else:
         out = {k: v for k, v in infra.items() if k not in _INFRA_DROP_AT_SUMMARY}
     if node_key:
-        out[node_key] = [_shape_node(n, detail) for n in (infra.get(node_key) or [])]
+        nodes = infra.get(node_key) or []
+        if detail != "full" and NODE_LIST_LIMIT and len(nodes) > NODE_LIST_LIMIT:
+            nodes, out["nodeListCapped"] = _cap_nodes(nodes, NODE_LIST_LIMIT)
+        out[node_key] = [_shape_node(n, detail) for n in nodes]
     return out
+
+
+# Fields that repeat on every resource and say nothing about it.
+_RESOURCE_BULK = ("connectionConfig", "keyValueList", "addtionalDetails")
+
+
+def _slim_resource(obj):
+    """Drop the per-resource boilerplate from a record returned by a write."""
+    if not isinstance(obj, dict):
+        return obj
+    return {k: v for k, v in obj.items() if k not in _RESOURCE_BULK}
 
 
 def _project(obj, fields):
@@ -1935,6 +2023,19 @@ def _normalize_firewall_rules(rules: List[Dict]) -> List[Dict]:
         normalized.append(r)
     return normalized
 
+
+def _slim_sg_update(result):
+    """A rule change answers with the whole SecurityGroup record; keep the rule set."""
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    result = dict(result)
+    for key in ("updated", "previous"):
+        record = result.get(key)
+        if isinstance(record, dict):
+            result[key] = {k: record[k] for k in ("id", "connectionName", "firewallRules")
+                           if k in record}
+    return result
+
 # Tool: Add SecurityGroup firewall rules
 @tool(mutating=True)
 def add_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict]) -> Dict:
@@ -1961,7 +2062,8 @@ def add_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict]) -> Dict:
         data = {"firewallRules": _normalize_firewall_rules(rules)}
     except ValueError as exc:
         return {"error": str(exc)}
-    return api_request("POST", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data)
+    return _slim_sg_update(
+        api_request("POST", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data))
 
 # Tool: Remove SecurityGroup firewall rules
 @tool(mutating=True)
@@ -1987,14 +2089,15 @@ def remove_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict], confi
         data = {"firewallRules": _normalize_firewall_rules(rules)}
     except ValueError as exc:
         return {"error": str(exc)}
-    return api_request("DELETE", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data)
+    return _slim_sg_update(
+        api_request("DELETE", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data))
 
 
 
 # Tool: Provisioning risk, in one place
 @tool()
 def get_provisioning_risk(spec_id: str, csp_image_name: Optional[str] = None,
-                          kind: str = "summary") -> Dict:
+                          kind: Optional[str] = None) -> Dict:
     """
     Historical provisioning risk for a spec, optionally paired with an image.
 
@@ -2003,14 +2106,14 @@ def get_provisioning_risk(spec_id: str, csp_image_name: Optional[str] = None,
     Args:
         spec_id: Spec ID, e.g. "aws+ap-northeast-2+t2.small"
         csp_image_name: CSP image identifier. Required for "summary" and "detailed".
-        kind: "summary" (default) - risk level for this spec+image pair
-              "detailed"          - per-factor breakdown and recommendations
-              "history"           - raw success/failure log for the spec
+        kind: "summary"  - risk level for this spec+image pair (default with an image)
+              "detailed" - per-factor breakdown and recommendations
+              "history"  - raw success/failure log for the spec (default without an image)
 
     Returns:
         The requested risk view, or an error naming what is missing.
     """
-    kind = (kind or "summary").strip().lower()
+    kind = (kind or ("summary" if csp_image_name else "history")).strip().lower()
     if kind not in ("summary", "detailed", "history"):
         return {"error": f"unknown kind {kind!r}; expected summary, detailed or history"}
     if kind in ("summary", "detailed") and not csp_image_name:
@@ -2034,7 +2137,8 @@ def get_provisioning_risk(spec_id: str, csp_image_name: Optional[str] = None,
 # ---------------------------------------------------------------------------
 
 @tool()
-def list_infra_templates(ns_id: str = "system", template_id: Optional[str] = None) -> Dict:
+def list_infra_templates(ns_id: str = "system", template_id: Optional[str] = None,
+                         detail: str = "summary") -> Dict:
     """
     List saved Infra templates, or fetch one by id.
 
@@ -2043,17 +2147,44 @@ def list_infra_templates(ns_id: str = "system", template_id: Optional[str] = Non
 
     Args:
         ns_id: Namespace ID. Defaults to "system", where init loads the shipped templates.
-        template_id: Return just this template instead of the whole list
+        template_id: Return just this template, with its node groups
+        detail: For the list: "summary" (default) gives one line per template - node
+            groups, node count, providers; "full" returns every template's node groups.
 
     Returns:
         The template list, or the single template.
     """
     if template_id:
         return api_request("GET", f"/ns/{ns_id}/template/infra/{template_id}")
-    return api_request("GET", f"/ns/{ns_id}/template/infra")
+    result = api_request("GET", f"/ns/{ns_id}/template/infra")
+    templates = result.get("templates") if isinstance(result, dict) else None
+    if _validate_detail(detail) == "full" or not isinstance(templates, list):
+        return result
+    rows = []
+    for t in templates:
+        req = t.get("infraDynamicReq") or {}
+        groups = req.get("nodeGroups") or []
+        nodes = 0
+        for g in groups:
+            try:
+                nodes += max(1, int(g.get("nodeGroupSize") or 1))
+            except (TypeError, ValueError):
+                nodes += 1
+        rows.append({
+            "id": t.get("id"),
+            "description": t.get("description"),
+            "nodeGroups": len(groups),
+            "nodes": nodes,
+            "providers": sorted({str(g.get("specId") or "").split("+")[0] for g in groups} - {""}),
+            "hasPostScript": bool((req.get("postScript") or {}).get("phases")),
+            "hasInitScript": bool(req.get("initScript")
+                                  or any(g.get("initScript") for g in groups)),
+        })
+    return {"templates": rows, "count": len(rows),
+            "note": "node groups: list_infra_templates(template_id=...)"}
 
 
-@tool(mutating=True)
+@tool(mutating=True, additive=True)
 def provision_infra_from_template(ns_id: str, template_id: str, name: str,
                                   description: Optional[str] = None, budget_ack: Optional[str] = None, confirm: bool = False) -> Dict:
     """
@@ -2184,7 +2315,7 @@ def get_dns_hosted_zones(check_delegation: bool = True) -> Dict:
 # Command tasks - a long bootstrap needs to be observable and interruptible
 # ---------------------------------------------------------------------------
 
-@tool()
+@tool(read_only=False)  # cancel stops a running task
 def manage_command_task(action: str, ns_id: str, infra_id: str,
                         task_id: Optional[str] = None, detail: str = "summary") -> Dict:
     """
@@ -2580,7 +2711,7 @@ def get_budget_status() -> Dict:
     }
 
 
-@tool()
+@tool(read_only=False)  # files an approval request
 def request_budget_increase(reason: str, request_id: Optional[str] = None) -> Dict:
     """
     Ask an administrator to allow a creation that a limit refused.
@@ -2807,7 +2938,8 @@ def get_resources(kind: str, ns_id: str = DEFAULT_NAMESPACE, detail: str = "summ
 
 @tool(mutating=True)
 def manage_labels(action: str, label_type: str, uid: Optional[str] = None,
-                  labels: Optional[Union[Dict, str]] = None, key: Optional[str] = None) -> Dict:
+                  labels: Optional[Union[Dict, str]] = None, key: Optional[str] = None,
+                  detail: str = "summary") -> Dict:
     """
     Read, set, remove or sync resource labels, and find resources by label.
 
@@ -2817,11 +2949,13 @@ def manage_labels(action: str, label_type: str, uid: Optional[str] = None,
     Args:
         action: "get" | "set" | "remove" | "find" | "sync_from_csp"
         label_type: Resource type, e.g. "infra", "node", "vNet"
-        uid: Resource uid - required for get, set, remove and sync_from_csp
+        uid: Resource uid - required for get, set, remove and sync_from_csp. get_infra()
+            lists it for the Infra and for each node.
         labels: Key-value pairs, e.g. {"role": "control"}. For "find" a selector string
             such as "role=control,tier=web" is accepted as well, and a mapping given
             there is joined into one.
         key: Label key to delete, for "remove"
+        detail: For "find": "summary" (default) trims each match; "full" returns the records
 
     Returns:
         The labels, the matching resources, or the result of the change.
@@ -2832,16 +2966,25 @@ def manage_labels(action: str, label_type: str, uid: Optional[str] = None,
             return {"error": "labels (a selector string) is required for action='find'"}
         selector = labels if isinstance(labels, str) else ",".join(
             f"{k}={v}" for k, v in labels.items())
-        return api_request("GET", f"/resources/{label_type}",
-                           params={"labelSelector": selector})
+        result = api_request("GET", f"/resources/{label_type}",
+                             params={"labelSelector": selector})
+        matches = result.get("results") if isinstance(result, dict) else None
+        level = _validate_detail(detail)
+        if level == "full" or not isinstance(matches, list):
+            return result
+        shape = {"node": _shape_node, "infra": _shape_infra}.get(label_type)
+        return {"results": [shape(m, level) if shape else _slim_resource(m) for m in matches],
+                "count": len(matches)}
     if not uid:
         return {"error": f"uid is required for action={action!r}"}
     if action == "get":
         return api_request("GET", f"/label/{label_type}/{uid}")
     if action == "set":
-        if not labels:
-            return {"error": "labels is required for action='set'"}
-        return api_request("PUT", f"/label/{label_type}/{uid}", json_data=labels)
+        if not labels or not isinstance(labels, dict):
+            return {"error": "labels (a key-value mapping) is required for action='set'"}
+        # The body is model.Label; a bare mapping is accepted with 200 and sets nothing.
+        return api_request("PUT", f"/label/{label_type}/{uid}",
+                           json_data={"labels": {str(k): str(v) for k, v in labels.items()}})
     if action == "remove":
         if not key:
             return {"error": "key is required for action='remove'"}
@@ -2956,29 +3099,51 @@ def get_command_result(request_id: str, ns_id: str = DEFAULT_NAMESPACE,
         context_lines: Lines kept either side of a match (default 3)
 
     Returns:
-        status, and per-node output once finished. Poll while status is Handling.
+        status, statusCount and per-node output. Poll while status is Handling or Pending;
+        CompletedWithError means at least one node did not finish cleanly.
     """
     record = api_request("GET", f"/request/{request_id}")
     out: Dict[str, Any] = {"request_id": request_id}
-    if isinstance(record, dict) and "error" not in record:
-        out["request"] = _trim_command_record(record, tail_lines, contains, context_lines)
+    accepted = isinstance(record, dict) and "error" not in record
+    if accepted:
+        # The stored request repeats the headers and body that were sent; what matters
+        # is whether the server took it.
+        out["request"] = {k: record[k] for k in ("status", "startTime", "errorResponse")
+                          if record.get(k)}
 
     if infra_id:
-        nodes, still_running = [], 0
+        nodes, counts = [], {}
         listing = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}")
         for node in (listing or {}).get("vm") or (listing or {}).get("node") or []:
             for entry in (node.get("commandStatus") or []):
                 if entry.get("xRequestId") != request_id:
                     continue
-                if entry.get("status") == "Handling":
-                    still_running += 1
+                state = entry.get("status") or "Unknown"
+                counts[state] = counts.get(state, 0) + 1
                 nodes.append({"nodeId": node.get("id"),
                               **_trim_command_record(entry, tail_lines, contains, context_lines)})
+        still_running = sum(v for k, v in counts.items() if k in ("Handling", "Queued"))
+        failed = sum(v for k, v in counts.items()
+                     if k not in ("Handling", "Queued", "Completed"))
+        if len(nodes) > NODE_LIST_LIMIT:
+            # Keep the records that did not finish cleanly; the rest are in statusCount.
+            nodes = ([n for n in nodes if n.get("status") != "Completed"]
+                     + [n for n in nodes if n.get("status") == "Completed"])[:NODE_LIST_LIMIT]
+            out["nodesCapped"] = True
         out["nodes"] = nodes
+        out["statusCount"] = counts
         out["running"] = still_running
-        out["status"] = "Handling" if still_running else ("Completed" if nodes else "Unknown")
         if still_running:
+            out["status"] = "Handling"
             out["hint"] = "still running - poll this again rather than re-issuing the command"
+        elif nodes:
+            out["status"] = "CompletedWithError" if failed else "Completed"
+        elif accepted:
+            # An accepted command appears on the nodes a moment after the call returns.
+            out["status"] = "Pending"
+            out["hint"] = "accepted but not on any node yet - poll again in a few seconds"
+        else:
+            out["status"] = "Unknown"
     return out
 
 
@@ -3031,10 +3196,10 @@ def manage_dns_record(action: str, domain_name: str, record_name: Optional[str] 
     the node addresses itself and keeps the record as one name for the whole deployment -
     which is the point when the nodes sit in ten regions and their IPs are not memorable.
 
-    Exactly one source must be given for "set":
+    One source must be given for "set":
       infra_id        every running node of that Infra
-      label_selector  nodes matching a label, scoped to infra_id when both are given
-      ips             explicit addresses
+      label_selector  nodes matching a label; with infra_id, only that Infra's nodes
+      ips             explicit addresses (not combined with the other two)
 
     Args:
         action: "get" | "set" | "delete"
@@ -3090,9 +3255,9 @@ def manage_dns_record(action: str, domain_name: str, record_name: Optional[str] 
                                "usable_domains."),
         }}
 
-    sources = [bool(infra_id), bool(label_selector), bool(ips)]
-    if sum(sources) != 1:
-        return {"error": "give exactly one source: infra_id, label_selector or ips"}
+    # infra_id and label_selector combine (the selector is scoped to the Infra); ips stands alone.
+    if bool(infra_id or label_selector) == bool(ips):
+        return {"error": "give one source: infra_id and/or label_selector, or ips"}
     if routing_policy == "geoproximity" and ips:
         return {"error": "geoproximity needs an Infra or label source - it reads each "
                          "node's location, which bare IPs do not carry"}
@@ -3147,7 +3312,50 @@ Bootstrapping at creation time: pass post_script with one phase per tier, e.g.
 {"phases": [{"nodeGroupId": "web", "command": ["..."]}]}. The call waits for it by
 default and returns the final postScriptStatus. For anything slow set
 post_script_async=True: the call returns once the nodes are up, then poll get_infra()
-until postScriptStatus is terminal.""",
+until postScriptStatus is terminal.
+
+post_script runs over SSH after the nodes are up. init_script runs inside the node at
+first boot and needs no SSH - see get_usage_guide('initscript') for when to use which.
+
+The review also reports quota: specValidation.quota gives the tightest limit and
+fitCount, the number of nodes of that spec the account can still start in the region.
+Root disk choices for a spec: get_spec_disk_options(spec_id).""",
+
+    "initscript": """First-boot scripts, the notifier and observability.
+
+Two ways to configure a node, and they differ in who runs the script:
+    post_script   CB-Tumblebug connects over SSH after the node is up. Ordered phases,
+                  per-phase targets, output returned. Needs the node to be reachable.
+    init_script   The node runs it itself at first boot, from its user data. No SSH, so
+                  it works behind a private address and scales to thousands of nodes.
+                  The node reports the result through the notifier.
+
+init_script shapes (Infra-level argument, or "initScript" inside one node group):
+    {"templateId": "initscript-nginx", "env": {"SITE_TITLE": "demo"}}
+    {"scripts": [{"name": "setup", "script": "#!/bin/bash\nset -e\napt-get install -y jq"}]}
+    {"mode": "none"}                       no init script, not even the default one
+A script starts with its shebang line. Steps run in order as root; the first failure
+stops the run unless that step sets continueOnError. timeoutSec bounds one step.
+User data is limited (about 16 KB on most providers); the review reports the size.
+
+Templates: list_init_script_templates() lists them; with template_id it returns the
+script text. A template can also run later over SSH as a post_script phase with the
+same templateId - useful to re-run on nodes that failed.
+
+Results: get_init_script_status(ns_id, infra_id) gives counts per state;
+detail='full', status='fail' names the nodes and the failing step.
+    ok / fail        the node reported
+    initializing     the script is running
+    pending          not reported yet (still booting)
+    noReport         Running but silent past the timeout: user data did not run, or the
+                     node cannot reach the notifier
+    notApplicable    no init script, or reporting is off
+
+Reports need a notifier. get_platform_services() shows whether one is registered; when
+none is, every node is notApplicable and the script still runs - only the report is
+missing. The same call shows the observability stack (OTLP endpoint, Grafana URL); the
+initscript-otel-agent template installs the agent that sends a node's metrics and logs
+there.""",
 
     "commands": """Running commands on nodes.
 
@@ -3161,6 +3369,11 @@ reports success no matter what the installer did. Use && between steps, or set -
 
 Targeting: node_id for one node, nodegroup_id for a NodeGroup, label_selector for a role
 across NodeGroups ("role=node"). At most one applies.
+
+The result carries nodes: {total, succeeded, failed}; a failure on one node does not set
+isError, so read it. A node that has only just reached Running, or was just rebooted, can
+refuse SSH for up to a minute ("SSH authentication failed", "connection refused") while
+its login user and key are set up - retry rather than report a failure.
 
 Long-running work: pass timeout_minutes (server default 30, max 120). Output is retrieved
 with list_node_command_status() or get_node_command_status(index=...); by default only the
@@ -3220,12 +3433,27 @@ Creation is not all-or-nothing. policyOnPartialFailure defaults to "continue", s
 for ten nodes can leave nine running and one Failed, and the Infra sits at
 Partial-Running:9 (R:9/10).
 
+See what happened:
+    check_infra_status_and_handle_failures(ns_id, infra_id)
+                                       counts, the failed nodes with the provider's
+                                       message, and the server's retry plan
+
+Retry in place - same node group, same configuration:
+    retry_failed_nodes(ns_id, infra_id)                 preview: what is retriable and why
+    retry_failed_nodes(..., dry_run=False, confirm=True)
+The server classifies each failure. Capacity and transient faults are retried; quota and
+configuration faults are held back until fixed (then pass node_ids with
+assume_resolved=True). zone moves the replacements to another zone of the same VNet.
+
 Clear the wreckage, keep the rest:
     control_infra(action='refine')     removes the Failed nodes; the Infra returns to Running
 
-Replace what was lost:
+Replace what was lost with something else:
+    recommend_alternative_node_config(source_spec_id, target_provider)
+                                       closest spec and images in another cloud or region
     review_nodegroup_dynamic(...)      check the substitute first
     add_nodegroup_dynamic(...)         add it under a NEW name
+One node misbehaving: control_node(action='reboot'), or 'delete' to drop it.
 
 Use a new name. A node group keeps its shared resources (security group, key pair) after the
 node dies, and those are keyed by Infra and node-group name without the region. Reusing the
@@ -3258,6 +3486,10 @@ and `fields`, a comma-separated allowlist applied after tiering:
 Command history is collapsed at summary to {count, last_status, last_request_id}; fetch the
 transcript deliberately rather than carrying it in every read.
 
+Large Infras: past 50 nodes a summary read lists the nodes that are not Running first,
+then fills up to the cap, and reports the rest as counts in nodeListCapped (byStatus,
+largestNodeGroups). Per-node lists in other tools are capped the same way.
+
 Secrets are stripped from every response. get_ssh_private_key() is the one deliberate
 exception and puts the key into the transcript.""",
 }
@@ -3272,7 +3504,7 @@ def get_usage_guide(topic: str) -> Dict:
     workflow notes live here so they cost nothing until asked for.
 
     Args:
-        topic: "provision" | "commands" | "gpu" | "recovery" | "detail"
+        topic: "provision" | "initscript" | "commands" | "gpu" | "recovery" | "detail"
 
     Returns:
         The guide text, or the list of topics if the name is unknown.
@@ -3284,7 +3516,7 @@ def get_usage_guide(topic: str) -> Dict:
 
 
 # Tool: Get an SSH private key (explicitly, because it lands in the transcript)
-@tool(redact=False)
+@tool(redact=False, read_only=False)  # hands out a secret; never auto-approved
 def get_ssh_private_key(ns_id: str, key_id: str, reason: str) -> Dict:
     """
     Return the private key material of one SSH key resource.
@@ -3360,12 +3592,19 @@ def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> D
     
     Args:
         ns_id: Namespace ID
-        resource_type: Type of resource (e.g., "vNet", "securityGroup", "sshKey", "image", "spec")
+        resource_type: "infra", "vNet", "securityGroup", "sshKey", "dataDisk",
+            "customImage", "image" or "spec"
         resource_id: Resource ID to check
 
     Returns:
         {"exists": true|false}
     """
+    if resource_type.lower() == "infra":
+        # The checkResource endpoint covers resources only; an Infra is looked up by id.
+        listing = api_request("GET", f"/ns/{ns_id}/infra?option=id")
+        if not isinstance(listing, dict) or "error" in listing:
+            return listing
+        return {"exists": resource_id in (listing.get("output") or [])}
     return api_request("GET", f"/ns/{ns_id}/checkResource/{resource_type}/{resource_id}")
 
 
@@ -4105,7 +4344,8 @@ def _internal_review_infra_dynamic(
     hold: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
-    sg_template_id: str = ""
+    sg_template_id: str = "",
+    init_script: Optional[Dict] = None
 ) -> Dict:
     """Internal helper function to review Infra dynamic configuration"""
     # Build request data according to model.InfraDynamicReq spec
@@ -4123,6 +4363,8 @@ def _internal_review_infra_dynamic(
         data["label"] = label
     if post_script and post_script.get("phases"):
         data["postScript"] = post_script
+    if init_script:
+        data["initScript"] = init_script
     if vnet_template_id:
         data["vNetTemplateId"] = vnet_template_id
     if sg_template_id:
@@ -4456,14 +4698,15 @@ def review_infra_dynamic_request(
     hold: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
-    sg_template_id: str = ""
+    sg_template_id: str = "",
+    init_script: Optional[Dict] = None
 ) -> Dict:
     """Validate an Infra configuration and estimate its cost before creating it.
 
     Run this before create_infra_dynamic(). It resolves every spec and image against the
-    CSP, reports per-node availability, estimates hourly cost, and flags configurations
-    that cannot be provisioned. Same arguments as create_infra_dynamic().
-    Details: get_usage_guide('provision').
+    CSP, reports per-node availability, quota headroom and init script size, estimates
+    hourly cost, and flags configurations that cannot be provisioned. Same arguments as
+    create_infra_dynamic(). Details: get_usage_guide('provision').
 
     Args:
         ns_id: Namespace ID
@@ -4476,12 +4719,14 @@ def review_infra_dynamic_request(
         system_label: Reserved system label; leave empty unless told otherwise.
         label: Key-value pairs applied to the Infra (enables labelSelector targeting later).
         post_script: Bootstrap to run once the nodes are up: {"phases": [...]}.
+        init_script: First-boot script for every node - see create_infra_dynamic().
         hold: Create the records but leave provisioning paused, to be released later.
 
     Returns:
         overallStatus ("Ready" | "Warning" | "Error"), creationViable, estimatedCost,
-        per-node validation in nodeReviews, and resourceSummary. Fix anything reported as
-        an error and re-review until creationViable is true.
+        per-node validation in nodeReviews (info and warnings carry the quota and init
+        script findings), and resourceSummary. Fix anything reported as an error and
+        re-review until creationViable is true.
     """
     return _internal_review_infra_dynamic(
         ns_id=ns_id,
@@ -4494,7 +4739,8 @@ def review_infra_dynamic_request(
         hold=hold,
         policy_on_partial_failure=policy_on_partial_failure,
         vnet_template_id=vnet_template_id,
-        sg_template_id=sg_template_id
+        sg_template_id=sg_template_id,
+        init_script=init_script
     )
 
 # # Tool: Create Infra (Traditional method)
@@ -4541,7 +4787,7 @@ def review_infra_dynamic_request(
 #     return api_request("POST", url, json_data=data)
 
 # Tool: Create Infra dynamically (Recommended method)
-@tool(mutating=True)
+@tool(mutating=True, additive=True)
 def create_infra_dynamic(
     ns_id: str,
     name: str,
@@ -4556,8 +4802,9 @@ def create_infra_dynamic(
     force_create: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
-    sg_template_id: str = ""
-, budget_ack: Optional[str] = None, confirm: bool = False) -> Dict:
+    sg_template_id: str = "",
+    init_script: Optional[Dict] = None,
+    budget_ack: Optional[str] = None, confirm: bool = False) -> Dict:
     """Create a Multi-Cloud Infrastructure.
 
     Two steps: call review_infra_dynamic_request() first, then this with force_create=True.
@@ -4575,7 +4822,9 @@ def create_infra_dynamic(
             imageId (required; exact cspImageName from search_images),
             name, description, nodeGroupSize (int, default 1), connectionName,
             rootDiskSize (int GB, 0 = CSP default), rootDiskType, zone,
+            distributeSubnets (bool; spread the group's nodes across the VNet's subnets),
             vNetTemplateId, sgTemplateId, os_requirements,
+            initScript (overrides init_script for this group; same shape),
             label: key-value pairs. A role label here is what label_selector targets
             later, so {"role":"control"} / {"role":"node"} lets one remote command
             reach a whole tier.
@@ -4591,6 +4840,13 @@ def create_infra_dynamic(
             True returns once nodes are provisioned and runs the phases in the background -
             use it when the bootstrap is long enough to outlast the call. Then poll
             get_infra() until postScriptStatus is terminal, or stream using postScriptRequestId.
+        init_script: First-boot script, run by the node itself from its user data - no SSH,
+            so it also works on nodes CB-Tumblebug cannot reach. One of
+            {"templateId": "initscript-nginx", "env": {...}},
+            {"scripts": [{"name": "setup", "script": "#!/bin/bash\\n..."}]} or
+            {"mode": "none"} to switch it off. Each node reports its result when a notifier
+            is registered: get_init_script_status(). Templates:
+            list_init_script_templates(). Details: get_usage_guide('initscript').
         hold: Hold provisioning for review
         skip_confirmation: Skip the confirmation step
         force_create: Confirms the configuration was reviewed
@@ -4613,96 +4869,16 @@ def create_infra_dynamic(
     if over_budget:
         return over_budget
     
-    # CRITICAL: Enforce explicit review step before Infra creation
+    # The review is a required step, not advice: without it the first sign of a spec or
+    # image that cannot be provisioned is a failed creation.
     if not force_create and not skip_confirmation:
-        return {
-            "error": "❌ Infra creation requires prior validation - MANDATORY WORKFLOW",
-            "message": "🚨 STOP: You MUST run review_infra_dynamic_request() first before creating Infra!",
-            "workflow_violation": "REVIEW_STEP_SKIPPED",
-            "required_workflow": [
-                "1. 🔍 MANDATORY: Call review_infra_dynamic_request() with the same parameters",
-                "2. 📋 EXAMINE: Review validation results, cost estimates, and any warnings/errors", 
-                "3. 🔧 FIX: Address any validation issues if needed",
-                "4. ✅ CREATE: Call create_infra_dynamic() with force_create=True to proceed"
-            ],
-            "why_review_required": [
-                "🛡️ Prevents expensive deployment failures",
-                "💰 Provides accurate cost estimation before spending money",
-                "🔍 Validates VM specifications and image compatibility",
-                "⚠️ Identifies potential issues before infrastructure creation",
-                "📊 Shows detailed deployment plan for informed decisions"
-            ],
-            "llm_instructions": {
-                "immediate_action": "CALL_REVIEW_FUNCTION",
-                "message_to_user": "I need to validate this Infra configuration first to ensure it will work and show you the cost estimates. Let me run the review step.",
-                "next_function_call": f"review_infra_dynamic_request(ns_id='{ns_id}', name='{name}', node_groups=<same_configurations>)",
-                "after_review": "After review completes, I'll show you the results and ask for confirmation before creating the infrastructure."
-            },
-            "example_code": f'''
-# STEP 1: Review first (MANDATORY)
-review_result = review_infra_dynamic_request(
-    ns_id="{ns_id}",
-    name="{name}",
-    node_groups=node_groups
-)
-
-# STEP 2: Check results and create if valid
-if review_result.get("overallStatus") == "Ready":
-    infra = create_infra_dynamic(
-        ns_id="{ns_id}",
-        name="{name}",
-        node_groups=node_groups,
-        force_create=True
-    )
-''',
-            "critical_note": "🚨 This error is intentional to enforce proper workflow. Do NOT bypass this step."
-        }
-    
-    # STEP 1: User confirmation workflow (unless explicitly skipped or forced)
-    if not skip_confirmation and not force_create:
-        # Generate comprehensive creation summary with cost analysis
-        creation_summary = generate_infra_creation_summary(
-            ns_id=ns_id,
-            name=name,
-            node_groups=node_groups,
-            description=description,
-            hold=hold
-        )
-        
-        # Add creation parameters for easy re-execution
-        creation_summary["_CREATION_PARAMETERS"] = {
-            "ns_id": ns_id,
-            "name": name,
-            "node_groups": node_groups,
-            "description": description,
-            "system_label": system_label,
-            "label": label,
-            "post_script": post_script,
-            "post_script_async": post_script_async,
-            "hold": hold
-        }
-        
-        # Add clear next action instructions
-        creation_summary["_NEXT_ACTION"] = {
-            "action_required": "USER_CONFIRMATION",
-            "message": "📋 Please review the Infra creation plan above, including cost estimates and deployment strategy.",
-            "to_proceed": {
-                "description": "After reviewing, call this function again with force_create=True to proceed with deployment",
-                "function_call": f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', node_groups=<same_configurations>, force_create=True)",
-                "alternative": "Or use skip_confirmation=True if you want to skip future confirmations"
-            },
-            "to_modify": {
-                "description": "To modify the configuration, adjust node_groups and run this function again",
-                "options": [
-                    "Modify vm specs, images, or counts in node_groups",
-                    "Change namespace, description, or other parameters",
-                    "Add or remove VMs from the configuration"
-                ]
-            }
-        }
-        
-        # Return summary without creating Infra
-        return creation_summary
+        return {"error": {
+            "message": "Infra creation requires prior validation: run "
+                       "review_infra_dynamic_request() with the same arguments first",
+            "code": "REVIEW_REQUIRED",
+            "how_to_proceed": ("review, fix what it reports, show the user the result, then "
+                               "repeat this call with force_create=True"),
+        }}
     
     # STEP 1: Validate namespace first
     ns_validation = _internal_validate_namespace(ns_id)
@@ -4858,11 +5034,13 @@ if review_result.get("overallStatus") == "Ready":
         data["label"] = label
     if post_script and post_script.get("phases"):
         data["postScript"] = post_script
+    if init_script:
+        data["initScript"] = init_script
     if vnet_template_id:
         data["vNetTemplateId"] = vnet_template_id
     if sg_template_id:
         data["sgTemplateId"] = sg_template_id
-    
+
     url = f"/ns/{ns_id}/infraDynamic"
     query = []
     if hold:
@@ -4883,12 +5061,13 @@ if review_result.get("overallStatus") == "Ready":
     }
     
     if "error" not in result:
-        # Add namespace info to result for reference
-        result["namespace_info"] = {
-            "namespace_id": ns_id,
-            "validation": "passed"
-        }
-        
+        # The server answers with the full record of every node; the caller needs the
+        # outcome, and get_infra(detail='full') has the rest.
+        result = _shape_infra(result, "summary")
+        if result.get("creationErrors") or (result.get("statusCount") or {}).get("countFailed"):
+            result["next"] = ("some nodes failed: check_infra_status_and_handle_failures() "
+                              "explains why and what can be retried")
+
         # Store successful Infra creation with auto-mapping details
         auto_mapped_count = sum(1 for vm in processed_vm_configs if vm.get("_auto_mapped_image", False))
         context_data["infra_id"] = result.get("id", name)
@@ -4968,7 +5147,7 @@ def review_spec_image_pair(
     return api_request("POST", "/specImagePairReview", json_data=data)
 
 # Tool: Add NodeGroup to existing Infra dynamically
-@tool(mutating=True)
+@tool(mutating=True, additive=True)
 def add_nodegroup_dynamic(
     ns_id: str,
     infra_id: str,
@@ -4985,28 +5164,17 @@ def add_nodegroup_dynamic(
     sg_template_id: str = "",
     label: Optional[Dict[str, str]] = None,
     post_script: Optional[Dict] = None,
-    post_script_async: bool = False
+    post_script_async: bool = False,
+    init_script: Optional[Dict] = None,
+    distribute_subnets: bool = False
 ) -> Dict:
     """
-    Add a new NodeGroup of VMs to an existing Infra dynamically.
-    
-    Use this to scale out an existing Infra by adding more VMs with a new spec/image.
-    The NodeGroup will be added to the existing Infra without affecting other VMs.
-    
-    **Example:**
-    ```python
-    # Add 3 worker VMs to existing Infra
-    result = add_nodegroup_dynamic(
-        ns_id="default",
-        infra_id="my-infra",
-        spec_id="aws+ap-northeast-2+t3.medium",
-        image_id="ami-0c02fb55956c7d316",
-        name="worker-group",
-        node_group_size=3,
-        description="Worker nodes"
-    )
-    ```
-    
+    Add a new NodeGroup to an existing Infra.
+
+    Adds nodes of a new spec/image without touching the existing ones. To add more nodes
+    of a group that already exists, use scale_out_nodegroup() instead. Node ids are
+    assigned by the server ("<name>-<n>"); read them back from the result.
+
     Args:
         ns_id: Namespace ID (REQUIRED)
         infra_id: Infra ID to add the nodegroup to (REQUIRED)
@@ -5027,9 +5195,11 @@ def add_nodegroup_dynamic(
             "continueOnError": False}]}
         post_script_async: True returns as soon as the nodes exist and runs post_script in
             the background (default False: wait for it).
+        init_script: First-boot script for the NEW nodes - see create_infra_dynamic().
+        distribute_subnets: Spread the new nodes across the VNet's subnets (zones).
     
     Returns:
-        Updated Infra information including the newly added NodeGroup
+        The Infra after the addition; addedNodeIds lists the new nodes.
     """
     data = {
         "specId": spec_id,
@@ -5054,6 +5224,10 @@ def add_nodegroup_dynamic(
         data["sgTemplateId"] = sg_template_id
     if label:
         data["label"] = label
+    if init_script:
+        data["initScript"] = init_script
+    if distribute_subnets:
+        data["distributeSubnets"] = True
     # Bootstrap commands run on the NEW nodes only (phases without an explicit
     # target are scoped to this nodeGroup by the server)
     params = None
@@ -5062,7 +5236,15 @@ def add_nodegroup_dynamic(
         if post_script_async:
             params = {"postScriptAsync": "true"}
     
-    return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic", json_data=data, params=params)
+    result = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic", json_data=data, params=params)
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    added = result.get("newNodeList") or [
+        n.get("id") for n in (result.get("node") or []) if name and n.get("nodeGroupId") == name]
+    result = _shape_infra(result, "summary")
+    if added:
+        result["addedNodeIds"] = added
+    return result
 
 # Tool: Review NodeGroup Dynamic Request
 @tool()
@@ -5078,7 +5260,8 @@ def review_nodegroup_dynamic(
     root_disk_size: int = 0,
     connection_name: str = "",
     zone: str = "",
-    post_script: Optional[Dict] = None
+    post_script: Optional[Dict] = None,
+    init_script: Optional[Dict] = None
 ) -> Dict:
     """
     Review/validate a NodeGroup configuration before adding it to an existing Infra.
@@ -5099,6 +5282,7 @@ def review_nodegroup_dynamic(
         connection_name: Specific connection name (optional)
         zone: Availability zone (optional)
         post_script: Bootstrap to validate (same shape as add_nodegroup_dynamic)
+        init_script: First-boot script to validate (same shape as add_nodegroup_dynamic)
     
     Returns:
         Validation result including spec/image availability, cost estimation,
@@ -5125,6 +5309,8 @@ def review_nodegroup_dynamic(
     # can be submitted unchanged (bootstrap phases are validated here too)
     if post_script and post_script.get("phases"):
         data["postScript"] = post_script
+    if init_script:
+        data["initScript"] = init_script
 
     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamicReview", json_data=data)
 
@@ -5132,29 +5318,21 @@ def review_nodegroup_dynamic(
 @tool(mutating=True)
 def terminate_infra(ns_id: str, infra_id: str, confirm: bool = False) -> Dict:
     """
-    Delete an Infra.
-    This operation will terminate all VMs in the Infra and delete the Infra.
+    Terminate every node of an Infra at the provider and delete the Infra.
 
-    Named for what it does: it terminates. Deleting the CB-Tumblebug record without
-    terminating at the provider is deliberately not offered here - that path leaves billable
-    instances running with nothing tracking them. Use MapUI or the REST API if a
-    metadata-only removal is ever genuinely needed.
+    Irreversible. Removing only the CB-Tumblebug record is deliberately not offered: it
+    leaves billable instances running with nothing tracking them. If the API reports that
+    termination is still in progress, wait and call again.
 
-    Safety: always runs with option=terminate (CSP resources are terminated
-    first). Forced metadata-only deletion is not available through this tool because it
-    orphans running instances. If the API reports that termination is still in progress,
-    wait a few minutes and call this tool again.
-    This operation is irreversible and should be used with caution.
-    This operation requires confirmation from the user.
-    
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
         confirm: Must be True to proceed. Ask the user first - this is the only
             thing standing between a request and the destructive action.
-    
+
     Returns:
-        Deletion result with guidance about optional shared resources cleanup
+        The deletion result, and leftover_resources: the security groups, key pair and
+        VNet the Infra used, which outlive it.
     """
     guard = _require_confirmation(
         confirm, "terminating infrastructure",
@@ -5175,9 +5353,7 @@ def terminate_infra(ns_id: str, infra_id: str, confirm: bool = False) -> Dict:
     # in progress, retry in a few minutes instead of forcing.
     result = api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}?option=terminate")
     
-    # Add shared resources cleanup guidance to the result
     if isinstance(result, dict) and "error" not in result:
-        # Store deletion in memory
         _store_interaction_memory(
             user_request=f"Delete Infra '{infra_id}' in namespace '{ns_id}'",
             llm_response=f"Successfully deleted Infra '{infra_id}'",
@@ -5185,39 +5361,16 @@ def terminate_infra(ns_id: str, infra_id: str, confirm: bool = False) -> Dict:
             context_data={"namespace_id": ns_id, "infra_id": infra_id, "operation": "delete"},
             status="completed"
         )
-        
-        # Add shared resources cleanup guidance
-        result["next_steps_guidance"] = {
-            "infra_deletion": "✅ Infra deletion completed successfully",
-            "optional_cleanup": {
-                "title": "🔧 Optional: Clean up shared resources",
-                "description": "Your Infra used shared resources (VNet, SecurityGroup, SSHKey) that remain in the namespace. These can be reused by future Infras or cleaned up if no longer needed.",
-                "when_to_cleanup": [
-                    "This was the last Infra in the namespace",
-                    "You won't create new Infras that could reuse these network configurations",
-                    "You want to completely clean up the namespace"
-                ],
-                "when_to_keep": [
-                    "Other Infras exist in the same namespace",
-                    "You plan to create new Infras soon",
-                    "You want to keep network configurations for future use"
-                ],
-                "cleanup_command": f"release_resources('{ns_id}', confirm=True)",
-                "check_command": f"get_infra_list('{ns_id}') # Check if other Infras exist",
-                "warning": "⚠️  Shared resources cleanup is IRREVERSIBLE and affects the entire namespace"
-            }
-        }
-        
-        # Add associated resources information if available
-        if associated_resources and isinstance(associated_resources, dict) and "error" not in associated_resources:
-            result["next_steps_guidance"]["associated_resources"] = {
-                "description": "The deleted Infra was using these shared resources:",
-                "vNets": associated_resources.get("vNetIds", []),
-                "securityGroups": associated_resources.get("securityGroupIds", []),
-                "sshKeys": associated_resources.get("sshKeyIds", []),
-                "note": "These resources remain available for future Infras unless explicitly released"
-            }
-    
+        # The Infra's security groups and key pair outlive it, and a later Infra of the
+        # same name collides with them.
+        leftover = {}
+        if isinstance(associated_resources, dict) and "error" not in associated_resources:
+            leftover = {k: associated_resources.get(k) or [] for k in
+                        ("vNetIds", "securityGroupIds", "sshKeyIds")}
+        result["leftover_resources"] = leftover
+        result["next"] = ("release_resources(ns_id, dry_run=True) lists what nothing uses "
+                          "any more; confirm=True removes only those, leaving other Infras' "
+                          "resources alone")
     return result
 
 # Tool: Control Infra
@@ -5243,6 +5396,591 @@ def control_infra(ns_id: str, infra_id: str, action: str, force: bool = False) -
     if force:
         params["force"] = "true"
     return api_request("GET", f"/ns/{ns_id}/control/infra/{infra_id}", params=params)
+
+#####################################
+# Node-level control and scaling
+#####################################
+
+# Tool: Control a single node
+@tool(mutating=True)
+def control_node(ns_id: str, infra_id: str, node_id: str, action: str,
+                 force: bool = False, confirm: bool = False) -> Dict:
+    """
+    Control one node of an Infra: suspend, resume, reboot, terminate or delete.
+
+    control_infra() acts on every node; this acts on one. "terminate" ends the instance at
+    the provider and keeps the node record as Terminated. "delete" terminates the instance
+    and then removes the node from the Infra; if the provider has not confirmed the
+    termination yet it answers "retry shortly" and nothing is removed.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        node_id: Node ID, e.g. "g1-1"
+        action: "suspend" | "resume" | "reboot" | "terminate" | "delete"
+        force: For suspend, resume, reboot and terminate: proceed even when the node is
+            in an in-progress state. Ignored for "delete".
+        confirm: Must be True for "terminate" and "delete". Ask the user first.
+
+    Returns:
+        The node's action result (success, status, message).
+    """
+    action = (action or "").strip().lower()
+    if action not in ("suspend", "resume", "reboot", "terminate", "delete"):
+        return {"error": f"unknown action {action!r}; expected one of suspend, resume, "
+                         f"reboot, terminate, delete"}
+    if action in ("terminate", "delete"):
+        guard = _require_confirmation(
+            confirm, f"{'terminating' if action == 'terminate' else 'deleting'} node {node_id}",
+            "the instance is terminated at the provider; this cannot be undone")
+        if guard:
+            return guard
+    if action == "delete":
+        # The server's option=force skips the termination and drops only the record, which
+        # leaves a billable instance nothing tracks. It is deliberately not offered here.
+        result = api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}")
+        if isinstance(result, dict) and "error" in result:
+            # The termination is issued before the record goes; when the provider has not
+            # confirmed it within the call, the record stays and a second call finishes it.
+            view = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}",
+                               params={"option": "status"})
+            state = view.get("status") if isinstance(view, dict) else None
+            if isinstance(state, dict):
+                state = state.get("status")
+            if state in ("Terminating", "Terminated"):
+                return {"error": {
+                    "message": f"node {node_id} is {state} at the provider and its record is "
+                               f"still listed; nothing else was removed",
+                    "code": "TIMEOUT",
+                    "how_to_proceed": "call again in a few seconds to remove the record",
+                }}
+        return result
+    params = {"action": action}
+    if force:
+        params["force"] = "true"
+    return api_request("GET", f"/ns/{ns_id}/control/infra/{infra_id}/node/{node_id}",
+                       params=params)
+
+
+# Tool: Add nodes to an existing NodeGroup
+@tool(mutating=True, additive=True)
+def scale_out_nodegroup(ns_id: str, infra_id: str, nodegroup_id: str, add_count: int = 1,
+                        budget_ack: Optional[str] = None, confirm: bool = False) -> Dict:
+    """
+    Add nodes to an existing NodeGroup, using the group's own spec, image and settings.
+
+    For nodes of a different spec or image, add_nodegroup_dynamic() creates a new group.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        nodegroup_id: NodeGroup to grow, e.g. "g1"
+        add_count: Number of nodes to add (default 1)
+        budget_ack: Approval id from request_budget_increase(), to proceed past a spend limit
+        confirm: Confirms a person agreed to the added machines and their cost.
+
+    Returns:
+        The Infra after the addition; addedNodeIds lists the new nodes.
+    """
+    try:
+        add_count = int(add_count)
+    except (TypeError, ValueError):
+        return {"error": "add_count must be a positive integer"}
+    if add_count < 1:
+        return {"error": "add_count must be a positive integer"}
+
+    # Price the addition from a node already in the group.
+    members = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/nodegroup/{nodegroup_id}")
+    if not isinstance(members, dict) or "error" in members:
+        return members
+    node_ids = members.get("output") or []
+    if not node_ids:
+        return {"error": f"NodeGroup {nodegroup_id!r} does not exist in Infra {infra_id!r}"}
+    sample = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_ids[0]}")
+    plan = [{"name": nodegroup_id, "nodeGroupSize": add_count,
+             "specId": (sample or {}).get("specId"), "imageId": (sample or {}).get("imageId")}]
+    unconfirmed = _confirm_creation_plan(plan, f"{add_count} more node(s) in {nodegroup_id}", confirm)
+    if unconfirmed:
+        return unconfirmed
+    over_budget = _check_budget(plan, budget_ack)
+    if over_budget:
+        return over_budget
+
+    result = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodegroup/{nodegroup_id}",
+                         json_data={"numNodesToAdd": add_count})
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    before = set(node_ids)
+    added = [n.get("id") for n in (result.get("node") or [])
+             if n.get("nodeGroupId") == nodegroup_id and n.get("id") not in before]
+    result = _shape_infra(result, "summary")
+    result["addedNodeIds"] = added
+    return result
+
+
+#####################################
+# Failure recovery
+#####################################
+
+# Tool: Retry failed nodes
+@tool(mutating=True, additive=True)
+def retry_failed_nodes(ns_id: str, infra_id: str, dry_run: bool = True,
+                       node_ids: Optional[List[str]] = None, attempts_per_node: int = 0,
+                       interval_seconds: int = 0, zone: Optional[str] = None,
+                       assume_resolved: bool = False, keep_failed_nodes: bool = False,
+                       confirm: bool = False) -> Dict:
+    """
+    Re-create the Failed nodes of an Infra with their original configuration.
+
+    The server classifies each failure first: a capacity or transient fault is worth
+    retrying, a quota or configuration fault is not until someone fixes it. dry_run=True
+    (the default) returns that plan - which nodes would be retried, why the others would
+    not, and the hourly cost - without creating anything.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        dry_run: True (default) previews the plan. False performs the retry.
+        node_ids: Failed nodes to retry. Omit for every node the server considers retriable.
+        attempts_per_node: Tries per node before giving up (0 = server default). Capacity
+            comes and goes, so a few attempts can succeed where one fails.
+        interval_seconds: Pause between attempts on one node (0 = server default 30, max 600)
+        zone: Place the replacements in this zone instead of the original one. Applies to
+            the nodes named in node_ids.
+        assume_resolved: Retry nodes the classifier ruled out, asserting the blocking
+            condition (a quota, for instance) has been fixed. Applies to node_ids.
+        keep_failed_nodes: Keep the original Failed records after a successful replacement
+        confirm: Required when dry_run=False - the retry creates billable machines.
+
+    Returns:
+        dry_run: retriableCount, notRetriableCount, costPerHourIfAll and a plan per node
+        (action, reason, escalation). Otherwise succeededCount, failedCount and per-node
+        results.
+    """
+    body: Dict[str, Any] = {"targets": []}
+    for node_id in node_ids or []:
+        target: Dict[str, Any] = {"nodeId": node_id}
+        if zone:
+            target["zone"] = zone
+        if assume_resolved:
+            target["assumeResolved"] = True
+        body["targets"].append(target)
+    if (zone or assume_resolved) and not node_ids:
+        return {"error": "node_ids is required when zone or assume_resolved is given"}
+    if attempts_per_node:
+        body["attemptsPerNode"] = int(attempts_per_node)
+    if interval_seconds:
+        body["intervalSeconds"] = int(interval_seconds)
+    if keep_failed_nodes:
+        body["keepFailedNodes"] = True
+
+    if dry_run:
+        review = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/retryFailedNodesReview",
+                             json_data=body)
+        if not isinstance(review, dict) or "error" in review:
+            return review
+        plans = review.get("plans") or []
+        keep = ("nodeId", "nodeGroupId", "action", "reason", "escalation", "provider", "region",
+                "zone", "specId", "costPerHour", "siblingZone", "siblingRunningCount",
+                "assumeResolvedHelps")
+        out = {k: v for k, v in review.items() if k != "plans"}
+        out["plans"] = [{k: p[k] for k in keep if p.get(k) not in (None, "", 0, False)}
+                        for p in plans[:NODE_LIST_LIMIT]]
+        if len(plans) > NODE_LIST_LIMIT:
+            out["plansCapped"] = {"total": len(plans), "shown": NODE_LIST_LIMIT}
+        if review.get("retriableCount"):
+            out["next"] = "show the plan to the user, then call again with dry_run=False, confirm=True"
+        return out
+
+    guard = _require_confirmation(
+        confirm, f"retrying failed nodes of {infra_id}",
+        "replacement machines are created and billed")
+    if guard:
+        return guard
+    result = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/retryFailedNodes",
+                         json_data=body, timeout_override=(60, 3600))
+    if isinstance(result, dict) and isinstance(result.get("results"), list) \
+            and len(result["results"]) > NODE_LIST_LIMIT:
+        # Keep the nodes that still failed; the counts cover the rest.
+        rows = result["results"]
+        rows = ([r for r in rows if not r.get("succeeded")] + [r for r in rows if r.get("succeeded")])
+        result = dict(result)
+        result["results"] = rows[:NODE_LIST_LIMIT]
+        result["resultsCapped"] = True
+    return result
+
+
+# Tool: Find a substitute spec and image elsewhere
+@tool()
+def recommend_alternative_node_config(source_spec_id: str, target_provider: str,
+                                      target_region: Optional[str] = None,
+                                      source_image_id: Optional[str] = None,
+                                      os_type: Optional[str] = None,
+                                      limit: int = 3) -> Dict:
+    """
+    Find the closest spec, with matching images, in another provider or region.
+
+    Use it when a spec cannot be provisioned where it was planned - no stock, no quota - or
+    to move a node group to another cloud. Each candidate carries a spec id and image ids
+    that can go straight into review_infra_dynamic_request().
+
+    Args:
+        source_spec_id: Spec to match, exact id from recommend_vm_spec()
+        target_provider: Provider to search, e.g. "gcp"
+        target_region: Limit the search to one region (default: every region of the provider)
+        source_image_id: Image used with the source spec; its OS decides the image search
+        os_type: OS to search images for, e.g. "ubuntu 22.04", overriding the source image's
+        limit: Number of candidate specs (default 3)
+
+    Returns:
+        candidates, each with the spec, how it compares with the source, and images.
+    """
+    body: Dict[str, Any] = {"sourceSpecId": source_spec_id,
+                            "targetProviderName": target_provider,
+                            "specCandidateLimit": max(1, int(limit or 3)),
+                            "imageAlternativeLimit": 2}
+    if target_region:
+        body["targetRegionName"] = target_region
+    if source_image_id:
+        body["sourceImageId"] = source_image_id
+    if os_type:
+        body["osType"] = os_type
+    result = api_request("POST", "/recommendAlternativeNodeConfig", json_data=body)
+    if not isinstance(result, dict) or "error" in result:
+        return result
+
+    def spec_row(spec):
+        if not isinstance(spec, dict):
+            return spec
+        return {k: spec[k] for k in ("id", "providerName", "regionName", "cspSpecName", "vCPU",
+                                     "memoryGiB", "costPerHour", "architecture",
+                                     "acceleratorModel", "acceleratorCount",
+                                     "acceleratorMemoryGB") if spec.get(k) not in (None, "", 0)}
+
+    def image_row(image):
+        if not isinstance(image, dict):
+            return image
+        return {k: image[k] for k in ("cspImageName", "osType", "osArchitecture",
+                                      "isBasicImage", "description") if image.get(k) is not None}
+
+    out: Dict[str, Any] = {"sourceSpec": spec_row(result.get("sourceSpec")), "candidates": []}
+    for cand in result.get("candidates") or []:
+        row = {}
+        for key, value in cand.items():
+            if isinstance(value, dict) and "cspSpecName" in value:
+                row[key] = spec_row(value)
+            elif isinstance(value, list) and value and isinstance(value[0], dict) \
+                    and "cspImageName" in value[0]:
+                row[key] = [image_row(v) for v in value]
+            elif isinstance(value, dict) and "cspImageName" in value:
+                row[key] = image_row(value)
+            else:
+                row[key] = value
+        out["candidates"].append(row)
+    return out
+
+
+# Tool: Root and data disk choices for a spec
+@tool()
+def get_spec_disk_options(spec_id: str, image_id: Optional[str] = None) -> Dict:
+    """
+    Disk types and size ranges usable with a spec - the valid values for rootDiskType
+    and rootDiskSize in a node group.
+
+    Args:
+        spec_id: Exact spec id from recommend_vm_spec()
+        image_id: Image the node will boot; adds the image's minimum root disk size
+
+    Returns:
+        defaultRootDiskType, whether the root disk is selectable, and per disk type its
+        availability and size range.
+    """
+    return api_request("GET", f"/ns/system/resources/spec/{spec_id}/diskOptions",
+                       params={"imageId": image_id} if image_id else None)
+
+
+#####################################
+# Init script (first-boot) and platform services
+#####################################
+
+_INIT_SCRIPT_STATES = ("initializing", "ok", "fail", "pending", "noReport", "notApplicable")
+
+
+# Tool: Init script results of an Infra
+@tool()
+def get_init_script_status(ns_id: str, infra_id: str, detail: str = "summary",
+                           status: Optional[str] = None) -> Dict:
+    """
+    First-boot (init script) results reported by the nodes of an Infra.
+
+    The init script runs inside each node from its user data, so the result arrives as a
+    report through the notifier, not over SSH. States: initializing, ok, fail, pending
+    (not reported yet), noReport (Running but silent past the timeout) and notApplicable
+    (no init script, or reporting off - which is every node while no notifier is
+    registered; see get_platform_services()).
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        detail: "summary" (default) - counts per state. "full" - one entry per node with
+            its step results, capped; narrow it with status.
+        status: With detail="full", only nodes in this state, e.g. "fail"
+
+    Returns:
+        Counts per state, and with detail="full" the node entries.
+    """
+    if status and status not in _INIT_SCRIPT_STATES:
+        return {"error": f"unknown status {status!r}; expected one of "
+                         f"{', '.join(_INIT_SCRIPT_STATES)}"}
+    if _validate_detail(detail) != "full" and not status:
+        result = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/initScript",
+                             params={"option": "summary"})
+    else:
+        result = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/initScript",
+                             params={"status": status} if status else None)
+        nodes = result.get("nodes") if isinstance(result, dict) else None
+        if isinstance(nodes, list) and len(nodes) > NODE_LIST_LIMIT:
+            result = dict(result)
+            result["nodes"] = nodes[:NODE_LIST_LIMIT]
+            result["nodesCapped"] = {"total": len(nodes), "shown": NODE_LIST_LIMIT}
+    if isinstance(result, dict) and "error" not in result and result.get("total") \
+            and result.get("notApplicable") == result.get("total"):
+        result["note"] = ("no node reports: either no notifier is registered "
+                          "(get_platform_services()) or the init script is switched off")
+    return result
+
+
+# Tool: Init script templates
+@tool()
+def list_init_script_templates(ns_id: str = "system", template_id: Optional[str] = None,
+                               keyword: Optional[str] = None) -> Dict:
+    """
+    List init script templates, or fetch one with its script text.
+
+    A template is a named first-boot script with default variables, referenced from a
+    node group as init_script={"templateId": "<id>", "env": {...}} or run later over SSH
+    as a post_script phase with templateId.
+
+    Args:
+        ns_id: Namespace ID. Defaults to "system", where the shipped templates live.
+        template_id: Return this template in full, script text included
+        keyword: Filter the list by keyword
+
+    Returns:
+        One line per template (id, description, step names, variables), or the template.
+    """
+    if template_id:
+        return api_request("GET", f"/ns/{ns_id}/template/initScript/{template_id}")
+    result = api_request("GET", f"/ns/{ns_id}/template/initScript",
+                         params={"filterKeyword": keyword} if keyword else None)
+    templates = result.get("templates") if isinstance(result, dict) else None
+    if not isinstance(templates, list):
+        return result
+    return {"templates": [{
+        "id": t.get("id"),
+        "description": t.get("description"),
+        "steps": [s.get("name") or f"step-{i + 1}" for i, s in enumerate(t.get("scripts") or [])],
+        "env": t.get("env") or {},
+    } for t in templates], "count": len(templates)}
+
+
+# Tool: Create, update or delete an init script template
+@tool(mutating=True)
+def manage_init_script_template(action: str, ns_id: str = "default",
+                                template_id: Optional[str] = None,
+                                template: Optional[Dict] = None,
+                                confirm: bool = False) -> Dict:
+    """
+    Create, update or delete an init script template.
+
+    Args:
+        action: "create" | "update" | "delete"
+        ns_id: Namespace ID that owns the template
+        template_id: Required for update and delete
+        template: Body for create and update: {"name": "...", "description": "...",
+            "env": {"KEY": "default"}, "scripts": [{"name": "step", "script":
+            "#!/bin/bash\\n...", "timeoutSec": 0, "continueOnError": false}]}.
+            Each script starts with its shebang line.
+        confirm: Must be True for action="delete". Ask the user first.
+
+    Returns:
+        The stored template, or the deletion result.
+    """
+    action = (action or "").strip().lower()
+    if action == "create":
+        if not template:
+            return {"error": "template body is required for action='create'"}
+        return api_request("POST", f"/ns/{ns_id}/template/initScript", json_data=template)
+    if action == "update":
+        if not (template_id and template):
+            return {"error": "template_id and template are required for action='update'"}
+        return api_request("PUT", f"/ns/{ns_id}/template/initScript/{template_id}",
+                           json_data=template)
+    if action == "delete":
+        if not template_id:
+            return {"error": "template_id is required for action='delete'"}
+        guard = _require_confirmation(
+            confirm, f"deleting init script template {template_id!r}",
+            "node groups that reference it can no longer be created")
+        if guard:
+            return guard
+        return api_request("DELETE", f"/ns/{ns_id}/template/initScript/{template_id}")
+    return {"error": f"unknown action {action!r}; expected create, update or delete"}
+
+
+# Tool: Notifier and observability state
+@tool()
+def get_platform_services(messages: int = 0) -> Dict:
+    """
+    State of the services CB-Tumblebug runs for its nodes.
+
+    notifier: where nodes report their init script result. With none registered,
+    get_init_script_status() shows every node as notApplicable.
+    observability: the OTLP endpoint and Grafana that node metrics and logs go to.
+
+    Read-only: registering or provisioning either service is done in MapUI or the REST API.
+
+    Args:
+        messages: Include this many of the newest notifier messages (0 = none, max 50)
+
+    Returns:
+        ready, plus notifier and observability with registered, status and endpoints.
+        Tokens and passwords are redacted.
+    """
+    def service(path, keep):
+        info = api_request("GET", path)
+        if not isinstance(info, dict) or "error" in info:
+            return {"registered": False, "error": (info or {}).get("error") if isinstance(info, dict) else "unreadable"}
+        # Nothing registered answers 204, which api_request turns into a bare message.
+        found = {k: info[k] for k in keep if info.get(k)}
+        return {"registered": True, **found} if found else {"registered": False}
+
+    ready = api_request("GET", "/readyz")
+    out: Dict[str, Any] = {
+        "ready": isinstance(ready, dict) and "error" not in ready,
+        "notifier": service("/notifier", (
+            "status", "statusMessage", "source", "type", "url", "urls", "topic",
+            "managedNsId", "managedInfraId", "registeredAt")),
+        "observability": service("/observability", (
+            "status", "statusMessage", "source", "otlpEndpoint", "grafanaUrl",
+            "retentionDays", "managedNsId", "managedInfraId", "registeredAt")),
+    }
+    try:
+        wanted = max(0, min(50, int(messages or 0)))
+    except (TypeError, ValueError):
+        wanted = 0
+    if wanted and out["notifier"].get("registered"):
+        recent = api_request("GET", "/notifier/messages", params={"limit": wanted})
+        out["notifier"]["recentMessages"] = recent if isinstance(recent, list) else []
+    return out
+
+
+#####################################
+# Resources that exist at the CSP but are not managed yet
+#####################################
+
+_INSPECT_TYPES = ("vNet", "subnet", "securityGroup", "sshKey", "node")
+
+
+# Tool: Compare CB-Tumblebug's records with the CSP
+@tool()
+def inspect_csp_resources(connection_name: str, resource_type: str = "node") -> Dict:
+    """
+    Compare what CB-Tumblebug manages with what exists at the CSP, for one connection.
+
+    Shows resources found at the provider that CB-Tumblebug does not track - left over
+    from a failed run, or created outside it. Read-only. Listing a busy account can take
+    minutes.
+
+    Args:
+        connection_name: Connection to inspect, e.g. "aws-ap-northeast-2"
+        resource_type: "node" (default) | "vNet" | "subnet" | "securityGroup" | "sshKey"
+
+    Returns:
+        Counts (onTumblebug, onCspTotal, onCspOnly) and the resources found only at the CSP.
+    """
+    if resource_type not in _INSPECT_TYPES:
+        return {"error": f"unknown resource_type {resource_type!r}; expected one of "
+                         f"{', '.join(_INSPECT_TYPES)}"}
+    result = api_request("POST", "/inspectResources",
+                         json_data={"connectionName": connection_name,
+                                    "resourceType": resource_type},
+                         timeout_override=(60, 900))
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    resources = result.get("resources") or {}
+    csp_only = ((resources.get("onCspOnly") or {}).get("info")) or []
+    out = {
+        "connectionName": result.get("connectionName"),
+        "resourceType": result.get("resourceType"),
+        "overview": result.get("resourceOverview"),
+        "onCspOnly": csp_only[:NODE_LIST_LIMIT],
+    }
+    if len(csp_only) > NODE_LIST_LIMIT:
+        out["onCspOnlyCapped"] = {"total": len(csp_only), "shown": NODE_LIST_LIMIT}
+    if result.get("systemMessage"):
+        out["systemMessage"] = result["systemMessage"]
+    return out
+
+
+# Tool: Bring existing CSP resources under management
+@tool(mutating=True, additive=True)
+def register_csp_resources(ns_id: str, connection_name: str,
+                           resource_type: Optional[str] = None,
+                           infra_name_prefix: str = "reg",
+                           one_infra: bool = True, confirm: bool = False) -> Dict:
+    """
+    Register resources that already exist at a CSP into a namespace, for one connection.
+
+    After registration CB-Tumblebug manages them like its own: deleting a registered
+    resource through CB-Tumblebug deletes the real one. In a shared account this also
+    picks up resources that belong to other people - run inspect_csp_resources() first
+    and show the user what would be taken in.
+
+    Args:
+        ns_id: Namespace that will own the registered resources
+        connection_name: Connection whose region is scanned, e.g. "aws-ap-northeast-2"
+        resource_type: Limit to "vNet", "securityGroup", "sshKey" or "node". A type needs
+            the ones before it: securityGroup needs vNet, node needs securityGroup and
+            sshKey. Omit to register all of them.
+        infra_name_prefix: Prefix of the Infra that registered nodes are placed in
+        one_infra: True (default) puts the registered nodes in one Infra; False creates
+            one Infra per node.
+        confirm: Must be True to proceed. Ask the user first.
+
+    Returns:
+        Counts and results per resource type.
+    """
+    guard = _require_confirmation(
+        confirm, f"registering the CSP resources of {connection_name}",
+        "every matching resource at the provider becomes managed, and deletable, through "
+        "CB-Tumblebug - including ones created by others in a shared account")
+    if guard:
+        return guard
+    params = {"infraFlag": "y" if one_infra else "n"}
+    if resource_type:
+        if resource_type not in ("vNet", "securityGroup", "sshKey", "node"):
+            return {"error": f"unknown resource_type {resource_type!r}; expected one of "
+                             f"vNet, securityGroup, sshKey, node"}
+        params["option"] = resource_type
+    result = api_request("POST", "/registerCspResources", params=params,
+                         json_data={"connectionName": connection_name, "nsId": ns_id,
+                                    "infraNamePrefix": infra_name_prefix},
+                         timeout_override=(60, 1800))
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    # Per connection: the counts, the message, and a sample of what was registered.
+    out = {k: result.get(k) for k in ("registerationOverview", "elapsedTime") if k in result}
+    out["connections"] = []
+    for entry in result.get("registerationResult") or []:
+        ids = ((entry.get("registerationOutputs") or {}).get("output")) or []
+        row = {"connectionName": entry.get("connectionName"),
+               "overview": entry.get("registerationOverview"),
+               "registered": ids[:NODE_LIST_LIMIT], "registeredCount": len(ids)}
+        if entry.get("systemMessage"):
+            row["systemMessage"] = entry["systemMessage"]
+        out["connections"].append(row)
+    return out
 
 #####################################
 # NLB Management (Network Load Balancer)
@@ -6015,7 +6753,18 @@ def execute_command_infra(
         context_data=context_data,
         status=status
     )
-    
+
+    # The per-node error sits inside results, where a caller checking only isError misses it.
+    if "results" in result:
+        result["nodes"] = {"total": total_count, "succeeded": success_count,
+                           "failed": total_count - success_count}
+        errors = " ".join(str(r.get("error") or "") for r in result["results"]).lower()
+        if any(sign in errors for sign in ("authentication failed", "unable to authenticate",
+                                           "connection refused")):
+            result["hint"] = ("a node that was just created or rebooted refuses SSH until its login "
+                              "user and key are in place, usually under a minute - retry before "
+                              "treating this as a failure")
+
     return result
 
 # PREDEFINED_SCRIPTS: Enhanced remote command scripts based on MapUI patterns
@@ -7414,7 +8163,7 @@ def context_awareness_prompt() -> str:
     - resume_session(): See recent work and operations
     - resume_session(): Get comprehensive analysis of current session
     - resume_session(): Find specific previous work
-    - store_interaction_memory(): Record new interactions (automatic in most tools)
+    - resume_session(session_id): What this session already did (mutating calls are journaled automatically)
     
     **GETTING STARTED WITH CONTEXT:**
     
@@ -7901,7 +8650,7 @@ logger.debug("Automatic memory storage enabled for: Infra creation, command exec
 #####################################
 
 # Tool: Check Infra status and handle failures
-@tool()
+@tool(read_only=False)  # auto_cleanup_failed removes nodes
 def check_infra_status_and_handle_failures(
     ns_id: str,
     infra_id: str,
@@ -7909,41 +8658,30 @@ def check_infra_status_and_handle_failures(
     detailed_analysis: bool = True
 ) -> Dict:
     """
-    Check Infra status and provide recovery options for failed/partial-failed states.
-    
-    **HANDLES FOLLOWING SCENARIOS:**
-    - Partial-Failed: Some VMs failed, some succeeded → Offer cleanup of failed VMs
-    - Failed: All VMs failed → Provide diagnostic information and recovery options
-    - Running: All VMs running → Status confirmation
-    - Creating: Still in progress → Monitor progress
-    - Suspended/Terminated: Provide restart/recovery options
-    
-    **AUTOMATIC RECOVERY OPTIONS:**
-    - Failed VM cleanup via 'refine' action
-    - Detailed failure analysis with recommendations
-    - User confirmation for cleanup operations
-    - Status monitoring with retry suggestions
-    
+    Health of an Infra and what to do about its failures.
+
+    Reports node states with addresses, the provider's message for each Failed node, the
+    post script and init script outcome, and the server's retry plan - which failed nodes
+    can be re-created in place and why the others cannot.
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID to check
-        auto_cleanup_failed: If True, automatically cleanup failed VMs without asking
-        detailed_analysis: Include detailed VM-level analysis
-    
+        auto_cleanup_failed: True removes the Failed nodes (refine) without asking
+        detailed_analysis: False returns counts only, without the per-node lists
+
     Returns:
-        Status report with recovery recommendations and action options
+        status_analysis (counts, deployment_health, init_script, retry_plan),
+        detailed_status, recommendations and recovery_actions.
     """
     try:
-        # Get detailed Infra status
-        infra_status = get_infra_list(ns_id, option="status")
-        
-        # Find specific Infra in status list
-        target_infra_status = None
-        for infra in infra_status.get("infra", []):
-            if infra.get("id") == infra_id:
-                target_infra_status = infra
-                break
-        
+        # The status view of this one Infra: node states and addresses without the full
+        # records, and without listing every other Infra in the namespace.
+        status_view = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}?option=status")
+        if isinstance(status_view, dict) and "error" in status_view:
+            return status_view
+        target_infra_status = (status_view or {}).get("status")
+
         if not target_infra_status:
             return {
                 "error": "Infra status not found",
@@ -7972,6 +8710,7 @@ def check_infra_status_and_handle_failures(
                     "vm_id": vm.get("id", "unknown"),
                     "vm_name": vm.get("name", "unknown"),
                     "status": vm_status,
+                    "message": vm.get("systemMessage", ""),
                     "public_ip": vm.get("publicIp", "N/A"),
                     "private_ip": vm.get("privateIp", "N/A"),
                     "csp_resource_id": vm.get("cspResourceId", "N/A")
@@ -7983,7 +8722,7 @@ def check_infra_status_and_handle_failures(
                     "public_ip": vm.get("publicIp", "N/A"),
                     "private_ip": vm.get("privateIp", "N/A")
                 })
-            elif vm_status.lower() in ["creating", "creating-vm"]:
+            elif vm_status.lower() in ["creating", "creating-vm", "registering", "undefined"]:
                 creating_vms.append({
                     "vm_id": vm.get("id", "unknown"),
                     "vm_name": vm.get("name", "unknown"),
@@ -8005,7 +8744,10 @@ def check_infra_status_and_handle_failures(
         # their bootstrap failed, so surface it alongside node health
         post_status = None
         try:
-            infra_detail = get_infra(ns_id, infra_id)
+            # The post script outcome lives on the full record, which is tens of megabytes
+            # for an Infra of thousands of nodes; skip it there.
+            infra_detail = (get_infra(ns_id, infra_id, fields="postScriptStatus,postScriptResults")
+                            if len(vm_status_list) <= 1000 else None)
             if isinstance(infra_detail, dict):
                 post_status = infra_detail.get("postScriptStatus")
                 if post_status and post_status != "None":
@@ -8029,9 +8771,53 @@ def check_infra_status_and_handle_failures(
         except Exception as e:
             logger.debug(f"Could not read postScriptStatus: {e}")
 
+        # First-boot script results, as reported by the nodes themselves
+        init_summary = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/initScript?option=summary")
+        if isinstance(init_summary, dict) and "error" not in init_summary \
+                and init_summary.get("total", 0) > init_summary.get("notApplicable", 0):
+            recovery_analysis["init_script"] = {
+                k: init_summary.get(k, 0)
+                for k in ("ok", "fail", "initializing", "pending", "noReport", "notApplicable")}
+
+        # What the server itself judges retriable, and why the rest is not
+        retry_plan = None
+        if failed_vms:
+            review = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/retryFailedNodesReview",
+                                 json_data={"targets": []})
+            if isinstance(review, dict) and "error" not in review:
+                retry_plan = {
+                    "retriable": review.get("retriableCount", 0),
+                    "not_retriable": review.get("notRetriableCount", 0),
+                    "cost_per_hour_if_all": review.get("costPerHourIfAll"),
+                    "plans": [{k: plan.get(k) for k in
+                               ("nodeId", "action", "reason", "escalation", "zone", "siblingZone")
+                               if plan.get(k)}
+                              for plan in (review.get("plans") or [])[:NODE_LIST_LIMIT]],
+                }
+                recovery_analysis["retry_plan"] = retry_plan
+
         # Generate recommendations based on status
         recommendations = []
         recovery_actions = []
+
+        init_counts = recovery_analysis.get("init_script") or {}
+        if init_counts.get("fail") or init_counts.get("noReport"):
+            recommendations.append(
+                f"INIT SCRIPT: {init_counts.get('fail', 0)} node(s) failed and "
+                f"{init_counts.get('noReport', 0)} did not report; "
+                "get_init_script_status(detail='full', status='fail') names them")
+
+        if retry_plan and retry_plan["retriable"]:
+            recommendations.append(
+                f"RETRY: {retry_plan['retriable']} failed node(s) can be re-created in place - "
+                "retry_failed_nodes() previews the plan, confirm=True runs it")
+            recovery_actions.append({
+                "action": "retry",
+                "description": "Re-create the failed nodes with their original configuration",
+                "command": f"retry_failed_nodes('{ns_id}', '{infra_id}', dry_run=False, confirm=True)",
+                "risk_level": "low",
+                "impact": f"Replaces {retry_plan['retriable']} failed node(s); running nodes are untouched"
+            })
 
         if post_status in ("Failed", "CompletedWithErrors", "Interrupted"):
             recommendations.append(
@@ -8122,9 +8908,10 @@ def check_infra_status_and_handle_failures(
             "status_analysis": recovery_analysis,
             "detailed_status": {
                 "overall_infra_status": overall_status,
-                "failed_vms": failed_vms if detailed_analysis else len(failed_vms),
-                "running_vms": running_vms if detailed_analysis else len(running_vms),
-                "creating_vms": creating_vms if detailed_analysis else len(creating_vms)
+                # Lists are capped: the counts above are exact, the lists are a sample.
+                "failed_vms": failed_vms[:NODE_LIST_LIMIT] if detailed_analysis else len(failed_vms),
+                "running_vms": running_vms[:NODE_LIST_LIMIT] if detailed_analysis else len(running_vms),
+                "creating_vms": creating_vms[:NODE_LIST_LIMIT] if detailed_analysis else len(creating_vms)
             },
             "recommendations": recommendations,
             "recovery_actions": recovery_actions,
@@ -8167,30 +8954,20 @@ def interactive_infra_recovery(
     confirm_cleanup: bool = False
 ) -> Dict:
     """
-    Interactive Infra recovery tool for handling failed deployments with user confirmation.
-    
-    **SUPPORTED RECOVERY ACTIONS:**
-    - refine: Remove failed VMs while keeping successful ones (recommended for partial failures)
-    - terminate: Delete entire Infra (use when all VMs failed)
-    - reboot: Restart all VMs (use for temporary issues)
-    - resume: Resume suspended VMs
-    - suspend: Suspend all VMs (temporary cost saving)
-    
-    **INTERACTIVE WORKFLOW:**
-    1. Analyze current Infra status
-    2. Present failure details and impact assessment
-    3. Require user confirmation for destructive actions
-    4. Execute recovery action with progress monitoring
-    5. Verify recovery success and provide next steps
-    
+    Apply one Infra-wide recovery action, with a confirmation step for destructive ones.
+
+    For failed nodes specifically, retry_failed_nodes() re-creates them in place and is
+    usually the better first step; this tool removes or restarts.
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID to recover
-        recovery_action: Action to perform (refine, terminate, reboot, resume, suspend)
-        confirm_cleanup: User confirmation for destructive actions
-    
+        recovery_action: "refine" (drop Failed nodes, keep the rest) | "terminate" |
+            "reboot" | "resume" | "suspend"
+        confirm_cleanup: Must be True for refine and terminate. Ask the user first.
+
     Returns:
-        Recovery execution result with status updates and next steps
+        The state before and after, and what was done.
     """
     try:
         # Step 1: Get current status before recovery
@@ -8743,355 +9520,6 @@ def _estimate_cost_from_spec_name(spec_name: str, provider: str) -> float:
     # Default conservative estimate for unknown patterns
     return 0.05  # $0.05/hour as baseline estimate
 
-def generate_infra_creation_summary(
-    ns_id: str,
-    name: str,
-    node_groups: List[Dict],
-    description: str = "Infra to be created",
-    hold: bool = False
-) -> Dict:
-    """
-    Generate a comprehensive user-friendly summary of Infra creation plan for confirmation.
-    This provides detailed overview including cost estimates, CSP distribution, and deployment strategy.
-    
-    **ENHANCED SUMMARY INCLUDES:**
-    - Detailed Infra overview with cost breakdown
-    - VM-by-VM specifications and pricing
-    - CSP and region distribution analysis
-    - Image mapping strategy validation
-    - Monthly and hourly cost estimates
-    - Deployment timeline and resource allocation
-    - Risk assessment and recommendations
-    - User confirmation workflow
-    
-    Args:
-        ns_id: Namespace ID
-        name: Infra name
-        node_groups: VM configurations
-        description: Infra description
-        hold: Whether to hold for review
-    
-    Returns:
-        Comprehensive summary with detailed cost analysis and confirmation prompt
-    """
-    # Get detailed preview first
-    preview = preview_infra_configuration(ns_id, name, node_groups, description)
-    
-    # Enhanced summary structure
-    summary = {
-        "Infra_CREATION_PLAN": {
-            "infra_name": name,
-            "namespace": ns_id,
-            "description": description,
-            "total_vms": len(node_groups),
-            "deployment_mode": "REVIEW_FIRST" if hold else "IMMEDIATE_DEPLOYMENT",
-            "creation_timestamp": datetime.now().isoformat()
-        },
-        "VM_BREAKDOWN_DETAILED": [],
-        "COST_ANALYSIS": {
-            "hourly_cost": {"total": 0.0, "breakdown": [], "currency": "USD"},
-            "monthly_cost": {"total": 0.0, "breakdown": [], "currency": "USD"},
-            "cost_by_provider": {},
-            "cost_warnings": []
-        },
-        "MULTI_CLOUD_DISTRIBUTION": {},
-        "DEPLOYMENT_STRATEGY": {},
-        "RISK_ASSESSMENT": {
-            "deployment_risks": [],
-            "cost_risks": [],
-            "compatibility_issues": []
-        },
-        "CONFIGURATION_VALIDATION": {},
-        "USER_CONFIRMATION": {
-            "ready_to_proceed": False,
-            "confirmation_required": True,
-            "confirmation_message": "",
-            "next_steps": []
-        }
-    }
-    
-    # Enhanced VM Breakdown with cost analysis
-    total_hourly_cost = 0.0
-    provider_costs = {}
-    cost_warnings = []
-    
-    for i, vm_config in enumerate(node_groups):
-        vm_name = vm_config.get("name", f"vm-{i+1}")
-        common_spec = vm_config.get("specId", "")
-        common_image = vm_config.get("imageId", "AUTO-MAPPED")
-        nodegroup_size = int(vm_config.get("nodeGroupSize", 1))
-        
-        # Extract provider and region from spec
-        provider = "unknown"
-        region = "unknown"
-        spec_name = "unknown"
-        
-        if common_spec and "+" in common_spec:
-            parts = common_spec.split("+")
-            if len(parts) >= 3:
-                provider = parts[0]
-                region = parts[1]
-                spec_name = parts[2]
-        
-        # Get detailed spec information for cost calculation
-        vm_cost_info = _get_vm_cost_estimate(common_spec)
-        vm_hourly_cost = vm_cost_info.get("hourly_cost", 0.0)
-        
-        # Calculate total cost for this VM configuration
-        total_vm_hourly_cost = vm_hourly_cost * nodegroup_size
-        total_hourly_cost += total_vm_hourly_cost
-        
-        # Track costs by provider
-        if provider not in provider_costs:
-            provider_costs[provider] = 0.0
-        provider_costs[provider] += total_vm_hourly_cost
-        
-        # Add cost warnings
-        if vm_hourly_cost == 0.0 or vm_hourly_cost == -1:
-            cost_warnings.append(f"No cost data available for {vm_name} ({common_spec})")
-        elif vm_hourly_cost > 2.0:  # High cost warning
-            cost_warnings.append(f"High cost detected for {vm_name}: ${vm_hourly_cost:.3f}/hour")
-        
-        vm_breakdown = {
-            "vm_name": vm_name,
-            "provider": provider,
-            "region": region,
-            "spec_name": spec_name,
-            "full_spec": common_spec,
-            "image": common_image,
-            "instance_count": nodegroup_size,
-            "cost_analysis": {
-                "hourly_cost_per_instance": vm_hourly_cost,
-                "total_hourly_cost": total_vm_hourly_cost,
-                "monthly_cost_estimate": total_vm_hourly_cost * 24 * 30,
-                "cost_available": vm_hourly_cost > 0,
-                "cost_warning": vm_hourly_cost > 2.0
-            },
-            "resource_specs": vm_cost_info.get("specs", {}),
-            "deployment_info": {
-                "estimated_deploy_time": "3-8 minutes",
-                "auto_mapped_image": common_image == "AUTO-MAPPED"
-            }
-        }
-        
-        summary["VM_BREAKDOWN_DETAILED"].append(vm_breakdown)
-    
-    # Cost analysis summary
-    summary["COST_ANALYSIS"]["hourly_cost"]["total"] = round(total_hourly_cost, 3)
-    summary["COST_ANALYSIS"]["monthly_cost"]["total"] = round(total_hourly_cost * 24 * 30, 2)
-    summary["COST_ANALYSIS"]["cost_by_provider"] = {k: round(v, 3) for k, v in provider_costs.items()}
-    summary["COST_ANALYSIS"]["cost_warnings"] = cost_warnings
-    
-    # Enhanced multi-cloud distribution
-    csp_distribution = {}
-    region_distribution = {}
-    
-    for vm in summary["VM_BREAKDOWN_DETAILED"]:
-        provider = vm["provider"]
-        region = vm["region"]
-        
-        if provider not in csp_distribution:
-            csp_distribution[provider] = {"vm_count": 0, "instance_count": 0, "hourly_cost": 0.0}
-        if region not in region_distribution:
-            region_distribution[region] = {"vm_count": 0, "instance_count": 0}
-        
-        csp_distribution[provider]["vm_count"] += 1
-        csp_distribution[provider]["instance_count"] += vm["instance_count"]
-        csp_distribution[provider]["hourly_cost"] += vm["cost_analysis"]["total_hourly_cost"]
-        
-        region_distribution[region]["vm_count"] += 1
-        region_distribution[region]["instance_count"] += vm["instance_count"]
-    
-    summary["MULTI_CLOUD_DISTRIBUTION"] = {
-        "total_providers": len(csp_distribution),
-        "total_regions": len(region_distribution),
-        "deployment_type": "multi-cloud" if len(csp_distribution) > 1 else "single-cloud",
-        "provider_breakdown": csp_distribution,
-        "region_breakdown": region_distribution
-    }
-    
-    # Deployment strategy analysis
-    total_instances = sum(vm["instance_count"] for vm in summary["VM_BREAKDOWN_DETAILED"])
-    deployment_complexity = "simple" if len(csp_distribution) == 1 and total_instances <= 3 else "complex"
-    
-    summary["DEPLOYMENT_STRATEGY"] = {
-        "complexity": deployment_complexity,
-        "total_instances": total_instances,
-        "estimated_total_time": f"{max(5, len(node_groups) * 2)}-{max(10, len(node_groups) * 5)} minutes",
-        "parallel_deployment": len(csp_distribution) > 1
-    }
-    
-    # Risk assessment
-    risks = []
-    if total_hourly_cost > 10.0:
-        risks.append(f"High cost deployment: ${total_hourly_cost:.2f}/hour (${total_hourly_cost * 24 * 30:.2f}/month)")
-    if len(csp_distribution) > 2:
-        risks.append("Complex multi-cloud deployment across multiple providers")
-    if any(vm["deployment_info"]["auto_mapped_image"] for vm in summary["VM_BREAKDOWN_DETAILED"]):
-        risks.append("Some images will be auto-selected - review before deployment")
-    
-    summary["RISK_ASSESSMENT"]["deployment_risks"] = risks
-    summary["RISK_ASSESSMENT"]["cost_risks"] = cost_warnings
-    
-    # Configuration validation
-    ready_to_proceed = preview.get("ready_for_deployment", False)
-    validation_issues = preview.get("resource_summary", {}).get("validation_issues", 0)
-    
-    summary["CONFIGURATION_VALIDATION"] = {
-        "overall_status": "valid" if ready_to_proceed else "issues_found",
-        "validation_issues": validation_issues,
-        "auto_mapped_images": sum(1 for vm in summary["VM_BREAKDOWN_DETAILED"] if vm["deployment_info"]["auto_mapped_image"]),
-        "manual_images": sum(1 for vm in summary["VM_BREAKDOWN_DETAILED"] if not vm["deployment_info"]["auto_mapped_image"])
-    }
-    
-    # Enhanced user confirmation
-    if ready_to_proceed and validation_issues == 0:
-        confirmation_msg = f"""
-🔥 Infra CREATION SUMMARY - READY TO DEPLOY
-
-📋 DEPLOYMENT OVERVIEW:
-• Infra Name: {name}
-• Namespace: {ns_id}
-• Total VMs: {len(node_groups)} configurations
-• Total Instances: {total_instances}
-• Deployment Type: {summary['MULTI_CLOUD_DISTRIBUTION']['deployment_type'].upper()}
-
-💰 COST ESTIMATE:
-• Hourly Cost: ${total_hourly_cost:.3f} USD
-• Monthly Estimate: ${total_hourly_cost * 24 * 30:.2f} USD
-• Cost by Provider: {', '.join(f'{k}: ${v:.3f}/h' for k, v in provider_costs.items())}
-
-🌏 MULTI-CLOUD DISTRIBUTION:
-• Providers: {', '.join(csp_distribution.keys())}
-• Regions: {', '.join(region_distribution.keys())}
-
-⚡ DEPLOYMENT INFO:
-• Estimated Time: {summary['DEPLOYMENT_STRATEGY']['estimated_total_time']}
-• Complexity: {deployment_complexity.upper()}
-• Mode: {'HOLD FOR REVIEW' if hold else 'IMMEDIATE DEPLOYMENT'}
-
-❗ IMPORTANT NOTES:
-{chr(10).join(f'• {risk}' for risk in risks) if risks else '• No significant risks identified'}
-
-✅ Ready to proceed with Infra creation!
-"""
-        
-        next_steps = [
-            "✅ Approve: Call create_infra_dynamic() with skip_confirmation=True to proceed",
-            "📝 Review: Use hold=True to create but hold for manual review",
-            "✏️ Modify: Adjust node_groups if needed and re-run this summary"
-        ]
-        
-        summary["USER_CONFIRMATION"]["ready_to_proceed"] = True
-        
-    else:
-        confirmation_msg = f"""
-⚠️ Infra CONFIGURATION HAS ISSUES
-
-❌ DEPLOYMENT BLOCKED:
-• Found {validation_issues} configuration issue(s)
-• Manual review and fixes required before deployment
-
-🔧 REQUIRED ACTIONS:
-• Review and fix configuration issues
-• Validate spec-image compatibility
-• Re-run this summary after fixes
-"""
-        
-        next_steps = [
-            "🔧 Fix: Address configuration issues first",
-            "🔍 Validate: Use validate_vm_spec_image_compatibility() for detailed analysis",
-            "🔄 Retry: Re-run this summary after fixes"
-        ]
-        
-        summary["USER_CONFIRMATION"]["ready_to_proceed"] = False
-    
-    summary["USER_CONFIRMATION"]["confirmation_message"] = confirmation_msg.strip()
-    summary["USER_CONFIRMATION"]["next_steps"] = next_steps
-    
-    return summary
-    
-    # Multi-cloud distribution
-    csp_dist = preview.get("csp_distribution", {})
-    summary["MULTI_CLOUD_DISTRIBUTION"] = {
-        "deployment_type": csp_dist.get("deployment_type", "unknown"),
-        "total_csps": csp_dist.get("total_csps", 0),
-        "csp_breakdown": csp_dist.get("csp_breakdown", {}),
-        "regions": list(csp_dist.get("region_breakdown", {}).keys())
-    }
-    
-    # Configuration status
-    validation = preview.get("validation_status", {})
-    resource_summary = preview.get("resource_summary", {})
-    
-    summary["CONFIGURATION_STATUS"] = {
-        "overall_status": validation.get("overall", "unknown"),
-        "auto_mapped_images": resource_summary.get("auto_mapped_images", 0),
-        "manual_images": resource_summary.get("manual_images", 0),
-        "validation_issues": resource_summary.get("validation_issues", 0),
-    }
-    
-    # Resource estimate
-    total_vm_instances = sum(int(vm.get("nodeGroupSize", 1)) for vm in node_groups)
-    summary["RESOURCE_ESTIMATE"] = {
-        "total_vm_instances": total_vm_instances,
-        "unique_configurations": len(node_groups),
-        "multi_cloud_deployment": csp_dist.get("total_csps", 0) > 1,
-        "estimated_deployment_time": f"{2 + len(node_groups)}~{5 + len(node_groups) * 2} minutes"
-    }
-    
-    # Important notes from recommendations
-    important_notes = []
-    for rec in preview.get("recommendations", []):
-        if rec.get("priority") in ["critical", "warning"]:
-            important_notes.append(f"WARNING: {rec.get('message', '')}")
-        elif rec.get("priority") == "info" and "multi-cloud" in rec.get("message", "").lower():
-            important_notes.append(f"INFO: {rec.get('message', '')}")
-        elif rec.get("priority") == "success":
-            important_notes.append(f"SUCCESS: {rec.get('message', '')}")
-    
-    summary["IMPORTANT_NOTES"] = important_notes
-    
-    # User confirmation
-    ready_to_proceed = preview.get("ready_for_deployment", False)
-    
-    if ready_to_proceed:
-        confirmation_msg = f"""
-READY TO CREATE Infra '{name}'
-
-Your multi-cloud infrastructure is configured and ready for deployment:
-- {len(node_groups)} VM configuration(s) across {csp_dist.get('total_csps', 0)} cloud provider(s)
-- {total_vm_instances} total VM instance(s) will be created
-- Deployment mode: {'Review first (hold=True)' if hold else 'Immediate deployment'}
-
-Do you want to proceed with Infra creation?
-"""
-        next_steps = [
-            "Confirm: Proceed with create_infra_dynamic()",
-            "Review: Use hold=True to review before deployment",
-            "Modify: Adjust VM configurations if needed"
-        ]
-    else:
-        validation_issues = resource_summary.get("validation_issues", 0)
-        confirmation_msg = f"""
-Infra CONFIGURATION HAS ISSUES
-
-Cannot proceed with deployment due to {validation_issues} configuration issue(s):
-Please review and fix the issues identified in the validation report.
-"""
-        next_steps = [
-            "Fix configuration issues first",
-            "Use validate_vm_spec_image_compatibility() for detailed analysis",
-            "Re-run this summary after fixes"
-        ]
-    
-    summary["USER_CONFIRMATION"] = {
-        "ready_to_proceed": ready_to_proceed,
-        "confirmation_message": confirmation_msg.strip(),
-        "next_steps": next_steps
-    }
-    
-    return summary
 
 #####################################
 # Spec-to-Image Mapping Validation Tools
@@ -9894,21 +10322,14 @@ def _extract_used_templates(commands: List[str]) -> List[str]:
 @tool()
 def list_credential_holders() -> Dict:
     """
-    List all credential holders registered in the system.
-    
-    A credential holder represents a set of CSP credentials (e.g., for different teams,
-    environments, or users). Each holder can have credentials for multiple cloud providers.
-    
-    Use this to discover available credential holders before setting the
-    x-credential-holder header via the credential_holder parameter in API calls.
-    
+    List the credential holders registered in the system.
+
+    A holder is one set of CSP credentials (a team, an environment, a user), possibly for
+    several providers. Tools that take credential_holder act with that holder's credentials.
+
     Returns:
-        Dict with "credentialHolderList": list of holders, each with:
-        - credentialHolder: Holder identifier (e.g., "admin", "dev-team")
-        - providers: List of cloud providers with credentials (e.g., ["aws", "gcp", "azure"])
-        - connectionCount: Total connection configurations
-        - verifiedConnectionCount: Number of verified connections
-        - isDefault: Whether this is the system default holder
+        credentialHolderList: per holder its providers, connectionCount,
+        verifiedConnectionCount and isDefault.
     """
     return api_request("GET", "/credentialHolder")
 
@@ -12132,7 +12553,7 @@ workers = manage_labels(action='find'
 ### Syncing CSP Labels
 ```python
 # Pull labels set directly on CSP resources (e.g., via AWS Console)
-merge_csp_resource_labels(label_type="node", uid="node-uid-123")
+manage_labels(action="sync_from_csp", label_type="node", uid="node-uid-123")
 ```
 
 ## 🔐 Credential Holder Management

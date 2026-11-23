@@ -45,6 +45,7 @@ spec:
             - { name: MCP_SERVER_HOST, value: "0.0.0.0" }
             - { name: MCP_SERVER_PORT, value: "8000" }
             - { name: MCP_LOG_LEVEL, value: "INFO" }
+            - { name: MCP_READ_ONLY, value: {{ .Values.mcp.readOnly | default false | quote }} }
           readinessProbe:
             tcpSocket: { port: http }
             periodSeconds: 10
