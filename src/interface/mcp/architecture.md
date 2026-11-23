@@ -248,7 +248,7 @@ mindmap
       recommend_vm_spec
       search_images
       review_infra_dynamic_request
-      get_spec_disk_options
+      get_spec_options
       API_recommendSpec_searchImage_infraDynamicReview
 
     Provision
@@ -273,11 +273,12 @@ mindmap
       API_ns_infra_control_cmd
 
     Recover and Clean Up
-      check_infra_status_and_handle_failures
+      diagnose_infra
       retry_failed_nodes
       recommend_alternative_node_config
       terminate_infra
       release_resources
+      manage_resource
       API_retryFailedNodes_sharedResources
 
     Resources
@@ -286,6 +287,15 @@ mindmap
       add_security_group_rules
       inspect_csp_resources
       API_ns_resources_label_inspectResources
+
+    Services
+      manage_object_storage
+      manage_nlb
+      manage_k8s_cluster
+      manage_rdbms
+      create_custom_image
+      manage_dns_record
+      API_objectStorage_nlb_k8sCluster_rdbms_snapshot_globalDns
 
     Direct Database Access
       PostgreSQL_MCP_Server

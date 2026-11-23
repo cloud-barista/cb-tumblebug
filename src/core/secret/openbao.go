@@ -63,11 +63,22 @@ func storeSecretCache(path string, data map[string]any) {
 	secretCacheMu.Unlock()
 }
 
+// invalidationHooks drop values other packages derived from a secret.
+var invalidationHooks []func(path string)
+
+// OnSecretInvalidated registers fn to run when a secret is written or deleted. Call it from init().
+func OnSecretInvalidated(fn func(path string)) {
+	invalidationHooks = append(invalidationHooks, fn)
+}
+
 // InvalidateSecretCache drops a cached secret (call after writes or deletes).
 func InvalidateSecretCache(path string) {
 	secretCacheMu.Lock()
 	delete(secretCache, path)
 	secretCacheMu.Unlock()
+	for _, fn := range invalidationHooks {
+		fn(path)
+	}
 }
 
 // WriteSecret writes key-value data to OpenBao at the given KV v2 path (upsert).

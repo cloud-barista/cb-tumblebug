@@ -1024,8 +1024,9 @@ mcp-check: ## Tier 1 contract checks for the MCP server (tools golden file, requ
 	@docker run --rm \
 		-v "$(PWD)/src/interface/mcp:/repo/src/interface/mcp:ro" \
 		-v "$(PWD)/src/interface/rest/docs/swagger.yaml:/repo/src/interface/rest/docs/swagger.yaml:ro" \
+		-v "$(PWD)/scripts:/repo/scripts:ro" \
 		-w /repo $(MCP_TEST_IMAGE) \
-		python3 /repo/src/interface/mcp/tests/check_contract.py
+		python3 /repo/src/interface/mcp/tests/check_contract.py $(ARGS)
 
 mcp-check-update: ## Rewrite the MCP tools golden file after an intended tool change
 	@docker image inspect $(MCP_TEST_IMAGE) >/dev/null 2>&1 || \
@@ -1048,26 +1049,30 @@ mcp-scenarios: ## Tier 2: drive real requests through MCP alone, no spend (ARGS=
 # an "admin-only tool" would be unenforceable. The agent can request; only this can grant.
 ETCD_POD ?= cb-tumblebug-etcd-0
 
-mcp-budget: ## Show the MCP spend policy and pending approval requests
-	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl get --prefix /mcp/policy/budget
-	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl get --prefix /mcp/budget/requests/ || true
+ETCDCTL = $(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl
+MCP_BUDGET = python3 scripts/misc/mcp-budget.py
 
-mcp-budget-set: ## Set spend limits (PER_CREATION=10 PER_DAY=100 CONCURRENT=50 ENABLED=true)
-	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/policy/budget \
-		'{"enabled":$(or $(ENABLED),true),"per_creation_usd_per_hour":$(or $(PER_CREATION),10),"per_day_created_usd_per_hour":$(or $(PER_DAY),100),"concurrent_running_usd_per_hour":$(or $(CONCURRENT),50)}'
-	@printf '%b\n' 'Spend limits updated. Check with: make mcp-budget'
+mcp-budget: ## Show the MCP spend policy and the approval requests
+	@raw=$$($(ETCDCTL) get --prefix /mcp/ -w json) || { echo "cannot read etcd: is the cluster up?"; exit 1; }; \
+	printf '%s' "$$raw" | $(MCP_BUDGET) show
 
-mcp-budget-approve: ## Approve one over-budget request (ID=req-...)
+mcp-budget-set: ## Set spend limits; values not given keep their setting (PER_CREATION=10 PER_DAY=100 CONCURRENT=50 ENABLED=true)
+	@raw=$$($(ETCDCTL) get --print-value-only /mcp/policy/budget) || { echo "cannot read etcd: nothing was changed"; exit 1; }; \
+	new=$$(printf '%s' "$$raw" | \
+		ENABLED='$(ENABLED)' PER_CREATION='$(PER_CREATION)' PER_DAY='$(PER_DAY)' CONCURRENT='$(CONCURRENT)' $(MCP_BUDGET) policy) && \
+	$(ETCDCTL) put /mcp/policy/budget "$$new" >/dev/null && \
+	$(MAKE) --no-print-directory mcp-budget
+
+mcp-budget-approve: ## Approve one pending over-budget request (ID=req-...)
 	@test -n "$(ID)" || { echo "usage: make mcp-budget-approve ID=req-..."; exit 1; }
-	@cur=$$($(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl get --print-value-only /mcp/budget/requests/$(ID)); \
-	test -n "$$cur" || { echo "no such request: $(ID)"; exit 1; }; \
-	upd=$$(printf '%s' "$$cur" | python3 -c 'import json,sys; d=json.load(sys.stdin); d["status"]="approved"; print(json.dumps(d))'); \
-	$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/budget/requests/$(ID) "$$upd" >/dev/null
-	@printf '%b\n' 'Approved $(ID) — the agent may retry with budget_ack=$(ID) (single use)'
+	@raw=$$($(ETCDCTL) get --print-value-only /mcp/budget/requests/$(ID)) || { echo "cannot read etcd: nothing was approved"; exit 1; }; \
+	upd=$$(printf '%s' "$$raw" | $(MCP_BUDGET) approve) && \
+	lease=$$($(ETCDCTL) lease grant 604800 | awk '{print $$2}') && \
+	$(ETCDCTL) put --lease=$$lease /mcp/budget/requests/$(ID) "$$upd" >/dev/null && \
+	printf '%b\n' 'Approved $(ID): the agent may retry the same plan once with budget_ack=$(ID)'
 
-mcp-budget-off: ## Disable spend limits
-	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/policy/budget '{"enabled":false}'
-	@printf '%b\n' 'Spend limits disabled.'
+mcp-budget-off: ## Disable spend limits (the configured values are kept)
+	@$(MAKE) --no-print-directory mcp-budget-set ENABLED=false
 
 k-build: ## Build LOCAL source into the cluster (interactive menu if C= omitted; C=tb|mapui|mcp|sp|all)
 	@comp="$(C)"; \

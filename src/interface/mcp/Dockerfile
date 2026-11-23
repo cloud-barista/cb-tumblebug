@@ -9,7 +9,8 @@ WORKDIR /app
 
 # install system dependencies by uv (pinned for reproducible builds)
 # cryptography: credentials are RSA/AES-encrypted client-side before being registered
-RUN uv pip install --system "fastmcp==3.4.5" "requests==2.34.2" "uvicorn==0.51.0" "cryptography==46.0.4"
+# pyyaml: rewrites a kubeconfig that relies on a credential plugin
+RUN uv pip install --system "fastmcp==3.4.5" "requests==2.34.2" "uvicorn==0.51.0" "cryptography==46.0.4" "pyyaml==6.0.4"
 
 COPY tb-mcp.py .
 

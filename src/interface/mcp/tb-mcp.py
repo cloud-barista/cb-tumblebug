@@ -1,54 +1,10 @@
-# Information: This file is part of the Tumblebug MCP server implementation.
-# Run with the following command:
-# uv run ./tb-mcp.py
-# this server will be exposed to the MCP interface at http://127.0.0.1:8000/sse by default.
+# CB-Tumblebug MCP server.
+#
+# Exposes the CB-Tumblebug REST API to MCP clients over Streamable HTTP (stateless) at
+# http://<host>:8000/mcp. Run with `uv run ./tb-mcp.py`; configuration is read from the
+# environment (see README.md). Checks: `make mcp-check`, `make mcp-scenarios`.
 
-# Configuration example in Claude Desktop
-# Note that Claude Desktop does not fully support streamable HTTP transport yet. (SSE transport was deprecated)
-# So, the example utilizes mcp-simple-proxy.py based on the (https://gofastmcp.com/integrations/claude-desktop#remote-servers).
-# cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py
-# In case of you are using WSL, the configuration would look like this:
-# {
-#   "mcpServers": {
-#     "tumblebug": {
-#       "command": "wsl.exe",
-#       "args": [
-#         "bash",
-#         "-c",
-#         "/home/shson/.local/bin/uv run --with fastmcp /home/shson/go/src/github.com/cloud-barista/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
-#       ]
-#     }
-#   }
-# }
-# In case of the source code is in Windows, the configuration would look like this:
-# {
-#   "mcpServers": {
-#     "tumblebug": {
-#       "command": "uv",
-#       "args": [
-#         "run",
-#         "--with",
-#         "fastmcp",
-#         "{Path to the mcp-simple-proxy.py}"
-#       ]
-#     }
-#   }
-# }
-
-# Configuration example in VS Code.
-# Note that VS Code does support streamable HTTP transport directly.
-# "servers": {
-#   "tumblebug": {
-#     "type": "http",
-#     "url": "http://127.0.0.1:8000/mcp"
-#   },
-# }
-
-# For testing, you can use the Model Context Protocol Inspector.
-# https://modelcontextprotocol.io/docs/tools/inspector
-
-
-
+import asyncio
 import os
 import requests
 import json
@@ -57,6 +13,7 @@ import re
 import functools
 import inspect
 import base64
+import math
 import time
 import socket
 from typing import Dict, List, Optional, Any, Union
@@ -83,7 +40,7 @@ if log_level_value > logging.DEBUG:
     # Completely suppress uvicorn access logs
     logging.getLogger("uvicorn.access").setLevel(logging.CRITICAL)
     logging.getLogger("uvicorn.access").disabled = True
-    
+
     # Suppress other noisy loggers
     logging.getLogger("mcp.server.streamable_http").setLevel(logging.CRITICAL)
     logging.getLogger("mcp.server.streamable_http_manager").setLevel(logging.CRITICAL)
@@ -93,7 +50,7 @@ if log_level_value > logging.DEBUG:
     logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("requests").setLevel(logging.WARNING)
-    
+
     # Override uvicorn's default access logger
     uvicorn_access = logging.getLogger("uvicorn.access")
     uvicorn_access.handlers.clear()
@@ -122,7 +79,7 @@ if log_level_value > logging.DEBUG:
                 record.args = ()  # Clear args to prevent formatting mismatch
                 return True
             return False
-    
+
     mcp_logger = logging.getLogger("mcp.server.lowlevel.server")
     mcp_logger.setLevel(logging.INFO)  # Allow INFO level for important events
     mcp_logger.addFilter(MCPRequestFilter())
@@ -142,10 +99,26 @@ logger.info(f"Password configured: {'Yes' if TUMBLEBUG_PASSWORD else 'No'}")
 logger.info(f"Logging level: {log_level}")
 logger.info(f"MCP Server will start on {host}:{port}")
 
-# Initialize MCP server
-# mask_error_details=True: hide internal exception details from MCP clients
-# (only generic error messages are returned). Errors are still logged server-side.
-mcp = FastMCP("cb-tumblebug", mask_error_details=True)
+# Sent to the client at initialize; most clients place it in the model's system prompt.
+SERVER_INSTRUCTIONS = "\n\n".join([
+    "CB-Tumblebug provisions and operates multi-cloud infrastructure. An Infra is a set of "
+    "node groups, each a number of identical nodes on one provider and region.",
+    "Typical flow: recommend_vm_spec -> search_images(matched_spec_id=...) -> "
+    "review_infra_dynamic_request -> show the plan and its cost to the user -> "
+    "create_infra_dynamic(force_create=True, confirm=True). Afterwards: "
+    "execute_command_infra, diagnose_infra, terminate_infra, release_resources.",
+    "get_usage_guide(topic) holds the worked examples: provision, initscript, commands, "
+    "gpu, recovery, cleanup, services, detail.",
+    "Tools that create, change or delete take confirm. Pass confirm=True only after the "
+    "user agreed; without it the call refuses and describes what it would do.",
+    "Tools that change state also take session_id, which journals the call so that "
+    "resume_session(session_id) recovers the work after a disconnect, and idempotency_key, "
+    "with which a retry returns the first result instead of acting twice.",
+    'The namespace defaults to "default".',
+])
+
+# mask_error_details hides internal exception text from clients; it is still logged here.
+mcp = FastMCP("cb-tumblebug", instructions=SERVER_INSTRUCTIONS, mask_error_details=True)
 
 
 # MCP_READ_ONLY=true serves only the tools that change nothing, so an exploratory agent is
@@ -153,7 +126,32 @@ mcp = FastMCP("cb-tumblebug", mask_error_details=True)
 READ_ONLY_MODE = os.environ.get("MCP_READ_ONLY", "").strip().lower() in ("1", "true", "yes")
 
 
-def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, **d_kwargs):
+# Tools that mix reads and writes behind an `action` argument: name -> the read actions
+READ_ACTION_TOOLS = {}
+
+
+def _compact_schema(parameters):
+    """Publish an optional argument as its plain type instead of "X or null, default null".
+
+    The listing is paid for on every session and optional arguments are most of it. Input
+    is still validated against the function signature, so an explicit null is accepted.
+    """
+    for prop in ((parameters or {}).get("properties") or {}).values():
+        options = prop.get("anyOf")
+        if not isinstance(options, list) or prop.get("default", "") is not None:
+            continue
+        kept = [o for o in options if o != {"type": "null"}]
+        if len(kept) == len(options):
+            continue
+        del prop["anyOf"], prop["default"]
+        if len(kept) == 1:
+            prop.update(kept[0])
+        else:
+            prop["anyOf"] = kept
+
+
+def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False,
+         read_actions=None, **d_kwargs):
     """Register an MCP tool that returns its payload exactly once.
 
     FastMCP renders a structured return value twice - escaped inside content[0].text and
@@ -178,10 +176,17 @@ def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, *
     Read-only tools are announced as such (readOnlyHint), which is what lets a client
     run them without asking. additive=True marks a tool that only creates; the other
     tools that take confirm are announced as destructive.
+
+    read_actions names the values of the tool's `action` argument that only read. Those
+    calls are not journaled, and under MCP_READ_ONLY the tool stays published and refuses
+    every other action.
     """
     is_read_only = (not mutating) if read_only is None else read_only
+    read_actions = tuple(a.lower() for a in (read_actions or ()))
 
     def decorate(fn):
+        base = inspect.signature(fn)
+
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             started = time.monotonic()
@@ -189,8 +194,18 @@ def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, *
             session_id = (kwargs.get("session_id") if "session_id" in own
                           else kwargs.pop("session_id", None))
             idem_key = None
-            if mutating and "idempotency_key" not in own:
+            if "idempotency_key" not in own:
                 idem_key = kwargs.pop("idempotency_key", None)
+            reading = bool(read_actions) and str(
+                kwargs.get("action") or "").strip().lower() in read_actions
+            dry_run = "dry_run" in base.parameters and bool(
+                kwargs.get("dry_run", base.parameters["dry_run"].default))
+            if READ_ONLY_MODE and not is_read_only and not reading:
+                return ToolResult(content=[TextContent(type="text", text=json.dumps(
+                    _as_structured_error({"error": {
+                        "message": f"Refused: this server is read-only and {fn.__name__} "
+                                   f"with this action changes state",
+                        "code": "READ_ONLY"}})))], is_error=True)
 
             if idem_key:
                 cached = _state_get(f"{STATE_PREFIX}/idempotency/{fn.__name__}/{idem_key}")
@@ -201,20 +216,6 @@ def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, *
                         text=json.dumps(cached, ensure_ascii=False, default=str))])
 
             payload = fn(*args, **kwargs)
-
-            if mutating:
-                failed = isinstance(payload, dict) and "error" in payload
-                if idem_key and not failed:
-                    _state_put(f"{STATE_PREFIX}/idempotency/{fn.__name__}/{idem_key}",
-                               payload, ttl_seconds=IDEMPOTENCY_TTL_SECONDS)
-                if session_id:
-                    _journal(session_id, {
-                        "tool": fn.__name__,
-                        "arguments": {k: v for k, v in kwargs.items() if k != "confirm"},
-                        "outcome": "error" if failed else "ok",
-                        "summary": str(payload)[:400],
-                        "at": datetime.now().isoformat(timespec="seconds"),
-                    })
             if isinstance(payload, ToolResult):
                 return payload
             # Redaction is applied here rather than per tool so a newly added tool cannot
@@ -222,6 +223,20 @@ def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, *
             if redact:
                 payload = _redact_secrets(payload)
             failure = _as_structured_error(payload)
+
+            if mutating and not reading and not dry_run:
+                code = failure["error"]["code"] if failure else None
+                if idem_key and not failure:
+                    _state_put(f"{STATE_PREFIX}/idempotency/{fn.__name__}/{idem_key}",
+                               payload, ttl_seconds=IDEMPOTENCY_TTL_SECONDS)
+                # A refusal changed nothing, so it is not part of what the session did.
+                if session_id and code not in _NO_EFFECT_CODES:
+                    _journal(session_id, {
+                        "tool": fn.__name__,
+                        "arguments": _journal_arguments(kwargs),
+                        "outcome": code or "ok",
+                        "at": datetime.now().isoformat(timespec="seconds"),
+                    })
             if failure is not None:
                 logger.info("tool=%s ms=%d code=%s outcome=error", fn.__name__,
                             int((time.monotonic() - started) * 1000),
@@ -240,10 +255,9 @@ def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, *
 
         # inspect.signature stops unwrapping at an explicit __signature__, so this is what
         # FastMCP reads: the original parameters with the return type it needs.
-        base = inspect.signature(fn)
-        # A tool that already declares one of these keeps its own (resume_session takes a
-        # session_id as its subject, not as journal metadata).
-        wanted = ["session_id"] + (["idempotency_key"] if mutating else [])
+        # Journal metadata, on the tools that are journaled. A tool that already declares
+        # one of these keeps its own (resume_session takes a session_id as its subject).
+        wanted = ["session_id", "idempotency_key"] if mutating else []
         extra = [inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY,
                                    default=None, annotation=Optional[str])
                  for name in wanted if name not in base.parameters]
@@ -262,7 +276,9 @@ def tool(*d_args, redact=True, mutating=False, read_only=None, additive=False, *
             d_kwargs.setdefault("annotations", {"destructiveHint": False})
         elif "confirm" in base.parameters:
             d_kwargs.setdefault("annotations", {"destructiveHint": True})
-        if is_read_only or not READ_ONLY_MODE:
+        if read_actions:
+            READ_ACTION_TOOLS[fn.__name__] = read_actions
+        if is_read_only or read_actions or not READ_ONLY_MODE:
             mcp.tool(*d_args, **d_kwargs)(wrapper)
 
         # Register the wrapper with FastMCP but leave the plain function in the module
@@ -304,6 +320,12 @@ _ERROR_CODE_PATTERNS = (
     ("not found", "NOT_FOUND"),
     ("not valid namespace", "NOT_FOUND"),
     ("already exists", "ALREADY_EXISTS"),
+    ("database exists", "ALREADY_EXISTS"),
+    ("is not allowed for", "CONFLICT"),
+    ("resourceinuse", "CONFLICT"),
+    ("currently referenced", "CONFLICT"),
+    ("still referenced", "CONFLICT"),
+    ("dependencyviolation", "CONFLICT"),
     # A rejected argument is the caller's to fix; reporting it as an upstream failure
     # invites a retry of the same call.
     ("unknown kind", "INVALID_ARGUMENT"),
@@ -313,10 +335,13 @@ _ERROR_CODE_PATTERNS = (
     ("invalid resource type", "INVALID_ARGUMENT"),
     (" is required", "INVALID_ARGUMENT"),
     ("expected one of", "INVALID_ARGUMENT"),
+    ("not supported", "UNSUPPORTED"),
     ("timeout", "TIMEOUT"),
     ("timed out", "TIMEOUT"),
-    ("connection", "UPSTREAM_UNREACHABLE"),
-    ("not supported", "UNSUPPORTED"),
+    ("connection error", "UPSTREAM_UNREACHABLE"),
+    ("connection refused", "UPSTREAM_UNREACHABLE"),
+    ("connection reset", "UPSTREAM_UNREACHABLE"),
+    ("no route to host", "UPSTREAM_UNREACHABLE"),
     ("permission", "FORBIDDEN"),
     ("unauthorized", "FORBIDDEN"),
 )
@@ -334,16 +359,48 @@ _ERROR_NEXT_STEPS = {
     "NOT_FOUND": ["list the parent resource to check the id"],
     "ALREADY_EXISTS": ["read the existing resource instead of creating it"],
     "INVALID_ARGUMENT": ["correct the argument named in the message and call again"],
+    "READ_ONLY": ["only the reading tools and actions work on this endpoint"],
+    "CONFLICT": ["the resource is busy or not in a state that allows this - read its state, "
+                 "wait, and try again"],
     "TIMEOUT": ["retry", "the operation may still be running - check status before retrying"],
     "UPSTREAM_UNREACHABLE": ["check CB-Tumblebug is reachable", "retry"],
-    "UNSUPPORTED": ["this provider or option is not implemented"],
+    "UNSUPPORTED": ["this provider or option does not support the request as given - the "
+                    "message says what does"],
     "FORBIDDEN": ["check credentials"],
 }
 
 
+# Outcomes that are known to have changed nothing
+_NO_EFFECT_CODES = ("NEEDS_CONFIRMATION", "REVIEW_REQUIRED", "INVALID_ARGUMENT", "NOT_FOUND",
+                    "ALREADY_EXISTS", "BUDGET_EXCEEDED", "READ_ONLY", "ZONE_NOT_DELEGATED",
+                    "RATE_LIMITED", "UNSUPPORTED", "FORBIDDEN")
+
+
+def _journal_arguments(kwargs):
+    """Call arguments as they may be stored: no secrets, no bulk."""
+    out = {}
+    for name, value in kwargs.items():
+        if name == "confirm" or value is None:
+            continue
+        if name in ("credential", "content") \
+                or any(hint in name.lower().replace("_", "") for hint in _SECRET_FIELD_HINTS):
+            out[name] = _REDACTED
+            continue
+        value = _redact_secrets(value)
+        text = value if isinstance(value, str) else json.dumps(value, default=str)
+        out[name] = value if len(text) <= 300 else text[:300] + "..."
+    return out
+
+
+_STATUS_CODES = {401: "FORBIDDEN", 403: "FORBIDDEN", 404: "NOT_FOUND", 409: "CONFLICT",
+                 422: "UNSUPPORTED", 429: "RATE_LIMITED", 503: "RATE_LIMITED", 504: "TIMEOUT"}
+
+
 def _classify_error(message):
     low = str(message).lower()
-
+    # How the server reports a missing resource record
+    if re.fullmatch(r"cannot get (the )?\w+ \S+\.", low):
+        return "NOT_FOUND"
     for needle, code in _ERROR_CODE_PATTERNS:
         if needle in low:
             return code
@@ -368,17 +425,20 @@ def _as_structured_error(payload):
     for k, v in payload.items():
         if k != "error":
             detail[k] = v
-    # A code the tool set itself wins over one guessed from the wording.
-    code = detail.get("code") if detail.get("code") in _ERROR_NEXT_STEPS else None
-    if code is None:
-        code = _classify_error(message)
-    # The review gate reports its marker in the detail body rather than the message.
+    # A code the tool set itself wins over one guessed from the wording, and the wording
+    # wins over the HTTP status, which the server uses loosely.
+    own = detail.pop("code", None)
+    status = detail.pop("status", None)
+    code = own if own in _ERROR_NEXT_STEPS else _classify_error(message)
     if code == "UPSTREAM_ERROR" and detail:
         code = _classify_error(json.dumps(detail, default=str))
+    if code == "UPSTREAM_ERROR":
+        code = _STATUS_CODES.get(status, code)
+    how = detail.pop("how_to_proceed", None)
     err = {"code": code, "message": message}
     if detail:
         err["detail"] = detail
-    nxt = _ERROR_NEXT_STEPS.get(code)
+    nxt = [how] if how else _ERROR_NEXT_STEPS.get(code)
     if nxt:
         err["next"] = nxt
     return {"ok": False, "error": err}
@@ -409,22 +469,16 @@ def _redact_secrets(obj):
 
 
 def _collapse_command_status(entries):
-    """Command history as a pointer instead of a transcript.
-
-    Full stdout/stderr of every command ever run lives here - DevStack installs
-    write 100 KB records - and it is returned on every read of the node.
-    """
+    """Command history as a pointer instead of a transcript."""
     if not isinstance(entries, list) or not entries:
         return {"count": 0}
     last = entries[-1]
-    return {
-        "count": len(entries),
-        "last_status": last.get("status"),
-        "last_request_id": last.get("xRequestId"),
-        "last_started": last.get("startedTime"),
-        "handling": sum(1 for e in entries if e.get("status") == "Handling"),
-        "hint": "full output: get_command_result(request_id=...) or list_node_command_status(detail='full')",
-    }
+    out = {"count": len(entries), "last_status": last.get("status"),
+           "last_request_id": last.get("xRequestId")}
+    running = sum(1 for e in entries if e.get("status") in ("Handling", "Queued"))
+    if running:
+        out["handling"] = running
+    return {k: v for k, v in out.items() if v not in (None, "")}
 
 
 _NODE_MINIMAL = ("id", "status")
@@ -443,22 +497,27 @@ _NODE_SUMMARY_IF_SET = ("initScriptStatus", "initScriptMessage", "failure")
 NODE_LIST_LIMIT = int(os.environ.get("MCP_NODE_LIST_LIMIT", "50"))
 
 
+_EMPTY = (None, "", [], {})
+
+
 def _shape_node(node, detail):
-    if not isinstance(node, dict):
+    if not isinstance(node, dict) or detail == "full":
         return node
-    if detail == "full":
-        out = dict(node)
-    else:
-        keys = _NODE_MINIMAL if detail == "minimal" else _NODE_SUMMARY
-        out = {k: node[k] for k in keys if k in node}
-        if detail == "summary":
-            for k in _NODE_SUMMARY_IF_SET:
-                if node.get(k):
-                    out[k] = node[k]
-            if node.get("label"):
-                out["label"] = node["label"]
-    if detail != "full" and "commandStatus" in node:
-        out["commandStatus"] = _collapse_command_status(node.get("commandStatus"))
+    if detail == "minimal":
+        return {k: node[k] for k in _NODE_MINIMAL if k in node}
+    out = {k: node[k] for k in _NODE_SUMMARY if node.get(k) not in _EMPTY}
+    if out.get("name") == out.get("id"):
+        out.pop("name", None)
+    if out.get("status") == "Running":
+        out.pop("systemMessage", None)
+    for k in _NODE_SUMMARY_IF_SET:
+        if node.get(k):
+            out[k] = node[k]
+    label = {k: v for k, v in (node.get("label") or {}).items() if v != node.get("uid")}
+    if label:
+        out["label"] = label
+    if node.get("commandStatus"):
+        out["commandStatus"] = _collapse_command_status(node["commandStatus"])
     return out
 
 
@@ -484,28 +543,45 @@ def _cap_nodes(nodes, limit):
         "byStatus": by_status,
         "nodeGroupCount": len(by_group),
         "largestNodeGroups": dict(largest),
-        "note": ("node list capped; nodes that are not Running are listed first. Narrow with "
-                 "get_nodes_in_nodegroup() or control_node(), or pass detail='full' for every node"),
+        "note": ("node list capped; nodes that are not Running are listed first. "
+                 "get_nodegroups(nodegroup_id=...) lists a group's node ids; detail='full' "
+                 "returns every node"),
     }
 
 
 _INFRA_DROP_AT_SUMMARY = ("newNodeList", "configureCloudAdaptiveNetwork", "systemLabel",
-                          "resourceType", "targetStatus", "targetAction")
+                          "resourceType", "targetStatus", "targetAction", "cluster",
+                          "postScript")
 
 
 def _shape_infra(infra, detail):
-    if not isinstance(infra, dict):
+    if not isinstance(infra, dict) or detail == "full":
         return infra
-    node_key = "vm" if "vm" in infra else ("node" if "node" in infra else None)
-    if detail == "full":
-        out = dict(infra)
+    if detail == "minimal":
+        out = {k: infra[k] for k in ("id", "status") if k in infra}
     else:
-        out = {k: v for k, v in infra.items() if k not in _INFRA_DROP_AT_SUMMARY}
-    if node_key:
-        nodes = infra.get(node_key) or []
-        if detail != "full" and NODE_LIST_LIMIT and len(nodes) > NODE_LIST_LIMIT:
+        out = {k: v for k, v in infra.items()
+               if k not in _INFRA_DROP_AT_SUMMARY and v not in _EMPTY}
+        if out.get("name") == out.get("id"):
+            out.pop("name", None)
+        # sys.* labels repeat the id, name and namespace
+        label = {k: v for k, v in (infra.get("label") or {}).items() if not k.startswith("sys.")}
+        out.pop("label", None)
+        if label:
+            out["label"] = label
+        if isinstance(infra.get("postScriptResults"), list):
+            out["postScriptResults"] = [
+                {"phase": ph.get("phase"), "target": ph.get("target"), "status": ph.get("status"),
+                 "failedNodes": [r.get("nodeId") for r in
+                                 ((ph.get("results") or {}).get("results") or []) if r.get("error")]}
+                for ph in infra["postScriptResults"]]
+    if isinstance(infra.get("statusCount"), dict):
+        out["statusCount"] = {k: v for k, v in infra["statusCount"].items() if v}
+    if "node" in infra:
+        nodes = infra.get("node") or []
+        if NODE_LIST_LIMIT and len(nodes) > NODE_LIST_LIMIT:
             nodes, out["nodeListCapped"] = _cap_nodes(nodes, NODE_LIST_LIMIT)
-        out[node_key] = [_shape_node(n, detail) for n in nodes]
+        out["node"] = [_shape_node(n, detail) for n in nodes]
     return out
 
 
@@ -534,6 +610,23 @@ def _project(obj, fields):
     return obj
 
 
+_SUBNET_SUMMARY = ("id", "ipv4_CIDR", "zone", "status")
+
+
+def _summarize_resource(item, summary_keys):
+    """One resource at summary: the named fields that are set, subnets reduced to a line."""
+    out = {k: item[k] for k in summary_keys if item.get(k) not in _EMPTY}
+    if out.get("name") == out.get("id"):
+        out.pop("name", None)
+    # An image reports its state under another name than every other resource
+    if "imageStatus" in out:
+        out.setdefault("status", out.pop("imageStatus"))
+    if isinstance(out.get("subnetInfoList"), list):
+        out["subnetInfoList"] = [{k: sub[k] for k in _SUBNET_SUMMARY if sub.get(k)}
+                                 for sub in out["subnetInfoList"] if isinstance(sub, dict)]
+    return out
+
+
 def _shape_resource_list(payload, list_key, detail, fields, summary_keys):
     """Tier a `{list_key: [...]}` resource listing."""
     if not isinstance(payload, dict) or list_key not in payload:
@@ -544,7 +637,7 @@ def _shape_resource_list(payload, list_key, detail, fields, summary_keys):
     elif detail == "minimal":
         shaped = [{k: it.get(k) for k in ("id",) if k in it} for it in items if isinstance(it, dict)]
     else:
-        shaped = [{k: it[k] for k in summary_keys if k in it} for it in items if isinstance(it, dict)]
+        shaped = [_summarize_resource(it, summary_keys) for it in items if isinstance(it, dict)]
     out = dict(payload)
     out[list_key] = _project(shaped, fields)
     return _redact_secrets(out)
@@ -638,14 +731,18 @@ def _trim_command_record(rec, tail_lines, contains=None, context_lines=3):
         v = rec.get(k)
         if isinstance(v, str) and len(v) > 500:
             out[k] = v[:500] + f"...[{len(v) - 500} chars omitted]"
-    return out
+    if out.get("commandExecuted") == out.get("commandRequested"):
+        out.pop("commandExecuted", None)
+    return {k: v for k, v in out.items() if v not in _EMPTY}
 
 
 def _drop_command_output(rec):
     """Metadata only - the caller can fetch this record by index when it matters."""
     if not isinstance(rec, dict):
         return rec
-    out = {k: v for k, v in rec.items() if k not in ("stdout", "stderr")}
+    out = {k: v for k, v in rec.items() if k not in ("stdout", "stderr") and v not in _EMPTY}
+    if out.get("commandExecuted") == out.get("commandRequested"):
+        out.pop("commandExecuted", None)
 
     def clip(v):
         if isinstance(v, str) and len(v) > 200:
@@ -659,7 +756,7 @@ def _drop_command_output(rec):
             out[k] = [clip(x) for x in v]
         elif v is not None:
             out[k] = clip(v)
-    out["output"] = "omitted; get_node_command_status(index=...) or detail='full'"
+    out["output"] = "omitted; list_node_command_status(index=...) or detail='full'"
     return out
 
 
@@ -742,7 +839,6 @@ def _validate_detail(detail):
     d = (detail or "summary").lower()
     return d if d in DETAIL_LEVELS else "summary"
 
-# mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
 
 # Shared HTTP session: connection pooling + retry on transient connection errors
 _session = requests.Session()
@@ -751,138 +847,70 @@ _session.mount("http://", requests.adapters.HTTPAdapter(
     max_retries=requests.adapters.Retry(total=3, connect=2, read=0, backoff_factor=0.8,
                                         allowed_methods=["GET"],
                                         # 429: CB-Tumblebug rate-limits bursts of reads
-                                        status_forcelist=[429, 502, 503, 504])))
+                                        status_forcelist=[429, 502, 503, 504],
+                                        # hand back the last answer instead of raising
+                                        raise_on_status=False)))
 _session.mount("https://", requests.adapters.HTTPAdapter(pool_maxsize=20))
 
+def _request_headers(extra=None, credential_holder=None):
+    """Headers every call carries: the MCP marker MapUI shows, and the credential holder."""
+    headers = {"X-Request-Source": "mcp", **(extra or {})}
+    holder = credential_holder or TUMBLEBUG_CREDENTIAL_HOLDER
+    if holder:
+        headers["x-credential-holder"] = holder
+    return headers
+
+
 # Helper function: API request wrapper
-def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None, timeout_override=None, credential_holder=None):
-    url = f"{TUMBLEBUG_API_BASE_URL}{endpoint}"
-    
-    # Enhanced request configuration with improved timeout handling
-    # Special handling for remote command execution endpoints
-    default_timeout = (60, 600)  # 10 minutes default
-    
-    # Extended timeout for remote command execution (up to 20 minutes)
-    if "/cmd/infra/" in endpoint or timeout_override:
-        extended_timeout = timeout_override or (60, 1200)  # 20 minutes for command execution
-        request_config = {
-            "auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD),
-            "timeout": extended_timeout
-        }
-        logger.info(f"Using extended timeout for remote command: {extended_timeout[1]/60} minutes")
-    else:
-        request_config = {
-            "auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD),
-            "timeout": default_timeout
-        }
-    
-    # Add parameters according to method
+def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None,
+                timeout_override=None, credential_holder=None):
+    """One call to CB-Tumblebug: the decoded body, or {"error": ...} when it failed."""
+    method = method.upper()
+    if method not in ("GET", "POST", "PUT", "DELETE"):
+        return {"error": f"unsupported method {method}"}
+    # Remote commands run long; everything else answers within ten minutes.
+    timeout = timeout_override or ((60, 1200) if "/cmd/infra/" in endpoint else (60, 600))
+    config = {"auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD), "timeout": timeout,
+              "headers": _request_headers(headers, credential_holder)}
     if params:
-        request_config["params"] = params
-    if json_data and method.lower() in ["post", "put", "delete"]:
-        # With files, send fields as multipart form data (json= would be discarded)
-        request_config["data" if files else "json"] = json_data
+        config["params"] = params
+    if json_data is not None and method != "GET":
+        # With files the fields travel as multipart form data
+        config["data" if files else "json"] = json_data
     if files:
-        request_config["files"] = files
-    
-    # Build headers with credential holder support
-    request_headers = {
-        # CB-Tumblebug records request headers, so this marks every call that arrived
-        # through MCP. MapUI reads it to show which requests came from an agent rather than
-        # from someone clicking - the point being visible during a demonstration, where
-        # nobody is touching the map and things happen anyway.
-        "X-Request-Source": "mcp",
-    }
-    if headers:
-        request_headers.update(headers)
-    
-    # Add x-credential-holder header (per-request override > env default)
-    effective_holder = credential_holder or TUMBLEBUG_CREDENTIAL_HOLDER
-    if effective_holder:
-        request_headers["x-credential-holder"] = effective_holder
-    
-    if request_headers:
-        request_config["headers"] = request_headers
-    
-    logger.debug(f"Request: {method} {url}")
-    if json_data and logger.isEnabledFor(logging.DEBUG):
-        logger.debug(f"Request data: {json.dumps(json_data, indent=2, ensure_ascii=False)[:200]}...")
-    
+        config["files"] = files
+
     try:
-        if method.lower() not in ("get", "post", "put", "delete"):
-            return {"error": f"Unsupported method: {method}"}
-        response = _session.request(method.upper(), url, **request_config)
-        
-        logger.debug(f"Response status: {response.status_code}")
-        
-        response.raise_for_status()
-        
-        if response.text:
-            try:
-                return json.loads(response.text)
-            except json.JSONDecodeError:
-                logger.error(f"Failed to parse response as JSON: {response.text[:200]}")
-                return {"error": "Invalid JSON response", "raw_response": response.text[:500]}
-        else:
-            return {"message": "Success (No content)"}
-            
-    except requests.exceptions.Timeout as e:
-        timeout_duration = request_config["timeout"][1] / 60  # Convert to minutes
-        logger.error(f"Request timeout after {timeout_duration} minutes: {str(e)}")
-        
-        # Special message for remote command timeouts
-        if "/cmd/infra/" in endpoint:
-            return {
-                "error": f"Remote command execution timeout after {timeout_duration} minutes",
-                "error_type": "command_execution_timeout",
-                "suggestion": "The remote commands are taking longer than expected. This can happen with complex installations, large downloads, or system updates. Consider breaking commands into smaller batches or checking VM resources."
-            }
-        else:
-            return {
-                "error": f"Request timeout - operation took longer than {timeout_duration} minutes",
-                "error_type": "timeout",
-                "suggestion": "Try breaking down the operation into smaller steps or check resource availability"
-            }
-    except requests.exceptions.ConnectionError as e:
-        logger.error(f"Connection error: {str(e)}")
-        return {
-            "error": "Connection error - unable to reach CB-Tumblebug server",
-            "error_type": "connection_error",
-            "suggestion": "Check if CB-Tumblebug server is running and accessible"
-        }
-    except requests.RequestException as e:
-        # Enhanced error handling for different response codes
-        logger.error(f"API request error: {str(e)}")
-        if hasattr(e, 'response') and e.response is not None:
-            logger.error(f"Status code: {e.response.status_code}")
-            logger.error(f"Response text: {e.response.text[:200]}")
-            
-            # Handle specific error cases
-            if e.response.status_code == 400:
-                try:
-                    error_data = json.loads(e.response.text)
-                    if "rollback completed successfully" in str(error_data):
-                        return {
-                            "error": "Resource creation failed and was rolled back",
-                            "error_type": "resource_creation_failed",
-                            "details": error_data,
-                            "suggestion": "Check resource quotas, network settings, or try a different region/provider"
-                        }
-                except json.JSONDecodeError:
-                    pass
-        
-        error_response = None
-        
-        if hasattr(e, 'response') and e.response is not None:
-            try:
-                error_response = json.loads(e.response.text)
-            except Exception:
-                error_response = {"message": e.response.text}
-        
-        if error_response:
-            return {"error": error_response}
-        else:
-            return {"error": str(e)}
+        response = _session.request(method, f"{TUMBLEBUG_API_BASE_URL}{endpoint}", **config)
+    except requests.exceptions.Timeout:
+        return {"error": {
+            "message": f"timed out after {timeout[1] // 60} minutes - the operation may "
+                       f"still be running on the server",
+            "code": "TIMEOUT"}}
+    except requests.exceptions.ConnectionError as exc:
+        logger.error(f"connection error: {exc}")
+        return {"error": {"message": "connection error - CB-Tumblebug is not reachable",
+                          "code": "UPSTREAM_UNREACHABLE"}}
+    except requests.RequestException as exc:
+        logger.error(f"request failed: {exc}")
+        return {"error": str(exc)}
+
+    if response.status_code >= 400:
+        try:
+            body = response.json()
+        except ValueError:
+            body = None
+        message = body.get("message") if isinstance(body, dict) else None
+        logger.debug(f"{method} {endpoint} -> {response.status_code}")
+        return {"error": {"message": message or response.text[:500]
+                          or f"HTTP {response.status_code}",
+                          "status": response.status_code}}
+    if not response.text:
+        return {"message": "Success (No content)"}
+    try:
+        return response.json()
+    except ValueError:
+        return {"error": "Invalid JSON response", "raw_response": response.text[:500]}
 
 # Safely test the API only if in development mode
 if os.environ.get("MCP_ENV") == "development":
@@ -893,673 +921,16 @@ if os.environ.get("MCP_ENV") == "development":
     except Exception as e:
         logger.error(f"API test failed: {str(e)}")
 
-#####################################
-# Namespace Management
-#####################################
-
-# Helper function: Internal get namespaces (used by both get_namespaces tool and other functions)
-def _internal_get_namespaces() -> Dict:
-    """Internal helper function to get namespaces"""
-    result = api_request("GET", "/ns")
-    if "ns" in result:
-        return {"namespaces": result["ns"]}
-    return result
-
-
-# Helper function: Internal get namespace (used by both get_namespace tool and other functions)
-def _internal_get_namespace(ns_id: str) -> Dict:
-    """Internal helper function to get specific namespace"""
-    return api_request("GET", f"/ns/{ns_id}")
-
-
-# Helper function: Internal create namespace (used by both create_namespace tool and other functions)
-def _internal_create_namespace(name: str, description: Optional[str] = None) -> Dict:
-    """Internal helper function to create a new namespace"""
-    data = {
-        "name": name,
-        "description": description or f"Namespace {name}"
-    }
-    return api_request("POST", "/ns", json_data=data)
-
-
-
-
-
-#####################################
-# Image Selection & Analysis
-#####################################
-
-# Helper function: Select best image for specific VM spec
-# Helper: combined lowercase OS descriptor from current ImageInfo fields (guestOS was removed from the API)
+# Helper: the image's OS descriptor in one lowercase string
 def _image_os_text(img: Dict) -> str:
     return " ".join(str(img.get(k, "")) for k in ("osType", "osDistribution", "osPlatform")).lower()
 
-def select_best_image_for_spec(
-    image_list: List[Dict],
-    vm_spec: Dict,
-    requirements: Optional[Dict] = None
-) -> Dict:
-    """
-    Select best image for a specific VM specification.
-    This function considers CSP, region, architecture, and other spec-specific requirements.
-    
-    **CRITICAL for Multi-VM Infra Creation:**
-    Each VM spec requires its own image selection because:
-    - Different CSPs use different image formats (AMI vs Image ID vs etc.)
-    - Same OS in different regions may have different image IDs
-    - Architecture differences require different images
-    - Provider-optimized images perform better than generic ones
-    
-    Args:
-        image_list: List of image dictionaries from search_images() result
-        vm_spec: VM specification dictionary containing:
-            - id: spec ID (e.g., "aws+ap-northeast-2+t2.small")
-            - providerName: CSP provider
-            - regionName: region
-            - architecture: CPU architecture
-            - vCPU, memoryGiB: resource specs
-        requirements: Additional requirements:
-            - os_type: preferred OS (e.g., "ubuntu", "centos")
-            - use_case: workload type ("web-server", "database", etc.)
-            - version: specific version requirements
-    
-    Returns:
-        Selected image with detailed spec-compatibility analysis including:
-        - cspImageName: Provider-specific image identifier
-        - _selection_reason: Why this image was chosen
-        - _compatibility_score: How well it matches the spec
-        - _spec_info: Spec details used for selection
-    """
-    if not image_list:
-        return {"error": "No images provided for selection"}
-    
-    if not vm_spec:
-        return {"error": "VM specification is required"}
-    
-    provider = vm_spec.get("providerName", "")
-    region = vm_spec.get("regionName", "")
-    architecture = vm_spec.get("architecture", "")
-    vcpu = vm_spec.get("vCPU", 0)
-    memory = vm_spec.get("memoryGiB", 0)
-    
-    # Extract provider and region from spec ID if not directly available
-    spec_id = vm_spec.get("id", "")
-    if spec_id and ("+" in spec_id):
-        parts = spec_id.split("+")
-        if len(parts) >= 3:
-            provider = provider or parts[0]
-            region = region or parts[1]
-    
-    requirements = requirements or {}
-    preferred_os = requirements.get("os_type", "").lower()
-    use_case = requirements.get("use_case", "general")
-    
-    # Priority 1: Always prefer isBasicImage: true if available and compatible
-    basic_images = [img for img in image_list if img.get("isBasicImage", False)]
-    if basic_images:
-        # Check if basic images are compatible with the spec
-        for img in basic_images:
-            compatibility_score, compatibility_reasons = _analyze_image_spec_compatibility(img, vm_spec, requirements)
-            if compatibility_score >= 80:  # High compatibility threshold
-                return {
-                    **img,
-                    "cspImageName": img.get("cspImageName"),
-                    "_selection_reason": f"isBasicImage: true with high spec compatibility ({compatibility_score}%)",
-                    "_compatibility_score": compatibility_score,
-                    "_compatibility_reasons": compatibility_reasons,
-                    "_spec_info": {
-                        "provider": provider,
-                        "region": region,
-                        "architecture": architecture,
-                        "resources": f"{vcpu}vCPU, {memory}GB RAM"
-                    },
-                    "_confidence": "high",
-                    "_spec_match": "excellent"
-                }
-    
-    # Priority 2: Comprehensive spec-aware analysis
-    analysis_results = []
-    
-    for img in image_list:
-        compatibility_score, compatibility_reasons = _analyze_image_spec_compatibility(img, vm_spec, requirements)
-        
-        # Additional scoring based on image metadata
-        name = img.get("name", "").lower()
-        description = img.get("description", "").lower()
-        guest_os = _image_os_text(img)
-        combined_text = f"{name} {description} {guest_os}"
-        
-        metadata_score = 0
-        metadata_reasons = []
-        
-        # OS preference matching
-        if preferred_os:
-            if preferred_os in combined_text:
-                metadata_score += 20
-                metadata_reasons.append(f"Matches preferred OS: {preferred_os}")
-            elif any(variant in combined_text for variant in [preferred_os[:3], preferred_os.split()[0]]):
-                metadata_score += 10
-                metadata_reasons.append(f"Related to preferred OS: {preferred_os}")
-        
-        # Architecture matching
-        if architecture and architecture.lower() in combined_text:
-            metadata_score += 15
-            metadata_reasons.append(f"Architecture match: {architecture}")
-        
-        # Use case specific scoring
-        if use_case == "web-server":
-            if any(term in combined_text for term in ["nginx", "apache", "web", "lamp", "lemp"]):
-                metadata_score += 10
-                metadata_reasons.append("Web server optimized")
-        elif use_case == "database":
-            if any(term in combined_text for term in ["mysql", "postgres", "mongodb", "database"]):
-                metadata_score += 10
-                metadata_reasons.append("Database optimized")
-        elif use_case == "development":
-            if any(term in combined_text for term in ["dev", "development", "sdk", "tools"]):
-                metadata_score += 8
-                metadata_reasons.append("Development environment")
-        
-        # Version and stability indicators
-        if any(term in combined_text for term in ["lts", "stable", "production"]):
-            metadata_score += 5
-            metadata_reasons.append("Stable/LTS version")
-        
-        total_score = compatibility_score + metadata_score
-        
-        analysis_results.append({
-            "image": img,
-            "total_score": total_score,
-            "compatibility_score": compatibility_score,
-            "metadata_score": metadata_score,
-            "compatibility_reasons": compatibility_reasons,
-            "metadata_reasons": metadata_reasons,
-            "provider": provider,
-            "region": region
-        })
-    
-    # Sort by total score (descending)
-    analysis_results.sort(key=lambda x: x["total_score"], reverse=True)
-    
-    if not analysis_results:
-        # Fallback to first available image
-        fallback_img = image_list[0]
-        return {
-            **fallback_img,
-            "cspImageName": fallback_img.get("cspImageName"),
-            "_selection_reason": "Fallback selection - first available image",
-            "_compatibility_score": 0,
-            "_spec_info": {"provider": provider, "region": region},
-            "_confidence": "low",
-            "_spec_match": "unknown"
-        }
-    
-    best_result = analysis_results[0]
-    best_img = best_result["image"]
-    
-    return {
-        **best_img,
-        "cspImageName": best_img.get("cspImageName"),
-        "_selection_reason": f"Best spec-aware match (score: {best_result['total_score']})",
-        "_compatibility_score": best_result["compatibility_score"],
-        "_metadata_score": best_result["metadata_score"],
-        "_compatibility_reasons": best_result["compatibility_reasons"],
-        "_metadata_reasons": best_result["metadata_reasons"],
-        "_spec_info": {
-            "provider": provider,
-            "region": region,
-            "architecture": architecture,
-            "resources": f"{vcpu}vCPU, {memory}GB RAM"
-        },
-        "_analysis_details": [f"Analyzed {len(analysis_results)} images", f"Top score: {best_result['total_score']}"],
-        "_confidence": "high" if best_result["total_score"] >= 60 else "medium" if best_result["total_score"] >= 30 else "low",
-        "_spec_match": "excellent" if best_result["compatibility_score"] >= 80 else "good" if best_result["compatibility_score"] >= 60 else "fair"
-    }
-
-# Helper function: Analyze image-spec compatibility
-def _analyze_image_spec_compatibility(image: Dict, vm_spec: Dict, requirements: Optional[Dict] = None) -> tuple:
-    """
-    Analyze compatibility between an image and VM specification.
-    
-    Returns:
-        Tuple of (compatibility_score, reasons_list)
-    """
-    score = 0
-    reasons = []
-    
-    provider = vm_spec.get("providerName", "")
-    region = vm_spec.get("regionName", "")
-    architecture = vm_spec.get("architecture", "")
-    
-    # Extract from spec ID if needed
-    spec_id = vm_spec.get("id", "")
-    if spec_id and "+" in spec_id:
-        parts = spec_id.split("+")
-        if len(parts) >= 3:
-            provider = provider or parts[0]
-            region = region or parts[1]
-    
-    image_name = image.get("name", "").lower()
-    image_desc = image.get("description", "").lower()
-    guest_os = _image_os_text(image)
-    combined_text = f"{image_name} {image_desc} {guest_os}"
-    
-    # Provider compatibility (critical)
-    if provider:
-        # Provider-specific image naming patterns
-        provider_patterns = {
-            "aws": ["ami-", "amazon", "aws"],
-            "azure": ["microsoft", "azure", "windows"],
-            "gcp": ["google", "gcp", "debian", "ubuntu"],
-            "alibaba": ["alibaba", "aliyun"],
-            "tencent": ["tencent", "centos"]
-        }
-        
-        if provider.lower() in provider_patterns:
-            if any(pattern in combined_text for pattern in provider_patterns[provider.lower()]):
-                score += 30
-                reasons.append(f"Provider-optimized image for {provider}")
-            elif provider.lower() == "aws" and image.get("cspImageName", "").startswith("ami-"):
-                score += 35
-                reasons.append("AWS AMI format confirmed")
-        else:
-            score += 20  # Default compatibility for unknown providers
-            reasons.append("General compatibility assumed")
-    
-    # Region compatibility
-    if region:
-        region_lower = region.lower()
-        if region_lower in combined_text:
-            score += 15
-            reasons.append(f"Region-specific image: {region}")
-        elif any(geo in combined_text for geo in ["us", "eu", "asia", "ap-"]):
-            score += 8
-            reasons.append("Regional optimization detected")
-    
-    # Architecture compatibility
-    if architecture:
-        arch_lower = architecture.lower()
-        if arch_lower in combined_text:
-            score += 20
-            reasons.append(f"Architecture match: {architecture}")
-        elif "x86" in arch_lower and any(x86_variant in combined_text for x86_variant in ["x86", "amd64", "64-bit"]):
-            score += 15
-            reasons.append("x86 architecture compatibility")
-        elif "arm" in arch_lower and "arm" in combined_text:
-            score += 15
-            reasons.append("ARM architecture compatibility")
-    
-    # OS type compatibility from requirements
-    if requirements and requirements.get("os_type"):
-        preferred_os = requirements["os_type"].lower()
-        if preferred_os in combined_text:
-            score += 15
-            reasons.append(f"OS requirement satisfied: {preferred_os}")
-    
-    # Basic image bonus
-    if image.get("isBasicImage", False):
-        score += 10
-        reasons.append("Official basic image")
-    
-    return min(score, 100), reasons  # Cap at 100%
 
 #####################################
-# Namespace Helper Functions
+# Runtime CSP registration
 #####################################
 
-def select_best_image(image_list: List[Dict]) -> Dict:
-    """
-    Select the best image from search results based on priority:
-    1. isBasicImage: true (highest priority)
-    2. General/basic OS images (determined by LLM analysis)
-    3. Fallback to first available image
-    
-    Args:
-        image_list: List of image dictionaries from search_images() result
-    
-    Returns:
-        Selected image dictionary with selection reasoning
-    """
-    if not image_list:
-        return None
-    
-    # Priority 1: Find images with isBasicImage: true
-    basic_images = [img for img in image_list if img.get("isBasicImage", False)]
-    if basic_images:
-        selected = basic_images[0]
-        selected["_selection_reason"] = "isBasicImage: true (highest priority)"
-        return selected
-    
-    # Priority 2: Use LLM-based analysis to find the most suitable basic OS image
-    # Create a prompt for the MCP client to analyze and select the best image
-    image_analysis_data = []
-    for i, img in enumerate(image_list):
-        analysis_item = {
-            "index": i,
-            "name": img.get("name", ""),
-            "description": img.get("description", ""),
-            "osInfo": _image_os_text(img),
-            "cspImageName": img.get("cspImageName", "")
-        }
-        image_analysis_data.append(analysis_item)
-    
-    # Since this is a helper function, we'll implement a simple heuristic-based approach
-    # that can still be intelligent without hardcoded patterns
-    def calculate_image_suitability_score(image):
-        """
-        Calculate suitability score based on intelligent analysis of image metadata
-        """
-        name = image.get("name", "").lower()
-        description = image.get("description", "").lower()
-        guest_os = _image_os_text(image)
-        
-        # Combine all text for analysis
-        combined_text = f"{name} {description} {guest_os}"
-        
-        score = 0
-        selection_reasons = []
-        
-        # Boost score for standard OS indicators
-        os_indicators = ["ubuntu", "centos", "amazon", "rhel", "debian", "suse", "windows"]
-        for indicator in os_indicators:
-            if indicator in combined_text:
-                score += 10
-                selection_reasons.append(f"Standard OS: {indicator}")
-                break
-        
-        # Boost score for basic/official indicators
-        basic_indicators = ["official", "standard", "base", "minimal", "lts"]
-        for indicator in basic_indicators:
-            if indicator in combined_text:
-                score += 5
-                selection_reasons.append(f"Basic image indicator: {indicator}")
-        
-        # Reduce score for specialized software indicators
-        specialized_indicators = [
-            "gpu", "cuda", "nvidia",  # GPU/ML
-            "docker", "kubernetes", "k8s",  # Container platforms
-            "lamp", "wordpress", "drupal",  # Web applications
-            "mysql", "postgres", "mongodb", "elastic",  # Databases
-            "hadoop", "spark", "kafka",  # Big data
-            "jenkins", "gitlab", "bamboo",  # CI/CD
-            "tensorflow", "pytorch", "jupyter",  # ML frameworks
-            "nginx", "apache", "tomcat", "jboss",  # Web servers
-            "node", "python", "ruby", "go", "java", "dotnet"  # Runtime environments
-        ]
-        
-        for indicator in specialized_indicators:
-            if indicator in combined_text:
-                score -= 3
-                selection_reasons.append(f"Specialized software detected: {indicator}")
-        
-        # Prefer shorter names (usually more basic)
-        if len(name) < 30:
-            score += 2
-            selection_reasons.append("Concise name (likely basic)")
-        elif len(name) > 60:
-            score -= 2
-            selection_reasons.append("Long name (possibly specialized)")
-        
-        # Boost score for recent year indicators (more up-to-date)
-        recent_years = ["2024", "2023", "2022"]
-        for year in recent_years:
-            if year in combined_text:
-                score += 1
-                selection_reasons.append(f"Recent version: {year}")
-                break
-        
-        return score, selection_reasons
-    
-    # Score all images
-    scored_images = []
-    for img in image_list:
-        score, reasons = calculate_image_suitability_score(img)
-        scored_images.append((img, score, reasons))
-    
-    # Sort by score (highest first)
-    scored_images.sort(key=lambda x: x[1], reverse=True)
-    
-    # Return the best scored image
-    if scored_images:
-        best_image, best_score, reasons = scored_images[0]
-        best_image["_selection_reason"] = f"Best general OS image (score: {best_score})"
-        best_image["_analysis_details"] = reasons
-        return best_image
-    
-    # Fallback: return first image if no scoring worked
-    fallback_image = image_list[0]
-    fallback_image["_selection_reason"] = "Fallback to first available image"
-    return fallback_image
 
-# Tool: Advanced image selection with context analysis
-@tool()
-def select_best_image_with_context(
-    image_list: List[Dict],
-    use_case: str = "general",
-    requirements: Optional[str] = None
-) -> Dict:
-    """
-    Advanced image selection using contextual analysis for specific use cases.
-    This function provides more sophisticated image selection than the basic select_best_image helper.
-    
-    Args:
-        image_list: List of image dictionaries from search_images() result
-        use_case: Type of use case ("general", "web-server", "database", "development", "production")
-        requirements: Additional requirements or preferences in natural language
-    
-    Returns:
-        Selected image with detailed analysis and reasoning
-    """
-    if not image_list:
-        return {"error": "No images provided for selection"}
-    
-    # Priority 1: Always prefer isBasicImage: true
-    basic_images = [img for img in image_list if img.get("isBasicImage", False)]
-    if basic_images:
-        selected = basic_images[0]
-        return {
-            "selected_image": selected,
-            "csp_image_name": selected.get("cspImageName"),
-            "selection_reason": "isBasicImage: true (highest priority)",
-            "confidence": "high",
-            "use_case_match": "excellent"
-        }
-    
-    # Priority 2: Context-aware analysis
-    analysis_results = []
-    
-    for img in image_list:
-        name = img.get("name", "").lower()
-        description = img.get("description", "").lower()
-        guest_os = _image_os_text(img)
-        combined_text = f"{name} {description} {guest_os}"
-        
-        score = 0
-        reasons = []
-        
-        # Base OS recognition
-        if any(os in combined_text for os in ["ubuntu", "centos", "amazon", "rhel", "debian"]):
-            score += 15
-            reasons.append("Standard Linux distribution")
-        elif "windows" in combined_text:
-            score += 15
-            reasons.append("Windows operating system")
-        
-        # Use case specific scoring
-        if use_case == "web-server":
-            if any(term in combined_text for term in ["nginx", "apache", "web"]):
-                score += 10
-                reasons.append("Web server optimized")
-            if any(term in combined_text for term in ["lamp", "lemp"]):
-                score += 5
-                reasons.append("Web stack included")
-        elif use_case == "database":
-            if any(term in combined_text for term in ["mysql", "postgres", "mongodb"]):
-                score += 10
-                reasons.append("Database software included")
-        elif use_case == "development":
-            if any(term in combined_text for term in ["dev", "development", "sdk"]):
-                score += 5
-                reasons.append("Development environment")
-        elif use_case == "production":
-            if any(term in combined_text for term in ["production", "stable", "lts"]):
-                score += 10
-                reasons.append("Production ready")
-        
-        # General quality indicators
-        if any(term in combined_text for term in ["official", "standard", "base"]):
-            score += 8
-            reasons.append("Official/standard image")
-        
-        if any(term in combined_text for term in ["minimal", "clean"]):
-            score += 5
-            reasons.append("Minimal installation")
-        
-        # Avoid over-specialized images for general use
-        if use_case == "general":
-            specialized_terms = ["gpu", "cuda", "docker", "kubernetes", "hadoop", "spark"]
-            if any(term in combined_text for term in specialized_terms):
-                score -= 10
-                reasons.append("Specialized software detected (may not be suitable for general use)")
-        
-        # Name length consideration
-        if len(name) < 40:
-            score += 2
-            reasons.append("Concise name")
-        
-        analysis_results.append({
-            "image": img,
-            "score": score,
-            "reasons": reasons,
-            "combined_text": combined_text[:100] + "..." if len(combined_text) > 100 else combined_text
-        })
-    
-    # Sort by score and select the best
-    analysis_results.sort(key=lambda x: x["score"], reverse=True)
-    
-    if analysis_results:
-        best = analysis_results[0]
-        confidence = "high" if best["score"] >= 20 else "medium" if best["score"] >= 10 else "low"
-        
-        return {
-            "selected_image": best["image"],
-            "csp_image_name": best["image"].get("cspImageName"),
-            "selection_reason": f"Best match for {use_case} use case (score: {best['score']})",
-            "analysis_details": best["reasons"],
-            "confidence": confidence,
-            "use_case_match": "excellent" if best["score"] >= 25 else "good" if best["score"] >= 15 else "fair",
-            "alternative_options": [
-                {
-                    "image_name": alt["image"].get("name", ""),
-                    "score": alt["score"],
-                    "reasons": alt["reasons"][:2]  # Top 2 reasons
-                }
-                for alt in analysis_results[1:3]  # Show top 2 alternatives
-            ]
-        }
-    
-    # Fallback
-    fallback = image_list[0]
-    return {
-        "selected_image": fallback,
-        "csp_image_name": fallback.get("cspImageName"),
-        "selection_reason": "Fallback to first available image",
-        "confidence": "low",
-        "use_case_match": "unknown"
-    }
-
-
-# Helper function: does this namespace exist? (used by several tools)
-def _internal_validate_namespace(ns_id: str) -> Dict:
-    """Internal helper function to validate if a namespace exists"""
-    try:
-        ns_info = _internal_get_namespace(ns_id)
-        if "error" in ns_info:
-            # Distinguish transport/server failures from a genuinely missing namespace
-            if ns_info.get("error_type") in ("connection_error", "timeout"):
-                return {
-                    "valid": False,
-                    "namespace_id": ns_id,
-                    "error": "Could not reach CB-Tumblebug to validate the namespace",
-                    "details": ns_info,
-                    "suggestion": "Check server availability and retry — do NOT create the namespace based on this result"
-                }
-            return {
-                "valid": False,
-                "namespace_id": ns_id,
-                "error": "Namespace does not exist",
-                "suggestion": f"Create namespace '{ns_id}' using manage_namespace(action='create') or choose from existing namespaces using manage_namespace(action='create')"
-            }
-        
-        return {
-            "valid": True,
-            "namespace_id": ns_id,
-            "namespace_info": ns_info,
-            "status": "ready_for_infra_creation"
-        }
-    except Exception as e:
-        return {
-            "valid": False,
-            "namespace_id": ns_id,
-            "error": f"Failed to validate namespace: {str(e)}",
-            "suggestion": "Check your connection and try again"
-        }
-
-
-# Helper: create a namespace unless it exists. Backs the create_namespace tool.
-def _internal_create_namespace_with_validation(name: str, description: Optional[str] = None) -> Dict:
-    """Internal helper function to create namespace with validation"""
-    # First check if namespace already exists
-    validation = _internal_validate_namespace(name)
-    if validation["valid"]:
-        return {
-            "created": False,
-            "namespace_id": name,
-            "message": f"Namespace '{name}' already exists",
-            "existing_info": validation["namespace_info"],
-            "suggestion": "You can use this existing namespace for Infra creation"
-        }
-    
-    # Create the namespace
-    try:
-        result = _internal_create_namespace(name, description)
-        if "error" in result:
-            return {
-                "created": False,
-                "namespace_id": name,
-                "error": result["error"],
-                "suggestion": "Please check the namespace name and try again"
-            }
-        
-        # Validate the created namespace
-        validation = _internal_validate_namespace(name)
-        
-        # Store namespace creation in memory
-        _store_interaction_memory(
-            user_request=f"Create namespace '{name}' with description '{description or 'N/A'}'",
-            llm_response=f"Successfully created namespace '{name}'",
-            operation_type="namespace_management",
-            context_data={"namespace_id": name, "description": description},
-            status="completed"
-        )
-        
-        return {
-            "created": True,
-            "namespace_id": name,
-            "namespace_info": result,
-            "validation": validation,
-            "status": "ready_for_infra_creation",
-            "message": f"Namespace '{name}' created successfully and ready for Infra creation"
-        }
-    except Exception as e:
-        return {
-            "created": False,
-            "namespace_id": name,
-            "error": f"Failed to create namespace: {str(e)}",
-            "suggestion": "Please check your input and connection"
-        }
-
-# Helper function: Create namespace with validation
 # Tool: Register a CSP definition at runtime
 @tool(mutating=True)
 def register_csp_definition(
@@ -1635,12 +1006,11 @@ def unregister_csp_definition(provider_name: str, confirm: bool = False) -> Dict
 
     Args:
         provider_name: Provider to remove, e.g. "openstack-site01"
-        confirm: Must be True to proceed. Ask the user first - this is the only
-            thing standing between a request and the destructive action.
+        confirm: Must be True to proceed - infra already running on this provider can no
+            longer be managed
 
     Returns:
-        Removal result
-        confirm: must be True to proceed - the provider and its credentials stop being usable
+        The removal result; remainingConnections lists connection configs left behind.
     """
     guard = _require_confirmation(confirm, "unregistering a CSP definition", "infra already running on this provider becomes unmanageable from CB-Tumblebug")
     if guard:
@@ -1868,9 +1238,10 @@ def fetch_assets_for_provider(provider_names: List[str]) -> Dict:
     # Count what actually landed so the caller knows whether step 3 achieved anything.
     counts = {}
     try:
-        specs = recommend_vm_spec(filter_policies={"providerName": provider_names[0]}, limit="200")
-        counts["specs"] = len(specs.get("summarized_specs") or specs.get("specList") or [])
-        images = search_images(provider_name=provider_names[0], include_all=True, max_results=200)
+        specs = recommend_vm_spec(filter_policies={"providerName": provider_names[0]}, limit=200)
+        counts["specs"] = specs.get("count", 0)
+        images = search_images(provider_name=provider_names[0], include_basic_image_only=False,
+                               max_results=200)
         counts["images"] = images.get("imageCount", 0)
     except Exception as exc:
         counts["note"] = f"could not count the catalog: {exc}"
@@ -1890,26 +1261,34 @@ def fetch_assets_for_provider(provider_names: List[str]) -> Dict:
 # Connection Management
 #####################################
 
-# Tool: Get all cloud connections
+# Tool: Cloud connections
 @tool()
-def get_connections(detail: str = "summary", provider: Optional[str] = None,
-                    fields: Optional[str] = None, filter_verified: bool = True,
-                    filter_region_representative: bool = True,
+def get_connections(name: Optional[str] = None, detail: str = "summary",
+                    provider: Optional[str] = None, fields: Optional[str] = None,
+                    filter_verified: bool = True, filter_region_representative: bool = True,
                     credential_holder: Optional[str] = None) -> Dict:
     """
-    Get all registered cloud connections
+    List the registered cloud connections, or fetch one by name.
+
+    A connection is one provider region reached with one credential; its name is what
+    connectionName means elsewhere.
 
     Args:
-        detail: "minimal" (configName only) | "summary" (default) | "full"
-        provider: optional provider name filter, e.g. "aws"
-        fields: optional comma-separated allowlist of fields to keep
-        filter_verified: only connections that passed verification
-        filter_region_representative: one representative region per provider
-        credential_holder: only connections of this credential holder
+        name: Return just this connection in full, e.g. "aws-ap-northeast-2"
+        detail: "summary" (default: names grouped by provider) | "minimal" (a flat list
+            of names) | "full"
+        provider: Only connections of this provider, e.g. "aws"
+        fields: Comma-separated allowlist of fields to keep
+        filter_verified: Only connections that passed verification (default True)
+        filter_region_representative: One connection per region (default True)
+        credential_holder: Only connections of this credential holder
 
     Returns:
-        List of cloud connections
+        connections: provider -> connection names, and count. With detail "minimal" or
+        "full": connectionconfig.
     """
+    if name:
+        return api_request("GET", f"/connConfig/{name}")
     # Both flags are sent explicitly: the server defaults filterVerified to true when omitted
     params = {
         "filterVerified": "true" if filter_verified else "false",
@@ -1931,33 +1310,17 @@ def get_connections(detail: str = "summary", provider: Optional[str] = None,
     elif detail == "minimal":
         shaped = [c.get("configName") for c in items]
     else:
-        # regionDetail is 282 of the 652 bytes per entry - coordinates and the zone list,
-        # which a caller picking a connection does not need.
-        shaped = [{"configName": c.get("configName"),
-                   "providerName": c.get("providerName"),
-                   "regionName": (c.get("regionDetail") or {}).get("regionId")
-                                 or c.get("regionZoneInfoName")}
-                  for c in items]
+        # One name per connection, grouped by provider: the name already carries the region.
+        grouped: Dict[str, List[str]] = {}
+        for c in items:
+            grouped.setdefault(str(c.get("providerName")), []).append(c.get("configName"))
+        return {"connections": grouped, "count": len(items)}
     return {"connectionconfig": _project(shaped, fields), "count": len(shaped)}
 
-# Tool: Get specific cloud connection
-@tool()
-def get_connection(conn_config_name: str) -> Dict:
-    """
-    Get specific cloud connection
-    
-    Args:
-        conn_config_name: Connection configuration name
-    
-    Returns:
-        Cloud connection information
-    """
-    return api_request("GET", f"/connConfig/{conn_config_name}")
 
 #####################################
 # Resource Management
 #####################################
-
 
 
 # Helper: normalize firewall rule dicts to the API's field names
@@ -2028,13 +1391,39 @@ def _slim_sg_update(result):
     """A rule change answers with the whole SecurityGroup record; keep the rule set."""
     if not isinstance(result, dict) or "error" in result:
         return result
-    result = dict(result)
-    for key in ("updated", "previous"):
-        record = result.get(key)
-        if isinstance(record, dict):
-            result[key] = {k: record[k] for k in ("id", "connectionName", "firewallRules")
-                           if k in record}
+    result = {k: v for k, v in result.items() if k != "previous"}
+    record = result.get("updated")
+    if isinstance(record, dict):
+        result["updated"] = {k: record[k] for k in ("id", "connectionName", "firewallRules")
+                             if k in record}
     return result
+
+def _add_firewall_rules(ns_id, sg_id, rules):
+    """Add the rules the SecurityGroup lacks; the server refuses a set holding a duplicate."""
+    path = f"/ns/{ns_id}/resources/securityGroup/{sg_id}"
+    current = api_request("GET", path)
+    if not isinstance(current, dict) or "error" in current:
+        return current
+    have = {(str(r.get("Port", "")), str(r.get("Protocol", "")).upper(),
+             str(r.get("Direction", "")).lower(), r.get("CIDR"))
+            for r in current.get("firewallRules") or [] if isinstance(r, dict)}
+    missing, present = [], []
+    for rule in rules:
+        for port in [x.strip() for x in str(rule.get("Ports", "")).split(",")]:
+            key = (port, str(rule.get("Protocol", "")).upper(),
+                   str(rule.get("Direction", "")).lower(), rule.get("CIDR"))
+            one = {**rule, "Ports": port} if "Ports" in rule else dict(rule)
+            (present if key in have else missing).append(one)
+    if not missing:
+        return {"id": sg_id, "message": "every rule is already present",
+                "updated": {k: current[k] for k in ("id", "connectionName", "firewallRules")
+                            if k in current}}
+    result = _slim_sg_update(
+        api_request("POST", f"{path}/rules", json_data={"firewallRules": missing}))
+    if present and isinstance(result, dict) and "error" not in result:
+        result["alreadyPresent"] = [f"{r.get('Protocol')}/{r.get('Ports', '')}" for r in present]
+    return result
+
 
 # Tool: Add SecurityGroup firewall rules
 @tool(mutating=True)
@@ -2056,14 +1445,14 @@ def add_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict]) -> Dict:
             Example: [{"Ports": "80,443", "Protocol": "TCP"}]
 
     Returns:
-        Update result with the SecurityGroup's resulting rule set
+        The SecurityGroup's resulting rule set. Rules it already had are skipped and
+        listed in alreadyPresent.
     """
     try:
-        data = {"firewallRules": _normalize_firewall_rules(rules)}
+        return _add_firewall_rules(ns_id, sg_id, _normalize_firewall_rules(rules))
     except ValueError as exc:
         return {"error": str(exc)}
-    return _slim_sg_update(
-        api_request("POST", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data))
+
 
 # Tool: Remove SecurityGroup firewall rules
 @tool(mutating=True)
@@ -2075,12 +1464,11 @@ def remove_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict], confi
         ns_id: Namespace ID
         sg_id: SecurityGroup ID
         rules: List of rules to remove — same format as add_security_group_rules()
-        confirm: Must be True to proceed. Ask the user first - this is the only
-            thing standing between a request and the destructive action.
+        confirm: Must be True to proceed - removing a rule can cut off SSH or
+            application traffic to running nodes
 
     Returns:
         Update result with the SecurityGroup's resulting rule set
-        confirm: must be True to proceed - removing rules can cut off SSH to running nodes
     """
     guard = _require_confirmation(confirm, "removing security group rules", "may cut off SSH or application traffic to running nodes")
     if guard:
@@ -2091,7 +1479,6 @@ def remove_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict], confi
         return {"error": str(exc)}
     return _slim_sg_update(
         api_request("DELETE", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data))
-
 
 
 # Tool: Provisioning risk, in one place
@@ -2184,71 +1571,107 @@ def list_infra_templates(ns_id: str = "system", template_id: Optional[str] = Non
             "note": "node groups: list_infra_templates(template_id=...)"}
 
 
+def _read_infra_template(ns_id, template_id):
+    """A template by id; the server looks in the namespace first, then in "system"."""
+    found = api_request("GET", f"/ns/{ns_id}/template/infra/{template_id}")
+    if isinstance(found, dict) and "error" in found and ns_id != "system":
+        shipped = api_request("GET", f"/ns/system/template/infra/{template_id}")
+        if isinstance(shipped, dict) and "error" not in shipped:
+            return shipped
+    return found
+
+
 @tool(mutating=True, additive=True)
 def provision_infra_from_template(ns_id: str, template_id: str, name: str,
-                                  description: Optional[str] = None, budget_ack: Optional[str] = None, confirm: bool = False) -> Dict:
+                                  description: Optional[str] = None,
+                                  budget_ack: Optional[str] = None,
+                                  confirm: bool = False) -> Dict:
     """
     Create an Infra from a saved template.
 
-    The template supplies the node groups; only the new Infra's name is needed. Cost is not
-    reviewed on this path, so check the template with list_infra_templates() first if the
-    spend matters.
+    The template supplies the node groups and scripts; only the new Infra's name is needed.
+    Without confirm the call refuses and returns the template's machines and hourly cost.
 
     Args:
-        ns_id: Namespace ID
+        ns_id: Namespace for the new Infra. A template of that namespace is used first,
+            then one shipped in "system".
         template_id: Template to instantiate (see list_infra_templates)
         name: Name for the new Infra
         description: Optional description
-        budget_ack: Approval id from request_budget_increase(), to proceed past a
-            spend limit. Single-use.
-        confirm: Must be True to proceed. Ask the user first - this is the only
-            thing standing between a request and the destructive action.
+        budget_ack: Approval id from request_budget_increase(), to pass a spend limit once
+        confirm: Set True once a person has seen the plan and agreed to it
 
     Returns:
-        The created Infra.
+        The created Infra: status, statusCount and its nodes with their addresses.
     """
-    guard = _require_confirmation(
-        confirm, f"creating infrastructure from template {template_id!r}",
-        "the template decides the machines and their cost; read it with list_infra_templates first")
-    if guard:
-        return guard
-    over_budget = _check_budget(None, budget_ack)
+    template = _read_infra_template(ns_id, template_id)
+    if not isinstance(template, dict) or "error" in template:
+        return template
+    groups = (template.get("infraDynamicReq") or {}).get("nodeGroups") or []
+    unconfirmed = _confirm_creation_plan(groups, name, confirm)
+    if unconfirmed:
+        return unconfirmed
+    over_budget = _budget_refusal(groups, budget_ack)
     if over_budget:
         return over_budget
     body: Dict[str, Any] = {"name": name}
     if description:
         body["description"] = description
-    return api_request("POST", f"/ns/{ns_id}/infra/template/{template_id}", json_data=body)
+    result = api_request("POST", f"/ns/{ns_id}/infra/template/{template_id}", json_data=body,
+                         timeout_override=(60, 3600))
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    _record_spend(groups)
+    result = _shape_infra(result, "summary")
+    if result.get("creationErrors") or (result.get("statusCount") or {}).get("countFailed"):
+        result["next"] = ("some nodes failed: diagnose_infra() "
+                          "explains why and what can be retried")
+    return result
 
 
 @tool(mutating=True)
 def manage_infra_template(action: str, ns_id: str = "system",
                           template_id: Optional[str] = None,
                           template: Optional[Dict] = None,
+                          infra_id: Optional[str] = None,
                           confirm: bool = False) -> Dict:
     """
-    Create, update or delete an Infra template.
+    Create, update or delete an Infra template, or save a running Infra as one.
 
     Args:
-        action: "create" | "update" | "delete"
+        action: "create" | "update" | "delete" | "save_from_infra"
         ns_id: Namespace ID. Defaults to "system", where init loads the shipped templates.
-        template_id: Required for update and delete
-        template: Template body for create and update
+            For "save_from_infra" it is the namespace of the Infra, and of the new template.
+        template_id: Required for update and delete; the new template's name for
+            "save_from_infra" (default "<infra_id>-template")
+        template: Body for create and update: {"name": ..., "description": ...,
+            "infraDynamicReq": {"name": ..., "nodeGroups": [...]}}
+        infra_id: Infra to copy the configuration from, for "save_from_infra"
         confirm: Must be True for action="delete". Ask the user first - a shipped template
             is not recreated until the next init.
 
     Returns:
-        The server's response.
+        The stored template, or the deletion result.
     """
     action = (action or "").strip().lower()
     if action == "create":
         if not template:
-            return {"error": "template body is required for action='create'"}
+            return {"error": "template is required for action='create'"}
         return api_request("POST", f"/ns/{ns_id}/template/infra", json_data=template)
     if action == "update":
         if not (template_id and template):
-            return {"error": "template_id and template are required for action='update'"}
+            return {"error": "template_id and template is required for action='update'"}
         return api_request("PUT", f"/ns/{ns_id}/template/infra/{template_id}", json_data=template)
+    if action == "save_from_infra":
+        if not infra_id:
+            return {"error": "infra_id is required for action='save_from_infra'"}
+        config = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/configCopy")
+        if not isinstance(config, dict) or "error" in config:
+            return config
+        return api_request("POST", f"/ns/{ns_id}/template/infra", json_data={
+            "name": template_id or f"{infra_id}-template",
+            "description": f"Saved from Infra {infra_id}",
+            "infraDynamicReq": config})
     if action == "delete":
         if not template_id:
             return {"error": "template_id is required for action='delete'"}
@@ -2258,7 +1681,8 @@ def manage_infra_template(action: str, ns_id: str = "system",
         if guard:
             return guard
         return api_request("DELETE", f"/ns/{ns_id}/template/infra/{template_id}")
-    return {"error": f"unknown action {action!r}; expected create, update or delete"}
+    return {"error": f"unknown action {action!r}; expected one of create, update, delete, "
+                     f"save_from_infra"}
 
 
 # ---------------------------------------------------------------------------
@@ -2309,13 +1733,11 @@ def get_dns_hosted_zones(check_delegation: bool = True) -> Dict:
     return result
 
 
-
-
 # ---------------------------------------------------------------------------
 # Command tasks - a long bootstrap needs to be observable and interruptible
 # ---------------------------------------------------------------------------
 
-@tool(read_only=False)  # cancel stops a running task
+@tool(read_only=False, read_actions=("list", "get"))
 def manage_command_task(action: str, ns_id: str, infra_id: str,
                         task_id: Optional[str] = None, detail: str = "summary") -> Dict:
     """
@@ -2328,12 +1750,12 @@ def manage_command_task(action: str, ns_id: str, infra_id: str,
         action: "list" | "get" | "cancel"
         ns_id: Namespace ID
         infra_id: Infra ID
-        confirm: Must be True to proceed. Ask the user first - this destroys running nodes.
-        task_id: Required for "get" and "cancel"
-        detail: "summary" (default) trims the command text in listings; "full" keeps it
+        task_id: Required for "get" and "cancel"; taken from the task list
+        detail: For "list": "summary" (default) shows the running and queued tasks and
+            counts the rest; "full" lists every task
 
     Returns:
-        The task list, one task, or the cancellation result.
+        The tasks in flight with statusCount, one task, or the cancellation result.
     """
     action = (action or "").strip().lower()
     if action == "list":
@@ -2343,10 +1765,17 @@ def manage_command_task(action: str, ns_id: str, infra_id: str,
         tasks = result.get("tasks")
         if not isinstance(tasks, list):
             return result
-        # A listing answers "what is running"; the command bodies belong to action="get".
-        out = dict(result)
-        out["tasks"] = [_drop_command_output(t) for t in tasks]
-        return out
+        # A listing answers "what is running"; finished tasks are counted, not listed.
+        counts: Dict[str, int] = {}
+        for task in tasks:
+            state = task.get("status") or "Unknown"
+            counts[state] = counts.get(state, 0) + 1
+        active = [t for t in tasks if t.get("status") in ("Handling", "Queued")]
+        rows = [{k: t[k] for k in ("taskId", "nodeId", "status", "startedAt", "elapsedSeconds",
+                                   "command") if t.get(k) not in _EMPTY}
+                for t in (_drop_command_output(t) for t in active[:NODE_LIST_LIMIT])]
+        return {"tasks": rows, "statusCount": counts,
+                "note": "running and queued tasks only; detail='full' lists every task"}
     if not task_id:
         return {"error": f"task_id is required for action={action!r}"}
     if action == "get":
@@ -2388,14 +1817,17 @@ def download_file_from_node(ns_id: str, infra_id: str, node_id: str, source_path
     url = f"{TUMBLEBUG_API_BASE_URL}/ns/{ns_id}/downloadFile/infra/{infra_id}/node/{node_id}"
     try:
         resp = _session.post(url, json={"sourcePath": source_path},
+                             headers=_request_headers(),
                              auth=(TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD), timeout=(60, 600))
     except Exception as e:
         return {"error": f"download failed: {e}"}
     if resp.status_code >= 400:
         try:
-            return {"error": resp.json().get("message", resp.text[:300])}
+            message = resp.json().get("message")
         except Exception:
-            return {"error": f"HTTP {resp.status_code}: {resp.text[:300]}"}
+            message = None
+        return {"error": {"message": message or resp.text[:300] or f"HTTP {resp.status_code}",
+                          "status": resp.status_code}}
 
     raw = resp.content
     disposition = resp.headers.get("Content-Disposition", "")
@@ -2542,6 +1974,14 @@ def _budget_policy():
     policy = dict(DEFAULT_BUDGET_POLICY)
     if isinstance(stored, dict):
         policy.update(stored)
+    # A limit that is not a usable number would compare false and let everything through
+    for key, default in DEFAULT_BUDGET_POLICY.items():
+        value = policy.get(key)
+        if key != "enabled" and not (isinstance(value, (int, float))
+                                     and not isinstance(value, bool)
+                                     and math.isfinite(value) and value >= 0):
+            logger.warning(f"budget: stored {key}={value!r} is unusable, using {default}")
+            policy[key] = default
     return policy
 
 
@@ -2582,23 +2022,31 @@ def _price_node_groups(node_groups):
 
 
 def _running_spend():
-    """Hourly cost of everything currently running, summed from node specs.
+    """Hourly cost of every node that is or may become billed, across all namespaces.
 
-    Deliberately not option=status: that view omits specId, so every node would look
-    unpriced and the concurrent limit would never fire. The full listing is large, but it is
-    read inside the server and never reaches the caller's context.
+    Nodes on hold and in transition count: they were admitted against the limits, and
+    continuing a held Infra is not checked again. Terminated nodes and creations that
+    failed before the provider returned an instance do not.
+    Read from the stored Infra list, whose nodes carry their spec with its price.
     """
     total, unpriced = 0.0, 0
-    listing = api_request("GET", f"/ns/{DEFAULT_NAMESPACE}/infra")
-    for infra in (listing or {}).get("infra") or []:
-        for node in infra.get("vm") or infra.get("node") or []:
-            if str(node.get("status", "")).lower().startswith("terminated"):
-                continue
-            cost = _spec_cost(node.get("specId") or "")
-            if cost is None:
-                unpriced += 1
-            else:
-                total += cost
+    namespaces = (api_request("GET", "/ns", params={"option": "id"}) or {}).get("output") \
+        or [DEFAULT_NAMESPACE]
+    for ns_id in namespaces:
+        listing = api_request("GET", f"/ns/{ns_id}/infra")
+        for infra in (listing or {}).get("infra") or []:
+            for node in infra.get("node") or []:
+                status = str(node.get("status", "")).lower()
+                if status.startswith("terminated") or (
+                        status == "failed" and not node.get("cspResourceId")):
+                    continue
+                cost = (node.get("spec") or {}).get("costPerHour")
+                if not isinstance(cost, (int, float)):
+                    cost = _spec_cost(node.get("specId") or "")
+                if cost is None or cost < 0:
+                    unpriced += 1
+                else:
+                    total += cost
     return round(total, 4), unpriced
 
 
@@ -2608,33 +2056,25 @@ def _created_today():
     return round(sum(float(v.get("usd_per_hour", 0)) for _, v in entries), 4)
 
 
-def _record_created(amount):
-    stamp = datetime.now().strftime("%Y-%m-%d")
-    key = f"{BUDGET_CREATED_PREFIX}{stamp}/{datetime.now().strftime('%H%M%S%f')}"
-    _state_put(key, {"usd_per_hour": amount}, ttl_seconds=48 * 3600)
+def _record_spend(node_groups):
+    """Count a creation that went through against today's total."""
+    if not _budget_policy().get("enabled"):
+        return
+    planned, _ = _price_node_groups(node_groups)
+    if planned > 0:
+        stamp = datetime.now()
+        key = f"{BUDGET_CREATED_PREFIX}{stamp.strftime('%Y-%m-%d')}/{stamp.strftime('%H%M%S%f')}"
+        _state_put(key, {"usd_per_hour": planned}, ttl_seconds=48 * 3600)
 
 
-def _consume_approval(token):
-    """An approval is single-use: spend it or it stays unspent."""
-    if not token:
-        return False
-    key = f"{BUDGET_REQUEST_PREFIX}{token}"
-    record = _state_get(key)
-    if not isinstance(record, dict) or record.get("status") != "approved":
-        return False
-    record["status"] = "used"
-    record["used_at"] = datetime.now().isoformat(timespec="seconds")
-    _state_put(key, record, ttl_seconds=BUDGET_APPROVAL_TTL_SECONDS)
-    return True
+def _budget_refusal(node_groups, budget_ack=None):
+    """A refusal when the plan breaks a spend limit, else None. Records nothing.
 
-
-def _check_budget(node_groups, budget_ack=None):
-    """Return a refusal when a planned Infra breaks a limit, else None."""
+    An approval covers the amount the administrator saw: it is spent only by a plan that
+    costs no more than the request it was granted for.
+    """
     policy = _budget_policy()
     if not policy.get("enabled"):
-        return None
-    if _consume_approval(budget_ack):
-        logger.info(f"budget: proceeding under approval {budget_ack}")
         return None
 
     planned, unpriced = _price_node_groups(node_groups)
@@ -2651,22 +2091,46 @@ def _check_budget(node_groups, budget_ack=None):
     if running + planned > policy["concurrent_running_usd_per_hour"]:
         breaches.append(f"running total would reach ${round(running + planned, 4)}/h, over the "
                         f"${policy['concurrent_running_usd_per_hour']}/h concurrent limit")
-
     if not breaches:
-        _record_created(planned)
         return None
 
-    token = f"req-{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
-    _state_put(f"{BUDGET_REQUEST_PREFIX}{token}", {
+    record = _state_get(f"{BUDGET_REQUEST_PREFIX}{budget_ack}") if budget_ack else None
+    record = record if isinstance(record, dict) else None
+    ack_note = None
+    if record:
+        status = record.get("status")
+        covered = record.get("planned_usd_per_hour")
+        if status == "approved" and isinstance(covered, (int, float)) and planned <= covered + 1e-6:
+            record["status"] = "used"
+            record["used_at"] = datetime.now().isoformat(timespec="seconds")
+            _state_put(f"{BUDGET_REQUEST_PREFIX}{budget_ack}", record,
+                       ttl_seconds=BUDGET_APPROVAL_TTL_SECONDS)
+            logger.info(f"budget: proceeding under approval {budget_ack}")
+            return None
+        if status == "approved":
+            ack_note = (f"{budget_ack} was approved for ${covered}/h and this plan is "
+                        f"${planned}/h, so a new request was filed")
+        elif status != "pending":
+            ack_note = f"{budget_ack} is {status}; an approval works once"
+    elif budget_ack:
+        ack_note = f"{budget_ack} is not a known request"
+
+    # A pending request is updated in place, so retrying does not pile up requests.
+    pending = bool(record) and record.get("status") == "pending"
+    token = budget_ack if pending else f"req-{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
+    entry = {
         "status": "pending",
         "requested_at": datetime.now().isoformat(timespec="seconds"),
         "planned_usd_per_hour": planned,
         "unpriced_nodes": unpriced,
         "breaches": breaches,
         "node_groups": node_groups,
-    }, ttl_seconds=7 * 24 * 3600)
+    }
+    if pending and record.get("reason"):
+        entry["reason"] = record["reason"]
+    _state_put(f"{BUDGET_REQUEST_PREFIX}{token}", entry, ttl_seconds=7 * 24 * 3600)
 
-    return {"error": {
+    refusal = {
         "message": "Refused: over budget. " + "; ".join(breaches),
         "code": "BUDGET_EXCEEDED",
         "request_id": token,
@@ -2678,9 +2142,12 @@ def _check_budget(node_groups, budget_ack=None):
         "note": ("unpriced nodes count as 0 - self-hosted providers publish no price. "
                  "costPerHour is a compute list price and excludes egress, storage IOPS, "
                  "NAT/LB and licensing."),
-        "how_to_proceed": ("an administrator approves this request out of band, then retry "
-                           f"with budget_ack='{token}'"),
-    }}
+        "how_to_proceed": ("choose something cheaper, or have an administrator approve "
+                           f"{token} and retry the same plan with budget_ack='{token}'"),
+    }
+    if ack_note:
+        refusal["budget_ack"] = ack_note
+    return {"error": refusal}
 
 
 @tool()
@@ -2711,34 +2178,35 @@ def get_budget_status() -> Dict:
     }
 
 
-@tool(read_only=False)  # files an approval request
-def request_budget_increase(reason: str, request_id: Optional[str] = None) -> Dict:
+@tool(read_only=False)  # annotates an approval request
+def request_budget_increase(request_id: str, reason: str) -> Dict:
     """
-    Ask an administrator to allow a creation that a limit refused.
+    Ask an administrator to approve a creation that a spend limit refused.
 
-    The agent can ask; it cannot grant. Approval happens outside MCP - an administrator
-    writes it directly - so no tool call can approve its own request.
+    The agent can ask; it cannot grant. Approval happens outside MCP, and it covers the
+    plan that was refused: retry that same plan with budget_ack once it is approved.
 
     Args:
+        request_id: The request_id carried by the BUDGET_EXCEEDED refusal
         reason: Why the spend is justified. Recorded for the administrator to read.
-        request_id: The request_id returned by the refusal. Omit to raise a new one.
 
     Returns:
-        The request and how to check on it.
+        The request's status and how it gets approved.
     """
-    token = request_id or f"req-{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
-    key = f"{BUDGET_REQUEST_PREFIX}{token}"
-    record = _state_get(key) or {"status": "pending",
-                                 "requested_at": datetime.now().isoformat(timespec="seconds")}
+    key = f"{BUDGET_REQUEST_PREFIX}{request_id}"
+    record = _state_get(key)
+    if not isinstance(record, dict):
+        return {"error": f"budget request {request_id!r} was not found; repeat the refused "
+                         f"creation to get a current request_id"}
     record["reason"] = reason
-    record["status"] = record.get("status", "pending")
-    _state_put(key, record, ttl_seconds=7 * 24 * 3600)
+    if record.get("status") == "pending":
+        _state_put(key, record, ttl_seconds=7 * 24 * 3600)
     return {
-        "request_id": token,
-        "status": record["status"],
-        "message": "recorded; an administrator must approve it out of band",
-        "administrator_action": f"make mcp-budget-approve ID={token}",
-        "then": f"retry the creation with budget_ack='{token}'",
+        "request_id": request_id,
+        "status": record.get("status"),
+        "planned_usd_per_hour": record.get("planned_usd_per_hour"),
+        "administrator_action": f"make mcp-budget-approve ID={request_id}",
+        "then": f"retry the same plan with budget_ack='{request_id}'",
     }
 
 
@@ -2785,13 +2253,20 @@ def manage_namespace(action: str, name: Optional[str] = None,
         confirm: Must be True for delete - it removes everything recorded in the namespace
 
     Returns:
-        The server's response. Creating a namespace that exists reports it rather than failing.
+        The namespace, with created=false when it already existed, or the deletion result.
     """
     action = (action or "").strip().lower()
     if not name:
         return {"error": "name is required"}
     if action == "create":
-        return _internal_create_namespace_with_validation(name, description)
+        existing = api_request("GET", f"/ns/{name}")
+        if isinstance(existing, dict) and "error" not in existing:
+            return {"created": False, "namespace": existing}
+        created = api_request("POST", "/ns", json_data={"name": name,
+                                                        "description": description or ""})
+        if not isinstance(created, dict) or "error" in created:
+            return created
+        return {"created": True, "namespace": created}
     if action == "update":
         if not description:
             return {"error": "description is required for action='update'"}
@@ -2799,12 +2274,12 @@ def manage_namespace(action: str, name: Optional[str] = None,
                            json_data={"name": name, "description": description})
     if action == "delete":
         guard = _require_confirmation(
-            confirm, "deleting namespace",
+            confirm, f"deleting namespace {name}",
             "removes the namespace and every resource recorded in it")
         if guard:
             return guard
         return api_request("DELETE", f"/ns/{name}")
-    return {"error": f"unknown action {action!r}; expected create, update or delete"}
+    return {"error": f"unknown action {action!r}; expected one of create, update, delete"}
 
 
 # ---------------------------------------------------------------------------
@@ -2816,47 +2291,42 @@ def resume_session(session_id: str) -> Dict:
     """
     Recover what a session was doing, after a disconnect or a restart.
 
-    Every mutating call is journaled automatically under the session_id passed to it, so this
-    reports real actions rather than whatever the model remembered to write down. Kept small
-    on purpose: the point is to re-orient, not to replay a transcript.
+    Every call that changed something is journaled under the session_id passed to it, so
+    this reports what was actually done. Refusals and rejected arguments are not recorded.
 
     Args:
         session_id: The identifier used on earlier calls
 
     Returns:
-        created_resources, in_flight (calls that errored or never reported), last_actions,
-        and a suggested next step.
+        last_actions (tool, action, target, outcome, time), and unfinished: the calls
+        whose outcome is unknown because they failed or timed out partway.
     """
     entries = [v for _, v in _state_range(_session_key(session_id, "journal/"))]
     if not entries:
         return {"session_id": session_id, "known": False,
                 "message": "no journal for this session id",
                 "hint": "pass the same session_id on later calls to build one"}
-
-    created, failed = [], []
-    for e in entries:
-        args = e.get("arguments") or {}
-        target = args.get("name") or args.get("infra_id") or args.get("ns_id")
-        if e.get("outcome") == "error":
-            failed.append({"tool": e.get("tool"), "target": target, "at": e.get("at")})
-        elif e.get("tool") in ("create_infra_dynamic", "provision_infra_from_template",
-                               "add_nodegroup_dynamic", "manage_namespace"):
-            created.append({"tool": e.get("tool"), "target": target, "at": e.get("at")})
-
-    last = entries[-1]
-    return {
-        "session_id": session_id,
-        "known": True,
-        "actions_recorded": len(entries),
-        "created_resources": created[-10:],
-        "in_flight": failed[-5:],
-        "last_action": {"tool": last.get("tool"), "outcome": last.get("outcome"),
-                        "at": last.get("at")},
-        "suggested_next_step": (
-            "verify the resources listed in created_resources with get_infra_list(), then "
-            "continue" if created else
-            "nothing was created yet; restate the goal and start from review"),
-    }
+    actions = []
+    for entry in entries:
+        args = entry.get("arguments") or {}
+        target = next((args[k] for k in ("rdbms_id", "cluster_id", "bucket_id", "sg_id",
+                                         "resource_id", "template_id", "nlb_id")
+                       if args.get(k)), None)
+        if not target and args.get("infra_id"):
+            target = "/".join(filter(None, (args["infra_id"], args.get("node_id")
+                                            or args.get("nodegroup_id"))))
+        target = target or args.get("name") or args.get("ns_id")
+        row = {"tool": entry.get("tool"), "action": args.get("action"), "target": target,
+               "outcome": entry.get("outcome"), "at": entry.get("at")}
+        actions.append({k: v for k, v in row.items() if v})
+    unfinished = [a for a in actions if a.get("outcome") != "ok"]
+    out = {"session_id": session_id, "known": True, "actions_recorded": len(actions),
+           "last_actions": actions[-15:]}
+    if unfinished:
+        out["unfinished"] = unfinished[-5:]
+        out["next"] = ("the unfinished calls may have partly taken effect: read their targets "
+                       "with get_infra() or get_resources() before repeating them")
+    return out
 
 
 @tool(mutating=True)
@@ -2890,7 +2360,7 @@ def clear_session(session_id: str, confirm: bool = False) -> Dict:
 
 _RESOURCE_KINDS = {
     "vNet": ("vNet", ("id", "name", "connectionName", "cidrBlock", "status",
-                      "subnetInfoList", "associatedObjectList")),
+                      "subnetInfoList", "associatedObjectList", "deletionRequestedAt")),
     "securityGroup": ("securityGroup", ("id", "name", "connectionName", "vNetId",
                                         "description", "firewallRules", "associatedObjectList",
                                         "status", "deletionRequestedAt")),
@@ -2900,43 +2370,62 @@ _RESOURCE_KINDS = {
     "dataDisk": ("dataDisk", ("id", "name", "connectionName", "diskType", "diskSize",
                               "status", "associatedObjectList",
                               "deletionRequestedAt", "systemMessage")),
-    "customImage": ("customImage", ("id", "name", "connectionName", "status",
-                                    "description", "associatedObjectList",
+    "customImage": ("customImage", ("id", "name", "connectionName", "cspImageName", "status",
+                                    "description", "osType", "sourceNodeUid",
                                     "imageStatus", "deletionRequestedAt", "systemMessage")),
     "objectStorage": ("objectStorage", ("id", "name", "connectionName", "status",
-                                        "description")),
-    "nlb": ("nlb", ("id", "name", "connectionName", "vNetId", "listener", "status")),
+                                        "description", "creationDate", "systemMessage")),
+    "rdbms": ("rdbms", ("id", "name", "connectionName", "status", "dbEngine",
+                        "dbEngineVersion", "dbInstanceSpec", "endpoint", "publicAccess",
+                        "vNetId", "storageSize", "systemMessage", "deletionRequestedAt")),
+    "nlb": ("nlb", ("id", "name", "connectionName", "type", "scope", "listener",
+                    "targetGroup", "status", "location")),
 }
 
 
 @tool()
-def get_resources(kind: str, ns_id: str = DEFAULT_NAMESPACE, detail: str = "summary",
+def get_resources(kind: str, ns_id: str = DEFAULT_NAMESPACE,
+                  resource_id: Optional[str] = None, detail: str = "summary",
                   fields: Optional[str] = None) -> Dict:
     """
-    List resources of one kind in a namespace.
+    List resources of one kind in a namespace, or fetch one by id.
+
+    A resource showing deletionRequestedAt was asked to be deleted and the provider has
+    not confirmed it yet; manage_resource() retries, restores or purges it.
 
     Args:
         kind: "vNet" | "securityGroup" | "sshKey" | "dataDisk" | "customImage" |
-              "objectStorage" | "nlb"
+              "objectStorage" | "rdbms" | "nlb"
         ns_id: Namespace ID (defaults to the standing namespace)
+        resource_id: Return just this resource (not for "nlb", which belongs to an Infra)
         detail: "minimal" | "summary" (default) | "full"
         fields: Comma-separated allowlist of fields to keep
 
     Returns:
-        The resource list under its own key, e.g. {"vNet": [...]}.
+        The resource list under its own key, e.g. {"vNet": [...]}, or the one resource.
         Private keys are redacted; get_ssh_private_key returns one deliberately.
     """
-    entry = _RESOURCE_KINDS.get(kind) or _RESOURCE_KINDS.get(str(kind).strip())
+    entry = _RESOURCE_KINDS.get(str(kind).strip())
     if not entry:
         return {"error": f"unknown kind {kind!r}; expected one of "
                          f"{', '.join(sorted(_RESOURCE_KINDS))}"}
     path, summary_keys = entry
+    level = _validate_detail(detail)
+    if resource_id:
+        if path == "nlb":
+            return {"error": "resource_id is not supported for kind 'nlb'; use "
+                             "manage_nlb(action='get')"}
+        one = api_request("GET", f"/ns/{ns_id}/resources/{path}/{resource_id}")
+        if not isinstance(one, dict) or "error" in one or level == "full":
+            return one
+        if level == "minimal":
+            return {"id": one.get("id"), "status": one.get("status")}
+        return _project(_summarize_resource(one, summary_keys), fields)
     return _shape_resource_list(
-        api_request("GET", f"/ns/{ns_id}/resources/{path}"), path,
-        _validate_detail(detail), fields, summary_keys)
+        api_request("GET", f"/ns/{ns_id}/resources/{path}"), path, level, fields, summary_keys)
 
 
-@tool(mutating=True)
+@tool(mutating=True, read_actions=("get", "find"))
 def manage_labels(action: str, label_type: str, uid: Optional[str] = None,
                   labels: Optional[Union[Dict, str]] = None, key: Optional[str] = None,
                   detail: str = "summary") -> Dict:
@@ -2996,38 +2485,6 @@ def manage_labels(action: str, label_type: str, uid: Optional[str] = None,
 
 
 @tool()
-def get_handling_command_count(ns_id: str = DEFAULT_NAMESPACE, infra_id: str = "",
-                               node_id: Optional[str] = None) -> Dict:
-    """
-    How many remote commands are still running.
-
-    Args:
-        ns_id: Namespace ID
-        infra_id: Infra ID
-        node_id: Narrow to one node; omit for the whole Infra
-
-    Returns:
-        The in-flight command count, and a caveat about when it can be trusted.
-    """
-    if not infra_id:
-        return {"error": "infra_id is required"}
-    if node_id:
-        result = api_request("GET",
-                             f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/handlingCount")
-    else:
-        result = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/handlingCount")
-
-    # A command is not counted until the server has registered it, which lags the request by
-    # tens of seconds. Polling this immediately after issuing one reads 0 and looks like
-    # "finished" - it means "not started yet". Say so rather than letting the caller guess.
-    if isinstance(result, dict):
-        result["caveat"] = ("0 can mean 'not registered yet' as well as 'finished'. Right "
-                            "after issuing a command, confirm with list_node_command_status "
-                            "or get_command_result before concluding it is done.")
-    return result
-
-
-@tool()
 def get_search_options(kind: str) -> Dict:
     """
     The filter and priority vocabulary accepted by search_images and recommend_spec.
@@ -3060,7 +2517,7 @@ def _infra_access_info(ns_id: str, infra_id: str, show_ssh_key: bool = False) ->
     if not isinstance(infra, dict) or "error" in infra:
         return infra if isinstance(infra, dict) else {"error": "could not read infra"}
     groups = {}
-    for node in (infra.get("vm") or infra.get("node") or []):
+    for node in infra.get("node") or []:
         gid = node.get("nodeGroupId") or "default"
         groups.setdefault(gid, []).append({
             "nodeId": node.get("id"),
@@ -3114,7 +2571,7 @@ def get_command_result(request_id: str, ns_id: str = DEFAULT_NAMESPACE,
     if infra_id:
         nodes, counts = [], {}
         listing = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}")
-        for node in (listing or {}).get("vm") or (listing or {}).get("node") or []:
+        for node in (listing or {}).get("node") or []:
             for entry in (node.get("commandStatus") or []):
                 if entry.get("xRequestId") != request_id:
                     continue
@@ -3180,7 +2637,7 @@ def _zone_is_delegated(zone, timeout=4):
 
 
 # Tool: Global DNS records, including pointing a name at a whole Infra
-@tool(mutating=True)
+@tool(mutating=True, read_actions=("get",))
 def manage_dns_record(action: str, domain_name: str, record_name: Optional[str] = None,
                       record_type: str = "A", ttl: int = 300,
                       routing_policy: str = "simple",
@@ -3188,6 +2645,7 @@ def manage_dns_record(action: str, domain_name: str, record_name: Optional[str] 
                       ns_id: str = DEFAULT_NAMESPACE,
                       label_selector: Optional[str] = None,
                       ips: Optional[List[str]] = None,
+                      set_identifier: Optional[str] = None,
                       confirm: bool = False) -> Dict:
     """
     Read, set or delete a global DNS record.
@@ -3215,6 +2673,8 @@ def manage_dns_record(action: str, domain_name: str, record_name: Optional[str] 
         ns_id: Namespace of that Infra
         label_selector: Label filter, e.g. "role=web"
         ips: Explicit addresses for "set"
+        set_identifier: For "delete": remove only this entry of a weighted or geoproximity
+            record (setIdentifier from "get"). Omitted, every entry of the name goes.
         confirm: Must be True for "set" and "delete" - DNS changes are visible to everyone
 
     Returns:
@@ -3237,6 +2697,8 @@ def manage_dns_record(action: str, domain_name: str, record_name: Optional[str] 
         body = {"domainName": domain_name,
                 "recordName": record_name or domain_name,
                 "recordType": record_type}
+        if set_identifier:
+            body["setIdentifier"] = set_identifier
         return api_request("DELETE", "/resources/globalDns/record", json_data=body)
 
     if action != "set":
@@ -3285,41 +2747,49 @@ def manage_dns_record(action: str, domain_name: str, record_name: Optional[str] 
 _USAGE_GUIDES = {
     "provision": """Provisioning an Infra, end to end.
 
-1. Pick specs.  recommend_vm_spec(filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-   priority_policy="cost")  ->  summarized_specs[i]["id"], e.g. "aws+ap-northeast-2+t2.small".
-   Use the id exactly as returned. It encodes provider, region and instance type, and an
-   edited or hand-written id fails at the CSP.
+1. Pick specs.  recommend_vm_spec(filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4},
+   "providerName": "aws", "regionName": "ap-northeast-2"}, priority_policy="cost")
+   ->  specs[i]["id"], e.g. "aws+ap-northeast-2+t3.small". Use the id exactly as returned:
+   it encodes provider, region and instance type, and an edited id fails at the CSP.
 
-2. Pick an image per spec.  search_images(matched_spec_id=spec_id, os_type="ubuntu 22.04",
-   include_basic_image_only=True)  ->  imageList[i]["cspImageName"].
-   Every spec needs its own image: image ids are CSP- and region-specific, so one image
-   cannot be reused across providers or regions.
+2. Pick an image per spec.  search_images(matched_spec_id=spec_id, os_type="ubuntu 22.04")
+   ->  imageList[0]["cspImageName"]. Image ids are specific to a provider and region, so
+   every spec needs its own.
 
-3. Build node_groups.
-   [{"specId": spec_id, "imageId": csp_image_name, "name": "web-1", "nodeGroupSize": 1,
+3. Build node_groups, one object per group of identical nodes:
+   [{"name": "web", "specId": spec_id, "imageId": csp_image_name, "nodeGroupSize": 2,
      "label": {"role": "web"}}]
-   The label matters later - label_selector on a remote command targets it.
+   Nodes are named "<name>-1", "<name>-2", ... The label matters later: label_selector on
+   a remote command targets it. Optional per group: rootDiskType and rootDiskSize (GB),
+   zone, distributeSubnets (spread the nodes over zones), connectionName, initScript.
+   Valid zones and disk values for a spec: get_spec_options(spec_id).
 
 4. Review.  review_infra_dynamic_request(ns_id, name, node_groups)
-   Check overallStatus and creationViable. Fix what it reports and review again.
-   estimatedCost is a compute list price: it excludes egress, storage IOPS, NAT/LB
-   hourly and licensing.
+   Check creationViable and each nodeReviews entry. specValidation.quota.fitCount is how
+   many more nodes of that spec the account can start; warnings carry the spec's past
+   failure rate. Fix what it reports and review again.
 
-5. Create.  create_infra_dynamic(ns_id, name, node_groups, force_create=True)
-   force_create is what distinguishes an intentional provision from a review.
+5. Show the user the node groups and estimatedCost, and get their agreement.
 
-Bootstrapping at creation time: pass post_script with one phase per tier, e.g.
-{"phases": [{"nodeGroupId": "web", "command": ["..."]}]}. The call waits for it by
-default and returns the final postScriptStatus. For anything slow set
-post_script_async=True: the call returns once the nodes are up, then poll get_infra()
-until postScriptStatus is terminal.
+6. Create.  create_infra_dynamic(ns_id, name, node_groups, force_create=True, confirm=True)
+   force_create says the review passed, confirm says a person agreed. Without confirm the
+   call refuses and returns the plan with its hourly cost.
 
-post_script runs over SSH after the nodes are up. init_script runs inside the node at
-first boot and needs no SSH - see get_usage_guide('initscript') for when to use which.
+estimatedCost is a compute list price: it excludes egress, storage, NAT/LB hours and
+licensing. A review can pass and creation still fail on live stock or a provider fault;
+see get_usage_guide('recovery').
 
-The review also reports quota: specValidation.quota gives the tightest limit and
-fitCount, the number of nodes of that spec the account can still start in the region.
-Root disk choices for a spec: get_spec_disk_options(spec_id).""",
+Bootstrapping. post_script runs over SSH once the nodes are up:
+    {"phases": [{"nodeGroupId": "web", "command": ["sudo apt-get install -y nginx"]}]}
+The call waits for it and returns postScriptStatus. For anything slow pass
+post_script_async=True and poll get_infra() until postScriptStatus is terminal.
+init_script runs inside the node at first boot and needs no SSH: get_usage_guide('initscript').
+
+Large or slow creations. The call answers when every node is up. hold=True registers the
+Infra without provisioning; control_infra(action='continue') then starts it.
+
+A saved configuration: list_infra_templates() and provision_infra_from_template().
+manage_infra_template(action='save_from_infra') turns a running Infra into a template.""",
 
     "initscript": """First-boot scripts, the notifier and observability.
 
@@ -3332,15 +2802,16 @@ Two ways to configure a node, and they differ in who runs the script:
 
 init_script shapes (Infra-level argument, or "initScript" inside one node group):
     {"templateId": "initscript-nginx", "env": {"SITE_TITLE": "demo"}}
-    {"scripts": [{"name": "setup", "script": "#!/bin/bash\nset -e\napt-get install -y jq"}]}
+    {"script": "#!/bin/bash\\nset -e\\napt-get install -y jq"}
+    {"scripts": [{"name": "setup", "script": "#!/bin/bash\\n...", "timeoutSec": 300}]}
     {"mode": "none"}                       no init script, not even the default one
 A script starts with its shebang line. Steps run in order as root; the first failure
-stops the run unless that step sets continueOnError. timeoutSec bounds one step.
-User data is limited (about 16 KB on most providers); the review reports the size.
+stops the run unless that step sets continueOnError. User data is limited (about 16 KB
+on most providers); the review reports the size.
 
 Templates: list_init_script_templates() lists them; with template_id it returns the
-script text. A template can also run later over SSH as a post_script phase with the
-same templateId - useful to re-run on nodes that failed.
+script text. The same template can run later over SSH -
+execute_command_infra(template_id=...) - which is how to re-run it on nodes that failed.
 
 Results: get_init_script_status(ns_id, infra_id) gives counts per state;
 detail='full', status='fail' names the nodes and the failing step.
@@ -3368,18 +2839,34 @@ Exit status is the last command's. A trailing echo masks a failure - `installer.
 reports success no matter what the installer did. Use && between steps, or set -o pipefail.
 
 Targeting: node_id for one node, nodegroup_id for a NodeGroup, label_selector for a role
-across NodeGroups ("role=node"). At most one applies.
+across NodeGroups ("role=worker"). Without any, the command runs on every node.
 
 The result carries nodes: {total, succeeded, failed}; a failure on one node does not set
 isError, so read it. A node that has only just reached Running, or was just rebooted, can
 refuse SSH for up to a minute ("SSH authentication failed", "connection refused") while
 its login user and key are set up - retry rather than report a failure.
 
-Long-running work: pass timeout_minutes (server default 30, max 120). Output is retrieved
-with list_node_command_status() or get_node_command_status(index=...); by default only the
-newest record and any that did not complete carry their output.
+Long-running work: pass run_async=True and follow with get_command_result(request_id).
+A dropped connection then costs nothing. timeout_minutes raises the per-command limit
+(server default 30, max 120). manage_command_task(action='list') shows what is still
+running and can cancel it.
 
-Predefined scripts are listed by list_predefined_scripts() and cover common setup tasks.""",
+Output: each stream is cut to tail_lines; `contains` returns the lines matching a regex
+instead, which reaches a block in the middle of a long log. Earlier commands of a node:
+list_node_command_status(), and index=... for one record with its output.
+
+Values the server fills in on each node, usable inside a command:
+    $$Func(GetPublicIP(target=this))                      this node's public address
+    $$Func(GetPublicIP(target=this, prefix=http://, postfix=:8000/v1))
+    $$Func(GetPublicIPs(separator=' '))                   every node's public address
+    $$Func(GetPrivateIPs(separator=',', label='role=worker'))   nodes matching a label
+    $$Func(GetInfraId())    $$Func(GetNodeId())
+{{public_ip}}, {{public_ips_space}}, {{public_ips_comma}} and {{private_ips_space}} are
+filled by this server before sending, from the whole Infra.
+
+Predefined scripts: list_predefined_scripts(), run with script_name. Files:
+transfer_file_infra() writes text to nodes, download_file_from_node() reads one back.
+After installing a service open its port: add_security_group_rules().""",
 
     "gpu": """Serving an LLM on a GPU node.
 
@@ -3391,14 +2878,13 @@ cards, and the vLLM/KServe stack is CUDA-only, so an AMD node fails after provis
                                        "acceleratorModel": "nvidia"},
                       priority_policy="cost")
 
-In eu-central-1 that is the difference between g4ad.xlarge (AMD, $0.47/h, will not run the
-model) and g4dn.xlarge (NVIDIA T4, $0.658/h, will). The cheaper one is not cheaper if it
-cannot do the job. get_search_options("spec") lists the filter vocabulary, including
-acceleratorModel, acceleratorType and acceleratorMemoryGB.
+In eu-central-1 that is the difference between g4ad.xlarge (AMD, will not run the model)
+and g4dn.xlarge (NVIDIA T4, will). Filter on acceleratorMemoryGB for the memory the model
+needs: an acceleratorCount of 0 marks a fractional slice of a card.
+get_search_options("spec") lists the filter vocabulary.
 
-Choosing the image. search_images(is_gpu_image=True) returns purpose-built images with the
-driver already present. The clean-base-image default steps aside automatically when that
-flag is set.
+Choosing the image. search_images(matched_spec_id=..., is_gpu_image=True) returns images
+with the driver already present.
 
 Sizing the model to the card. A T4 has 16 GB: a 1.5B-7B model in half precision fits.
 Qwen/Qwen2.5-1.5B-Instruct is a safe small choice; 7B needs quantisation or an L4/A10.
@@ -3424,19 +2910,18 @@ B. Through Kubernetes and KServe. Worth it when the cluster is already there, or
     5. k8s_open_webui               node_port=30080; it auto-discovers the served model
     6. publish_nodeport_via_host    only when the node sits behind a private address
 
-Check progress with get_command_result or list_node_command_status; step 3 and 4 are long
-enough that a synchronous wait can hit a client timeout.""",
+Run the long steps with run_async=True and follow them with get_command_result();
+discover_service_endpoints() finds the model endpoints that are answering.""",
 
     "recovery": """When something fails partway through.
 
-Creation is not all-or-nothing. policyOnPartialFailure defaults to "continue", so a request
-for ten nodes can leave nine running and one Failed, and the Infra sits at
-Partial-Running:9 (R:9/10).
+Creation is not all-or-nothing. policy_on_partial_failure defaults to "continue", so a
+request for ten nodes can leave nine running and one Failed, and the Infra sits at
+Partial-Running.
 
 See what happened:
-    check_infra_status_and_handle_failures(ns_id, infra_id)
-                                       counts, the failed nodes with the provider's
-                                       message, and the server's retry plan
+    diagnose_infra(ns_id, infra_id)    counts, the failed nodes with the provider's
+                                       message, script outcomes and the retry plan
 
 Retry in place - same node group, same configuration:
     retry_failed_nodes(ns_id, infra_id)                 preview: what is retriable and why
@@ -3455,23 +2940,106 @@ Replace what was lost with something else:
     add_nodegroup_dynamic(...)         add it under a NEW name
 One node misbehaving: control_node(action='reboot'), or 'delete' to drop it.
 
-Use a new name. A node group keeps its shared resources (security group, key pair) after the
-node dies, and those are keyed by Infra and node-group name without the region. Reusing the
-old name in a different region attaches a security group belonging to the first region, and
-creation fails with "Security Group does not exist in connection ...".
+Use a new name. A node group keeps its security group and key pair after its nodes die,
+and those are keyed by Infra and node-group name without the region. Reusing the name in
+another region attaches a security group that belongs to the first one.
 
 Why a review can pass and creation still fail: the review checks that the spec and image
-exist and are priced. It cannot check account quota, live stock, or faults internal to the
-provider. Expect these and treat them as a retry signal, not a bug:
-    VcpuLimitExceeded ...              quota - ask for an increase, or use another family
-    no zone with stock ... right now   capacity - another spec in the region, or another region
-    provider-specific 4xx              try a different provider for that location
+exist, their price and the account's quota. It cannot see live stock or faults inside
+the provider. Treat these as a retry signal, not a bug:
+    no zone with stock right now       another zone, spec or region
+    provider-specific 4xx              another provider for that location
 
-Probing cheaply: review_spec_image_pair(spec_id, image_id) validates one pair in well under
-a second, so several candidates can be tested before committing to a full plan.
+An Infra stuck mid-provisioning after a server restart: control_infra(action='reconcile')
+adopts what exists at the CSP; 'abort' terminates what is unfinished.
 
-Long commands: pass run_async=True to execute_command_infra and follow with
-get_command_result(request_id=...). A dropped connection then costs nothing.""",
+Probing cheaply: review_spec_image_pair(spec_id, image_id) validates one pair in well
+under a second, and get_spec_options(spec_id, refresh=True) asks the provider whether the
+spec can be started right now.""",
+
+    "cleanup": """Removing what was created.
+
+    terminate_infra(ns_id, infra_id, confirm=True)
+                                       terminates every node and deletes the Infra
+    release_resources(ns_id, dry_run=True)
+                                       lists the VNets, security groups and keys nothing
+                                       uses any more; confirm=True removes only those
+
+An Infra's VNet, security groups and SSH key outlive it on purpose - the next Infra in
+that region reuses them - so a namespace is clean only after both steps.
+
+A deletion the provider has not confirmed keeps the record: get_resources() shows it with
+deletionRequestedAt. manage_resource(action='delete') tries again; action='restore'
+cancels the deletion when the resource is still wanted.
+
+Checking for leftovers at the provider: inspect_csp_resources(connection_name) compares
+CB-Tumblebug's records with what the CSP reports for that region.
+
+Other things that are billed until removed: database instances (manage_rdbms; delete them
+before the VNet they live in), buckets (manage_object_storage), load balancers
+(manage_nlb; a global one is its own "<infra>-nlb" Infra), managed Kubernetes clusters
+(manage_k8s_cluster), custom images (manage_resource) and DNS records
+(manage_dns_record).""",
+
+    "services": """Beyond virtual machines.
+
+Object storage.  manage_object_storage(action='create', bucket_id=name,
+connection_name='aws-ap-northeast-2'). Data does not pass through this server:
+action='presigned_url' with operation='upload' or 'download' returns a time-limited URL,
+and the node uses it directly, e.g.
+    execute_command_infra(commands=['curl -fsS -T /var/log/syslog "<url>"'], node_id=...)
+which moves data without putting cloud credentials on the node. The answer names the
+HTTP method (PUT for an upload) and, at some providers, requiredHeaders: send each one
+(`curl -H 'x-ms-blob-type: BlockBlob' ...` on Azure) or the upload is refused. Object keys
+may contain "/".
+
+Load balancer.  manage_nlb(action='create', nodegroup_id='web', port=80) puts the
+provider's NLB in front of one node group; action='health' lists healthy and unhealthy
+targets, which takes a few minutes to settle, and the address is listener.dnsName.
+scope='GLOBAL' fronts every node of an Infra that spans regions or clouds: it builds a
+billed HAProxy Infra "<infra_id>-nlb", opens the listener port on it and returns its
+addresses. HAProxy reaches the nodes on their public addresses, so open the target port
+in their security groups. terminate_infra("<infra_id>-nlb") removes it.
+
+One name for the deployment.  get_dns_hosted_zones() then manage_dns_record(action='set',
+infra_id=...) points a record at an Infra's nodes; routing_policy='geoproximity' sends
+each client to the nearest one.
+
+Managed Kubernetes.  manage_k8s_cluster(action='create', cluster_id=name, spec_id=...).
+action='info' says what each provider supports, 'versions' lists Kubernetes versions for
+the spec's region. Creation takes 10-20 minutes; poll action='get' until status is Active.
+Where info reports nodegroups_on_creation false (AWS, Alibaba) the cluster starts with no
+nodes: add them with action='add_nodegroup' once it is Active. action='kubeconfig' returns
+a file kubectl can use as is; where the provider relies on a credential plugin it holds a
+short-lived token instead. To remove a cluster, delete its node groups first where the
+provider asks for it (the delete answers CONFLICT), then the cluster. kubeadm on plain VMs
+is the other route: the k8s_* predefined scripts.
+
+Custom images.  create_custom_image(ns_id, infra_id, name) snapshots a configured node;
+search_images(custom_images_of=ns_id) finds it for the next Infra in that region.
+
+Managed database.  An instance joins a VNet that exists, so create the Infra first and
+take its VNet, two subnets in different zones and a security group from
+get_resources(kind='vNet') and get_infra_associated_resources():
+    manage_rdbms(action='validate', rdbms_id='appdb', connection_name='aws-ap-northeast-2',
+                 vnet_id=..., subnet_ids=[..., ...], security_group_ids=[...],
+                 admin_user_name='dbadmin', admin_user_password=...)
+then action='create' with confirm=True. action='support' says what each provider needs
+(some reject the admin name "admin", fix it to "root", or ignore security groups);
+action='capability' lists versions and instance specs. Open the database port (3306) in
+the security group for the VNet's address range, then reach the endpoint from a node of
+that VNet, passing the password through env so it stays out of the command line:
+    execute_command_infra(commands=["mysql -h <host> -u dbadmin -e 'SHOW DATABASES'"],
+                          env={"MYSQL_PWD": "<pw>"}, node_id=...)
+The database actions of manage_rdbms work through the provider's API or a public
+endpoint; a private instance on AWS or IBM answers UNSUPPORTED and is managed with SQL
+from a node, as above.
+
+Cleaning up.  Delete databases and clusters before release_resources(): they live in
+the Infra's VNet, and the release is refused while they do.
+
+Not covered by this server: site-to-site VPN and the autopilot provisioning API. They are
+available in MapUI and the REST API.""",
 
     "detail": """Controlling response size.
 
@@ -3489,9 +3057,15 @@ transcript deliberately rather than carrying it in every read.
 Large Infras: past 50 nodes a summary read lists the nodes that are not Running first,
 then fills up to the cap, and reports the rest as counts in nodeListCapped (byStatus,
 largestNodeGroups). Per-node lists in other tools are capped the same way.
+get_nodegroups() gives every node id of a group.
 
 Secrets are stripped from every response. get_ssh_private_key() is the one deliberate
-exception and puts the key into the transcript.""",
+exception and puts the key into the transcript.
+
+A failed call sets isError and carries {"error": {"code", "message", "next"}}. Codes:
+NEEDS_CONFIRMATION (ask the user, repeat with confirm=True), REVIEW_REQUIRED,
+INVALID_ARGUMENT, NOT_FOUND, ALREADY_EXISTS, BUDGET_EXCEEDED, RATE_LIMITED, TIMEOUT,
+UPSTREAM_ERROR, UPSTREAM_UNREACHABLE, READ_ONLY.""",
 }
 
 
@@ -3504,14 +3078,16 @@ def get_usage_guide(topic: str) -> Dict:
     workflow notes live here so they cost nothing until asked for.
 
     Args:
-        topic: "provision" | "initscript" | "commands" | "gpu" | "recovery" | "detail"
+        topic: "provision" | "initscript" | "commands" | "gpu" | "recovery" | "cleanup" |
+            "services" | "detail"
 
     Returns:
         The guide text, or the list of topics if the name is unknown.
     """
     text = _USAGE_GUIDES.get((topic or "").strip().lower())
     if text is None:
-        return {"error": f"unknown topic {topic!r}", "topics": sorted(_USAGE_GUIDES)}
+        return {"error": f"unknown topic {topic!r}; expected one of "
+                         f"{', '.join(sorted(_USAGE_GUIDES))}"}
     return {"topic": topic, "guide": text}
 
 
@@ -3530,7 +3106,7 @@ def get_ssh_private_key(ns_id: str, key_id: str, reason: str) -> Dict:
 
     Args:
         ns_id: Namespace ID
-        key_id: SSH key resource ID (see get_ssh_keys)
+        key_id: SSH key resource ID (see get_resources(kind='sshKey'))
         reason: why the key is needed - recorded in the server log for audit
 
     Returns:
@@ -3539,42 +3115,89 @@ def get_ssh_private_key(ns_id: str, key_id: str, reason: str) -> Dict:
     logger.warning(f"get_ssh_private_key: ns={ns_id} key={key_id} reason={reason!r}")
     result = api_request("GET", f"/ns/{ns_id}/resources/sshKey/{key_id}")
     if isinstance(result, dict) and "error" not in result:
+        result = {k: result[k] for k in ("id", "connectionName", "username", "verifiedUsername",
+                                         "fingerprint", "privateKey") if result.get(k)}
         result["_warning"] = "private key material is now in this transcript"
     return result
+
+
+def _managed_service_resources(ns_id):
+    """Shared resources that clusters and databases use; the server does not track them."""
+    used = {}
+
+    def claim(kind, ids, owner):
+        for rid in ids:
+            if rid:
+                used.setdefault((kind, rid), owner)
+    clusters = api_request("GET", f"/ns/{ns_id}/k8sCluster")
+    for c in (clusters.get("K8sClusterInfo") or [] if isinstance(clusters, dict) else []):
+        owner, net = f"k8sCluster {c.get('id')}", c.get("network") or {}
+        claim("vNet", [net.get("vNetId")], owner)
+        claim("securityGroup", net.get("securityGroupIds") or [], owner)
+        claim("sshKey", [g.get("sshKeyId") for g in c.get("k8sNodeGroupList") or []], owner)
+    databases = api_request("GET", f"/ns/{ns_id}/resources/rdbms")
+    for d in (databases.get("rdbms") or [] if isinstance(databases, dict) else []):
+        owner = f"rdbms {d.get('id')}"
+        claim("vNet", [d.get("vNetId")], owner)
+        claim("securityGroup", d.get("securityGroupIds") or [], owner)
+    return used
 
 
 # Tool: Release resources
 @tool(mutating=True)
 def release_resources(ns_id: str, confirm: bool = False, dry_run: bool = False) -> Dict:
     """
-    Reclaim shared resources in a namespace that nothing is using.
+    Delete the shared resources of a namespace that nothing uses any more.
 
-    The server decides per resource, not per namespace: it lists the VNets, SecurityGroups
-    and SSHKeys, checks each one's associated objects, and deletes only those with none.
-    Anything a running Infra still references is preserved. So this is safe to run with
-    other Infras present - it will simply skip their resources - and it is the normal way
-    to clean up after terminating an Infra, which leaves its security group and key behind.
+    Terminating an Infra leaves its VNet, SecurityGroups and SSH keys behind; this removes
+    those, and skips whatever a remaining Infra still references. A VNet that a managed
+    Kubernetes cluster or database lives in blocks the release until that is deleted.
 
     Args:
         ns_id: Namespace ID
-        confirm: Must be True to proceed. Ask the user first.
-        dry_run: Report what would be released without deleting anything. Cheap, and the
-            honest way to show the user the list before asking for confirm.
+        confirm: Must be True to delete. Ask the user first.
+        dry_run: True lists what would be deleted and deletes nothing
 
     Returns:
-        Per-resource results with a success/failure count. Resources still in use are not
-        listed, because they were never candidates.
+        Per-resource results with success and failure counts. Resources in use are not
+        listed.
     """
-    if not confirm and not dry_run:
-        return {
-            "error": "Refused: releasing shared resources was not confirmed",
-            "requirement": "Set confirm=True to proceed, or dry_run=True to preview first",
-            "note": ("Only resources with no associated objects are removed; anything a "
-                     "running Infra references is left alone."),
-        }
+    if not dry_run:
+        guard = _require_confirmation(
+            confirm, f"releasing unused shared resources in {ns_id}",
+            "VNets, security groups and SSH keys that nothing uses are deleted; "
+            "dry_run=True lists them first")
+        if guard:
+            return guard
 
-    params = {"dryRun": "true"} if dry_run else None
-    result = api_request("DELETE", f"/ns/{ns_id}/sharedResources", params=params)
+    path = f"/ns/{ns_id}/sharedResources"
+    in_use = _managed_service_resources(ns_id)
+    if in_use:
+        preview = api_request("DELETE", path, params={"dryRun": "true"})
+        blocked = {}
+        for entry in (preview.get("results") or [] if isinstance(preview, dict) else []):
+            owner = in_use.get((entry.get("resourceType"), entry.get("resourceId")))
+            if owner:
+                entry["inUseBy"] = owner
+                blocked[f"{entry.get('resourceType')} {entry.get('resourceId')}"] = owner
+        if blocked and not dry_run:
+            return {"error": {
+                "message": f"nothing was released: {len(blocked)} candidate(s) are used by "
+                           f"a managed cluster or database",
+                "code": "CONFLICT", "blocked": blocked,
+                "how_to_proceed": "delete those services first, or remove single leftovers "
+                                  "with manage_resource(action='delete')",
+            }}
+        if dry_run:
+            if blocked and isinstance(preview, dict):
+                preview["_note"] = ("preview only; entries with inUseBy block the release "
+                                    "until that service is deleted")
+                return preview
+            result = preview
+        else:
+            result = api_request("DELETE", path)
+    else:
+        result = api_request("DELETE", path, params={"dryRun": "true"} if dry_run else None)
 
     if isinstance(result, dict) and "error" not in result:
         result["_note"] = (
@@ -3583,49 +3206,6 @@ def release_resources(ns_id: str, confirm: bool = False, dry_run: bool = False) 
             "resources still referenced by a running Infra were skipped, not failed")
     return result
 
-# Tool: Check resource exists
-@tool()
-def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> Dict:
-    """
-    Check if a specific resource exists in the namespace.
-    This is useful for validating resources before using them in Infra creation.
-    
-    Args:
-        ns_id: Namespace ID
-        resource_type: "infra", "vNet", "securityGroup", "sshKey", "dataDisk",
-            "customImage", "image" or "spec"
-        resource_id: Resource ID to check
-
-    Returns:
-        {"exists": true|false}
-    """
-    if resource_type.lower() == "infra":
-        # The checkResource endpoint covers resources only; an Infra is looked up by id.
-        listing = api_request("GET", f"/ns/{ns_id}/infra?option=id")
-        if not isinstance(listing, dict) or "error" in listing:
-            return listing
-        return {"exists": resource_id in (listing.get("output") or [])}
-    return api_request("GET", f"/ns/{ns_id}/checkResource/{resource_type}/{resource_id}")
-
-
-# # Tool: Register CSP resources
-# @mcp.tool()
-# def register_csp_resources(ns_id: str, infra_flag: str = "n") -> Dict:
-#     """
-#     Register CSP resources
-    
-#     Args:
-#         ns_id: Namespace ID
-#         infra_flag: Infra flag (y/n)
-    
-#     Returns:
-#         Registration result
-#     """
-#     data = {
-#         "infraName": "csp",
-#         "nsId": ns_id
-#     }
-#     return api_request("POST", f"/registerCspResourcesAll?infraFlag={infra_flag}", json_data=data)
 
 #####################################
 # Infra Management (Multi-Cloud Infrastructure)
@@ -3633,32 +3213,40 @@ def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> D
 
 # Tool: Get Infra list
 @tool()
-def get_infra_list(ns_id: str, detail: str = "summary",
-                   fields: Optional[str] = None, option: str = "status") -> Dict:
+def get_infra_list(ns_id: str = DEFAULT_NAMESPACE, detail: str = "summary",
+                   fields: Optional[str] = None, option: str = "summary") -> Dict:
     """
-    Get list of Infras (Multi-Cloud Infrastructures) for a specific namespace.
-    
+    List the Infras of a namespace.
+
     Args:
         ns_id: Namespace ID
-        detail: "summary" (default) or "full". Summary drops the per-node command
-            history, which is where nearly all the bytes are.
-        fields: Comma-separated top-level fields to keep, e.g. "id,status". Applied
-            after detail.
-        option: Server-side view: "status" (default), "id" for ids only, or "" for the
-            full records.
+        detail: "summary" (default) - one line per Infra: status, node counts, labels.
+            "full" also lists each Infra's nodes.
+        fields: Comma-separated fields to keep per Infra, e.g. "id,status"
+        option: "summary" (default) - the server's stored view, cheap to read;
+            "status" - the state of every node checked at the provider now;
+            "id" - Infra ids only
 
     Returns:
-        List of Infras
+        infra: the Infras. With option="id": output, the ids. get_infra() reads one in full.
     """
     detail = _validate_detail(detail)
-    if option not in ("id", "simple", "status"):
-        option = "status"
-    result = api_request("GET", f"/ns/{ns_id}/infra?option={option}")
+    if option not in ("summary", "status", "id"):
+        return {"error": f"unknown option {option!r}; expected one of summary, status, id"}
+    result = api_request("GET", f"/ns/{ns_id}/infra",
+                         params=None if option == "summary" else {"option": option})
     if not isinstance(result, dict) or "infra" not in result:
         return result
-    out = dict(result)
-    out["infra"] = [_shape_infra(i, detail) for i in (result.get("infra") or [])]
-    return _project(_redact_secrets(out), fields)
+    rows = []
+    for infra in result.get("infra") or []:
+        row = _shape_infra(infra, detail)
+        if detail != "full" and isinstance(row, dict) and isinstance(row.get("node"), list):
+            # A listing answers "what is there"; get_infra() has the nodes.
+            row["nodeCount"] = len(infra.get("node") or [])
+            del row["node"]
+            row.pop("nodeListCapped", None)
+        rows.append(_project(row, fields))
+    return {"infra": rows, "count": len(rows)}
 
 # Tool: Get Infra details
 @tool()
@@ -3666,7 +3254,7 @@ def get_infra(ns_id: str, infra_id: str, detail: str = "summary",
               fields: Optional[str] = None) -> Dict:
     """
     Get details of a specific Infra
-    
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
@@ -3687,176 +3275,99 @@ def get_infra(ns_id: str, infra_id: str, detail: str = "summary",
 #####################################
 # Bastion Management
 #####################################
-#
-# A bastion is the SSH jump host CB-Tumblebug tunnels through to reach a node. One is
-# auto-assigned when a node has a public IP, so most Infras never need these tools.
-#
-# They matter when a node's "public" address is not reachable from CB-Tumblebug. The
-# clearest case is a VM inside a self-hosted OpenStack: its floating IP is private space
-# routable only from the machine running that OpenStack. Registering that machine as the
-# bastion is the only way remote commands reach the VM.
 
-# Tool: Set a bastion node for a target node
-@tool(mutating=True)
-def set_bastion_node(
-    ns_id: str,
-    infra_id: str,
-    target_node_id: str,
-    bastion_node_id: str,
-    bastion_infra_id: str = "",
-    bastion_ns_id: str = ""
-) -> Dict:
+# Tool: Bastion (SSH jump host) of a node
+@tool(mutating=True, read_actions=("get",))
+def manage_bastion(action: str, ns_id: str, infra_id: str,
+                   target_node_id: Optional[str] = None,
+                   bastion_node_id: Optional[str] = None,
+                   bastion_infra_id: str = "", bastion_ns_id: str = "",
+                   confirm: bool = False) -> Dict:
     """
-    Register a bastion (SSH jump host) for a node, so remote commands can reach it.
+    List, set or remove the bastion (SSH jump host) CB-Tumblebug reaches a node through.
 
-    Needed when the target's own address is not reachable from CB-Tumblebug. For a VM in
-    a self-hosted OpenStack, the bastion is the VM that hosts that OpenStack - it is the
-    only machine that can route to the tenant's floating IPs.
-
-    The bastion may live in a different Infra, and even a different namespace, from its
-    target; pass bastion_infra_id (and bastion_ns_id) for that.
-
-    A manually registered bastion takes precedence over any auto-assigned one, including
-    an auto-assignment that pointed the node at itself.
+    One is assigned automatically when a node has a public address, so most Infras never
+    need this. It matters when a node's own address cannot be reached from CB-Tumblebug:
+    for a VM inside a self-hosted OpenStack, the bastion is the machine hosting that
+    OpenStack, the only one that can route to the tenant's floating IPs.
 
     Args:
-        ns_id: Namespace of the TARGET node
-        infra_id: Infra of the TARGET node
-        target_node_id: Node that needs to be reached, e.g. "g1-1"
-        bastion_node_id: Node to jump through, e.g. "g9-1". Must have an address
-            CB-Tumblebug can reach, and must be able to route to the target.
-        bastion_infra_id: Bastion's Infra, when different from the target's
-        bastion_ns_id: Bastion's namespace, when different from the target's
-
-    Returns:
-        Registration result. Verify with a simple execute_command_infra() such as
-        "hostname" before running anything long.
-    """
-    path = f"/ns/{ns_id}/infra/{infra_id}/node/{target_node_id}/bastion"
-    if bastion_ns_id and bastion_infra_id:
-        path = f"{path}/{bastion_ns_id}/{bastion_infra_id}/{bastion_node_id}"
-    elif bastion_infra_id:
-        path = f"{path}/{bastion_infra_id}/{bastion_node_id}"
-    else:
-        path = f"{path}/{bastion_node_id}"
-    result = api_request("PUT", path)
-    # This endpoint answers with a bare JSON string; wrap it so the tool keeps its
-    # declared Dict return type and the caller gets a usable next step.
-    if isinstance(result, str):
-        return {
-            "message": result,
-            "alreadyRegistered": "already exists" in result,
-            "nextStep": "Confirm with get_bastion_nodes(), then run a simple command "
-                        "(hostname) on the target to prove it is reachable.",
-        }
-    return result
-
-
-# Tool: Get bastion nodes for a target node
-@tool()
-def get_bastion_nodes(ns_id: str, infra_id: str, target_node_id: str) -> Dict:
-    """
-    List the bastion nodes registered for a node.
-
-    Useful when remote commands to a node time out: if the only entry is the node
-    itself, CB-Tumblebug will dial it directly, which fails whenever its address is not
-    reachable from here.
-
-    Args:
+        action: "get" (bastions of target_node_id) | "set" | "remove"
         ns_id: Namespace of the target node
         infra_id: Infra of the target node
-        target_node_id: Node to inspect, e.g. "g1-1"
+        target_node_id: Node that needs to be reached, e.g. "g1-1". For get and set.
+        bastion_node_id: Node to jump through. For set and remove.
+        bastion_infra_id: Bastion's Infra, when different from infra_id
+        bastion_ns_id: Bastion's namespace, when different from ns_id
+        confirm: Must be True for "remove" - nodes behind the bastion lose their route
 
     Returns:
-        Registered bastions, each with its namespace, Infra and node id
+        get: bastionNodes; selfBastionOnly true means the node is dialled directly.
+        set / remove: the server's message.
     """
-    result = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{target_node_id}/bastion")
-    # This endpoint answers with a bare JSON array; wrap it so the tool's return type
-    # stays a Dict and callers get the self-bastion hint alongside the list.
-    if isinstance(result, list):
-        is_self_only = (
-            len(result) == 1
-            and result[0].get("nodeId") == target_node_id
-            and result[0].get("infraId") == infra_id
-        )
-        return {
-            "bastionNodes": result,
-            "count": len(result),
-            "selfBastionOnly": is_self_only,
-            "note": ("The only bastion is the node itself, so CB-Tumblebug will dial it "
-                     "directly. That works only if the node's own address is reachable from "
-                     "CB-Tumblebug; if commands time out, register a reachable jump host with "
-                     "set_bastion_node().") if is_self_only else None,
-        }
-    return result
+    action = (action or "").strip().lower()
+    if action not in ("get", "set", "remove"):
+        return {"error": f"unknown action {action!r}; expected one of get, set, remove"}
+    if action in ("get", "set") and not target_node_id:
+        return {"error": f"target_node_id is required for action={action!r}"}
+    if action in ("set", "remove") and not bastion_node_id:
+        return {"error": f"bastion_node_id is required for action={action!r}"}
 
+    if action == "get":
+        result = api_request(
+            "GET", f"/ns/{ns_id}/infra/{infra_id}/node/{target_node_id}/bastion")
+        if not isinstance(result, list):
+            return result
+        self_only = (len(result) == 1 and result[0].get("nodeId") == target_node_id
+                     and result[0].get("infraId") == infra_id)
+        out = {"bastionNodes": result, "count": len(result), "selfBastionOnly": self_only}
+        if self_only:
+            out["note"] = ("the node is dialled directly; if commands time out, set a "
+                           "bastion that can reach it")
+        return out
 
-# Tool: Remove a bastion node
-@tool(mutating=True)
-def remove_bastion_node( ns_id: str, infra_id: str, bastion_node_id: str, bastion_infra_id: str = "", bastion_ns_id: str = "" , confirm: bool = False) -> Dict:
-    """
-    Remove a bastion registration from an Infra.
-
-    Args:
-        ns_id: Namespace of the Infra holding the registration
-        infra_id: Infra holding the registration
-        bastion_node_id: Bastion node to unregister
-        bastion_infra_id: Bastion's Infra, when it differs from infra_id
-        bastion_ns_id: Bastion's namespace, when it differs from ns_id
-        confirm: Must be True to proceed. Ask the user first - this is the only
-            thing standing between a request and the destructive action.
-
-    Returns:
-        Removal result
-        confirm: must be True to proceed - nodes behind this bastion lose their route
-    """
-    guard = _require_confirmation(confirm, "removing a bastion", "remote commands to nodes served by this bastion will fail until another is set")
+    suffix = bastion_node_id
+    if bastion_ns_id and bastion_infra_id:
+        suffix = f"{bastion_ns_id}/{bastion_infra_id}/{bastion_node_id}"
+    elif bastion_infra_id:
+        suffix = f"{bastion_infra_id}/{bastion_node_id}"
+    if action == "set":
+        result = api_request(
+            "PUT", f"/ns/{ns_id}/infra/{infra_id}/node/{target_node_id}/bastion/{suffix}")
+        if isinstance(result, str):
+            return {"message": result, "alreadyRegistered": "already exists" in result,
+                    "next": "run a simple command (hostname) on the target to prove it is "
+                            "reachable"}
+        return result
+    guard = _require_confirmation(
+        confirm, f"removing bastion {bastion_node_id}",
+        "remote commands to nodes served by this bastion fail until another is set")
     if guard:
         return guard
-    path = f"/ns/{ns_id}/infra/{infra_id}/bastion"
-    if bastion_ns_id and bastion_infra_id:
-        path = f"{path}/{bastion_ns_id}/{bastion_infra_id}/{bastion_node_id}"
-    elif bastion_infra_id:
-        path = f"{path}/{bastion_infra_id}/{bastion_node_id}"
-    else:
-        path = f"{path}/{bastion_node_id}"
-    result = api_request("DELETE", path)
-    if isinstance(result, str):
-        return {"message": result}
-    return result
+    result = api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}/bastion/{suffix}")
+    return {"message": result} if isinstance(result, str) else result
 
 
-
-# Tool: Get nodegroups list
+# Tool: Node groups of an Infra and their node ids
 @tool()
-def get_nodegroups(ns_id: str, infra_id: str) -> Dict:
+def get_nodegroups(ns_id: str, infra_id: str, nodegroup_id: Optional[str] = None) -> Dict:
     """
-    Get list of nodegroups for a specific Infra
-    
-    Args:
-        ns_id: Namespace ID
-        infra_id: Infra ID
-    
-    Returns:
-        List of nodegroups
-    """
-    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/nodegroup")
+    List the node group ids of an Infra, or the node ids of one group.
 
-# Tool: Get nodes in a nodegroup
-@tool()
-def get_nodes_in_nodegroup(ns_id: str, infra_id: str, nodegroup_id: str) -> Dict:
-    """
-    Get list of nodes for a specific nodegroup in an Infra.
+    get_infra() shows nodes with their group, but caps the list on a large Infra; this
+    gives every id.
 
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-        nodegroup_id: NodeGroup ID
+        nodegroup_id: Return the node ids of this group instead of the group ids
 
     Returns:
-        List of nodes in the nodegroup
+        output: the ids.
     """
-    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/nodegroup/{nodegroup_id}")
+    path = f"/ns/{ns_id}/infra/{infra_id}/nodegroup"
+    return api_request("GET", f"{path}/{nodegroup_id}" if nodegroup_id else path)
+
 
 # Tool: Get Infra associated resources
 @tool()
@@ -3864,11 +3375,11 @@ def get_infra_associated_resources(ns_id: str, infra_id: str) -> Dict:
     """
     Get associated resource IDs for a given Infra.
     This function returns all resources (VNet, SecurityGroup, SSHKey, etc.) that are used by the Infra.
-    
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-    
+
     Returns:
         Associated resource information including:
         - vNetIds: List of VNet IDs used by the Infra
@@ -3881,10 +3392,25 @@ def get_infra_associated_resources(ns_id: str, infra_id: str) -> Dict:
     return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/associatedResources")
 
 
+_IMAGE_SUMMARY = ("cspImageName", "osType", "osDistribution", "osArchitecture", "isBasicImage",
+                  "isGPUImage", "isKubernetesImage", "osDiskSizeGB", "creationDate")
+
+
+def _shape_image(image, detail):
+    if detail == "full" or not isinstance(image, dict):
+        return image
+    row = {k: image[k] for k in _IMAGE_SUMMARY if image.get(k) not in (None, "", False, 0, -1)}
+    if image.get("imageStatus") not in (None, "", "Available"):
+        row["imageStatus"] = image["imageStatus"]
+    description = str(image.get("description") or "")
+    if description and description != row.get("osDistribution"):
+        row["description"] = description[:120]
+    return row
+
+
 # Tool: Search images
 @tool()
 def search_images(
-    ns_id: str = "system",
     matched_spec_id: Optional[str] = None,
     os_type: Optional[str] = None,
     os_architecture: Optional[str] = None,
@@ -3894,796 +3420,314 @@ def search_images(
     is_kubernetes_image: Optional[bool] = None,
     include_basic_image_only: Optional[bool] = None,
     detail_search_keys: Optional[List[str]] = None,
-    max_results: Optional[Union[int, str]] = None,
-    include_all: bool = False
+    max_results: Union[int, str] = 10,
+    custom_images_of: Optional[str] = None,
+    detail: str = "summary"
 ) -> Dict:
-    """Search VM images, optionally constrained to a chosen spec.
+    """Search VM images, normally constrained to a chosen spec.
 
-    Pass matched_spec_id with a spec id from recommend_vm_spec() and the provider, region
-    and architecture filters are applied for you - this is the reliable way to get an image
-    that will actually boot on that spec. Use the returned cspImageName as imageId.
-    Vocabulary: get_search_options(kind='image'). Worked example: get_usage_guide('provision').
+    Pass matched_spec_id with a spec id from recommend_vm_spec(): provider, region and
+    architecture are then matched for you, which is the reliable way to get an image that
+    boots on that spec. Use the returned cspImageName as imageId.
+    Vocabulary: get_search_options(kind='image').
 
     Args:
-        ns_id: Namespace ID (default "system")
-        matched_spec_id: Spec id to match provider/region/architecture against
-        provider_name: Provider to search, e.g. "aws". An explicit alternative to
-            matched_spec_id; give region_name with it.
-        region_name: Region to search, e.g. "ap-northeast-2". Used with provider_name.
-        os_type: e.g. "ubuntu 22.04", "centos"
-        os_architecture: e.g. "x86_64", "arm64"
-        include_basic_image_only: Clean base images only. Defaults to True unless a GPU or
-            Kubernetes image was asked for - an unfiltered search returns over a megabyte.
-        is_gpu_image: Purpose-built GPU images. Use this for an accelerator node instead of
-            widening the search and picking by hand.
-        is_kubernetes_image: Purpose-built Kubernetes node images.
-        max_results: Maximum images to return (default 20)
-        include_all: Disable the defaults above and return everything. Rarely wanted.
-        detail: "summary" (default) or "full"
-        detail_search_keys: Extra provider-specific key/value filters applied to the
-            image details, e.g. {"Architecture": "x86_64"}.
+        matched_spec_id: Spec id to match provider, region and architecture against
+        os_type: OS name and version, space-separated terms all match, e.g. "ubuntu 22.04"
+        os_architecture: "x86_64" or "arm64". Taken from the spec when matched_spec_id is given.
+        provider_name: Provider to search, e.g. "aws" - an alternative to matched_spec_id
+        region_name: Region to search, used with provider_name
+        is_gpu_image: True for images with GPU drivers preinstalled - use it for
+            accelerator nodes
+        is_kubernetes_image: True for images usable as managed Kubernetes nodes
+        include_basic_image_only: Plain OS images only. Defaults to True unless a GPU or
+            Kubernetes image is asked for.
+        detail_search_keys: Keywords matched against the image details, e.g. ["sql 2022"]
+        max_results: Maximum images to return (default 10)
+        custom_images_of: Namespace ID - search that namespace's custom images (snapshots)
+            instead of the public catalog
+        detail: "summary" (default) | "full" for the whole image records
 
     Returns:
-        imageList with cspImageName, osType, osDistribution, osArchitecture, description.
-        Pass cspImageName as imageId to create_infra_dynamic(). Read osDistribution to tell
-        images apart - a self-hosted OpenStack leaves name and osType empty and puts the
-        only readable name ("jammy-server-cloudimg-amd64") there.
-        When the exact search finds nothing the filters are relaxed automatically and
-        search_status comes back "widened".
+        imageList with cspImageName, osType, osDistribution and osArchitecture, best match
+        first. search_status "widened" means the exact filters matched nothing and were
+        relaxed; "no_results" means nothing matched at all.
     """
-    # Unfiltered, this returns every image the provider publishes: measured at 1,169,312 B
-    # for one AWS region - larger than any other response in the server, and useless besides.
-    # Narrowing to clean base images gives 2 results and 5,554 B, which is what almost every
-    # caller wants. GPU and Kubernetes nodes have their own purpose-built images, selected
-    # with is_gpu_image / is_kubernetes_image rather than by widening the search.
-    if not include_all:
-        if include_basic_image_only is None and not (is_gpu_image or is_kubernetes_image):
-            include_basic_image_only = True
-        if max_results is None:
-            max_results = 20
-    # Handle type conversion for max_results (MCP client may send string)
-    if max_results is not None:
-        if isinstance(max_results, str):
-            try:
-                max_results = int(max_results)
-            except ValueError:
-                logger.warning(f"Invalid max_results value: {max_results}, using default")
-                max_results = None
-    
-    # Build request data according to model.SearchImageRequest spec
-    data = {}
-    
-    # Add MatchedSpecId for automatic spec-based filtering
+    if include_basic_image_only is None and not (is_gpu_image or is_kubernetes_image
+                                                 or custom_images_of or detail_search_keys):
+        include_basic_image_only = True
+    try:
+        max_results = max(1, int(max_results))
+    except (TypeError, ValueError):
+        max_results = 10
+
+    data: Dict[str, Any] = {"maxResults": max_results}
     if matched_spec_id:
         data["matchedSpecId"] = matched_spec_id
-    
-    # Add other search criteria
     if os_type:
         data["osType"] = os_type
-    
-    # Add default x86_64 architecture if not specified by user and no matched_spec_id
     if os_architecture:
         data["osArchitecture"] = os_architecture
-    elif not matched_spec_id:  # Only set default if not using matched_spec_id
+    elif not matched_spec_id:
         data["osArchitecture"] = "x86_64"
-    
     if provider_name:
         data["providerName"] = provider_name
-    
     if region_name:
         data["regionName"] = region_name
-    
     if is_gpu_image is not None:
         data["isGPUImage"] = is_gpu_image
-    
     if is_kubernetes_image is not None:
         data["isKubernetesImage"] = is_kubernetes_image
-    
     if include_basic_image_only is not None:
         data["includeBasicImageOnly"] = include_basic_image_only
-    
     if detail_search_keys:
         data["detailSearchKeys"] = detail_search_keys
-    
-    if max_results is not None:
-        data["maxResults"] = max_results
-    
-    # Debug log the request data
-    logger.debug(f"🔍 SearchImage request data: {json.dumps(data, indent=2)}")
-    
-    # Make API request
-    try:
-        response = api_request("POST", f"/ns/{ns_id}/resources/searchImage", json_data=data)
-        
-        # Debug log the response
-        logger.debug(f"🔍 SearchImage API response type: {type(response)}")
-        if isinstance(response, dict):
-            logger.debug(f"🔍 SearchImage response keys: {list(response.keys())}")
-            if "imageList" in response:
-                logger.debug(f"🔍 SearchImage found {len(response['imageList'])} images")
-        
-        # Validate response structure
-        if not isinstance(response, dict):
-            logger.error(f"Invalid response format: expected dict, got {type(response)}")
-            return {
-                "error": "Invalid response format from API",
-                "imageList": [],
-                "imageCount": 0
-            }
-        
-        # Handle API error responses
-        if "error" in response:
-            logger.error(f"API error in search_images: {response.get('error', 'Unknown error')}")
-            return response
-        
-        # Ensure imageList exists in response
-        if "imageList" not in response:
-            response["imageList"] = []
-        
-        # Ensure imageCount exists in response
-        if "imageCount" not in response:
-            response["imageCount"] = len(response.get("imageList", []))
-            
-    except Exception as e:
-        logger.error(f"Exception in search_images: {str(e)}")
-        return {
-            "error": f"Failed to search images: {str(e)}",
-            "imageList": [],
-            "imageCount": 0
-        }
-    
-    # Add helper information for optimal image selection
-    if "imageList" in response and response["imageList"]:
-        # Add context about matched spec filtering
-        if matched_spec_id:
-            logger.info(f"🎯 Found {len(response['imageList'])} images compatible with spec: {matched_spec_id}")
-        
-        # Add basic image prioritization hint
-        basic_images = [img for img in response["imageList"] if img.get("isBasicImage", False)]
-        if basic_images:
-            logger.info(f"💡 Found {len(basic_images)} basic images (highest priority) out of {len(response['imageList'])} total images")
-        
-        # Add first few images preview for LLM context
-        preview_count = min(3, len(response["imageList"]))
-        logger.info(f"📋 First {preview_count} images preview:")
-        for i, img in enumerate(response["imageList"][:preview_count]):
-            basic_marker = " 🌟" if img.get("isBasicImage", False) else ""
-            logger.info(f"  {i+1}. {img.get('cspImageName', 'N/A')}: {img.get('description', 'No description')[:80]}...{basic_marker}")
-    else:
-        # Before reporting nothing, look again without the filters that most often hide a
-        # real image. A self-hosted OpenStack publishes images with an empty osType and
-        # none marked basic, so the default search returns zero while Glance holds a
-        # perfectly good Ubuntu - and the model has no way to learn that from a bare
-        # "no results". Match os_type against the whole OS descriptor instead.
-        widened = None
-        if provider_name or region_name or matched_spec_id:
-            probe = {k: v for k, v in data.items()
-                     if k not in ("osType", "includeBasicImageOnly", "maxResults")}
-            probe["includeBasicImageOnly"] = False
-            probe["maxResults"] = max_results or 50
-            found = api_request("POST", f"/ns/{ns_id}/resources/searchImage", json_data=probe)
-            candidates = (found or {}).get("imageList") or [] if isinstance(found, dict) else []
-            os_matched = True
-            if os_type:
-                wanted = str(os_type).lower().split()
-                narrowed = [i for i in candidates
-                            if all(w in _image_os_text(i) for w in wanted)]
-                os_matched = bool(narrowed)
-                candidates = narrowed or candidates
-            if candidates:
-                widened = candidates
 
-        if widened:
-            response["imageList"] = widened
-            response["imageCount"] = len(widened)
-            response["search_status"] = "widened"
-            note = ("The exact search matched nothing, so basic-image-only was dropped and "
-                    "os_type was matched against osDistribution as well as osType. Identify "
-                    "an image by osDistribution - some providers leave name and osType empty "
-                    "and repeat the CSP id there.")
-            if os_type and not os_matched:
-                note += (f" Nothing mentions {os_type!r}, so this is EVERY image the provider "
-                         f"publishes, not a filtered set - check osDistribution before using one.")
-            response["_note"] = note
-            return response
+    path = f"/ns/{custom_images_of or 'system'}/resources/searchImage"
+    params = {"customImage": "true"} if custom_images_of else None
+    response = api_request("POST", path, json_data=data, params=params)
+    if not isinstance(response, dict) or "error" in response:
+        return response
+    images = response.get("imageList") or []
+    status = None
 
-        # Enhanced handling for empty results with structured LLM guidance
-        search_criteria = []
-        if matched_spec_id:
-            search_criteria.append(f"matched_spec_id={matched_spec_id}")
-        if os_type:
-            search_criteria.append(f"os_type={os_type}")
-        if provider_name:
-            search_criteria.append(f"provider={provider_name}")
-        if region_name:
-            search_criteria.append(f"region={region_name}")
-        
-        criteria_str = ", ".join(search_criteria) if search_criteria else "specified criteria"
-        
-        # Log when no images are found
-        if matched_spec_id:
-            logger.warning(f"⚠️ No images found for spec: {matched_spec_id}")
-        else:
-            logger.warning(f"⚠️ No images found for {criteria_str}")
-        
-        # Add structured guidance for LLM agents to prevent "Canceled: Canceled" responses
-        response["search_status"] = "no_results"
-        response["imageList"] = []
-        response["imageCount"] = 0
-        
-        # Generate specific guidance based on search context
-        guidance = {
-            "status": "no_images_found",
-            "message": f"No images found matching criteria: {criteria_str}",
-            "search_criteria_used": search_criteria
-        }
-        
-        # Provide specific suggestions based on matched_spec_id usage
-        if matched_spec_id:
-            # Extract provider and region from spec_id for targeted suggestions
-            spec_parts = matched_spec_id.split('+') if '+' in matched_spec_id else []
-            
-            guidance["alternative_suggestions"] = [
-                "Try using recommend_vm_spec() to get alternative VM specifications",
-                "Use a different spec_id from your previous recommend_vm_spec() results",
-                f"Try searching without matched_spec_id using traditional parameters",
-                "Try setting include_basic_image_only=True for basic OS images only"
-            ]
-            
-            if len(spec_parts) >= 2:
-                spec_provider = spec_parts[0]
-                spec_region = spec_parts[1]
-                guidance["alternative_suggestions"].extend([
-                    f"Try provider_name='{spec_provider}' and region_name='{spec_region}' instead of matched_spec_id",
-                    f"Search for images in different regions for provider '{spec_provider}'"
-                ])
-            
-            guidance["next_steps"] = [
-                "Call recommend_vm_spec() to get different VM specifications",
-                "Select alternative spec_id from recommend_vm_spec() results",
-                "Try broader search criteria without version-specific OS requirements",
-                "Consider using get_search_options(kind='image') to see available parameters"
-            ]
-        else:
-            # Traditional search suggestions
-            guidance["alternative_suggestions"] = [
-                "Try broadening search criteria (remove version numbers from os_type)",
-                "Try searching in different regions or providers", 
-                "Try setting include_basic_image_only=True",
-                "Use get_search_options(kind='image') to see available search parameters"
-            ]
-            
-            guidance["next_steps"] = [
-                "Broaden your search criteria or try different OS types",
-                "Check available providers/regions with get_search_options(kind='image')",
-                "Consider using matched_spec_id with recommend_vm_spec() for better results"
-            ]
-        
-        # Add OS-specific suggestions
-        if os_type and "22.04" in str(os_type):
-            guidance["alternative_suggestions"].insert(0, "Try searching with 'ubuntu 20.04' or just 'ubuntu' for broader results")
-        elif os_type and "ubuntu" in str(os_type).lower():
-            guidance["alternative_suggestions"].insert(0, "Try searching with 'centos', 'debian', or 'rhel' as alternative OS types")
-        
-        guidance["common_solutions"] = [
-            "Use recommend_vm_spec() first to get valid specifications",
-            "Try include_basic_image_only=True parameter",
-            "Search without version numbers in os_type (e.g., 'ubuntu' instead of 'ubuntu 22.04')",
-            "Verify provider/region availability with get_search_options(kind='image')"
-        ]
-        
-        response["llm_guidance"] = guidance
-        
-        # Log helpful guidance for debugging
-        logger.info(f"💡 LLM Guidance: {guidance['message']}")
-        if matched_spec_id:
-            logger.info(f"🔧 Suggestion: Try recommend_vm_spec() for alternative specifications")
-        else:
-            logger.info(f"🔧 Suggestion: {guidance['alternative_suggestions'][0] if guidance['alternative_suggestions'] else 'Broaden search criteria'}")
-    
-    return response
+    if not images and (provider_name or region_name or matched_spec_id) and not custom_images_of:
+        # Some providers publish images with an empty osType and none marked basic, so
+        # look again without those filters and match os_type against the whole descriptor.
+        probe = {k: v for k, v in data.items() if k not in ("osType", "includeBasicImageOnly")}
+        probe["includeBasicImageOnly"] = False
+        probe["maxResults"] = max(max_results, 50)
+        found = api_request("POST", path, json_data=probe)
+        candidates = (found.get("imageList") or []) if isinstance(found, dict) else []
+        wanted = str(os_type or "").lower().split()
+        narrowed = [i for i in candidates if all(w in _image_os_text(i) for w in wanted)]
+        images = (narrowed or candidates)[:max_results]
+        if images:
+            status = "widened"
+
+    level = _validate_detail(detail)
+    out: Dict[str, Any] = {"imageList": [_shape_image(i, level) for i in images],
+                           "imageCount": len(images)}
+    if status == "widened":
+        out["search_status"] = "widened"
+        out["note"] = ("the exact filters matched nothing, so basic-image-only was dropped and "
+                       "os_type was matched against osDistribution too - check osDistribution "
+                       "before using one")
+    elif not images:
+        out["search_status"] = "no_results"
+        out["next"] = ("drop the version from os_type, try another os_type, or pick another "
+                       "spec with recommend_vm_spec(); get_search_options(kind='image') lists "
+                       "the valid values")
+    return out
+
+
+_SPEC_SUMMARY = ("id", "cspSpecName", "providerName", "regionName", "vCPU", "memoryGiB",
+                 "costPerHour")
+
+
+def _shape_spec(spec, detail="summary"):
+    """A spec reduced to what a choice is made on."""
+    if detail == "full" or not isinstance(spec, dict):
+        return spec
+    row = {k: spec.get(k) for k in _SPEC_SUMMARY}
+    if spec.get("architecture") and spec["architecture"] != "x86_64":
+        row["architecture"] = spec["architecture"]
+    if spec.get("acceleratorModel"):
+        # Count 0 with a model is a fractional GPU: acceleratorMemoryGB is the share you get.
+        for key in ("acceleratorModel", "acceleratorType", "acceleratorCount",
+                    "acceleratorMemoryGB"):
+            if spec.get(key) is not None:
+                row[key] = spec[key]
+    status = spec.get("availabilityStatus")
+    if status and status != "Available":
+        row["availabilityStatus"] = status
+        if spec.get("availabilityReason"):
+            row["availabilityReason"] = spec["availabilityReason"]
+    return row
+
+
+def _demote_unpriced(specs):
+    """Under a cost priority a spec with no published price must not rank as cheapest."""
+    def unpriced(spec):
+        try:
+            return float(spec.get("costPerHour", -1)) < 0
+        except (TypeError, ValueError):
+            return True
+    priced = [s for s in specs if not unpriced(s)]
+    unknown = [s for s in specs if unpriced(s)]
+    note = None
+    if unknown and priced:
+        note = (f"{len(unknown)} of {len(specs)} specs publish no price (costPerHour -1) and "
+                f"are listed last; they are not necessarily cheap")
+    elif unknown:
+        where = sorted({f"{s.get('providerName')}/{s.get('regionName')}" for s in unknown})
+        note = (f"no matching spec in {', '.join(where)} publishes a price, so none can be "
+                f"ranked by cost - try another region or provider, or treat the spend as unknown")
+    return priced + unknown, note
 
 
 # Tool: Recommend VM spec
 @tool()
 def recommend_vm_spec(
-    filter_policies: Dict[str, Any] = None,
-    limit: Union[str, int] = "50",
-    priority_policy: str = "location",
+    filter_policies: Optional[Dict[str, Any]] = None,
+    priority_policy: str = "cost",
+    limit: Union[int, str] = 10,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
-    include_full_details: bool = False
-) -> Any:
-    """Recommend VM specs matching resource, location, or cost preferences.
+    detail: str = "summary"
+) -> Dict:
+    """Recommend VM specs matching resource, location or cost preferences.
 
-    This is the only supported source of spec ids: the returned spec["id"] must be passed
-    to search_images() and create_infra_dynamic() unchanged. Filter and priority vocabulary:
-    get_search_options(kind='spec'). Worked example: get_usage_guide('provision').
+    This is the only source of spec ids: pass the returned id unchanged to search_images()
+    and create_infra_dynamic(). Filter vocabulary: get_search_options(kind='spec').
 
     Args:
-        filter_policies: Field -> constraint, e.g.
+        filter_policies: Field -> constraint. A range is {"min": .., "max": ..}, anything
+            else is an exact match:
             {"vCPU": {"min": 2, "max": 8}, "memoryGiB": {"min": 4},
              "providerName": "aws", "regionName": "ap-northeast-2"}
-            For a GPU, filter on the memory you need rather than the card's name:
-            {"acceleratorModel": "l4", "acceleratorMemoryGB": {"min": 16}}. The name alone
-            does not say how much of the card you get - AWS g6f.large reports "NVIDIA L4"
-            and costs a quarter of g6.xlarge because it is a 3 GB slice of one, and sorting
-            by cost puts it first. acceleratorCount 0 marks such a slice.
-            Full vocabulary: get_search_options(kind='spec').
-        priority_policy: "location" | "cost" | "performance" | "random"
-        latitude: Reference latitude. Required when priority_policy is "location".
-        longitude: Reference longitude. Required when priority_policy is "location".
-        limit: Maximum number of specs to return (string)
-        include_full_details: Return every spec field instead of the summary
-            (default False; the full form is much larger).
+            GPU: {"acceleratorModel": "nvidia", "acceleratorMemoryGB": {"min": 16}} - filter
+            on the memory needed, since a card's name is also reported by fractional slices
+            of it. architecture defaults to "x86_64".
+        priority_policy: "cost" (default) | "location" | "performance" | "random"
+        limit: Maximum specs to return (default 10)
+        latitude: Reference latitude, required for priority_policy "location"
+        longitude: Reference longitude, required for priority_policy "location"
+        detail: "summary" (default) | "full" for every spec field
 
     Returns:
-        summarized_specs: list of specs with id, providerName, regionName, vCPU,
-        memoryGiB, costPerHour (-1 means price unknown).
+        specs: id, cspSpecName, providerName, regionName, vCPU, memoryGiB, costPerHour
+        (-1 = price unknown), accelerator fields when present, and availabilityStatus when
+        the spec is known to be sold out or over quota.
     """
-    # Handle type conversion for limit (API expects string but MCP client may send int)
-    if isinstance(limit, int):
-        limit = str(limit)
-    elif limit is None:
-        limit = "50"  # Default value
-    
-    # Configure filter policies according to API spec
-    if filter_policies is None:
-        filter_policies = {}
-    
-    # Add default x86_64 architecture filter if not specified by user
-    if "Architecture" not in filter_policies and "architecture" not in filter_policies:
-        filter_policies["Architecture"] = "x86_64"
-    
+    priority_policy = (priority_policy or "cost").strip().lower()
+    if priority_policy not in ("cost", "location", "performance", "random"):
+        return {"error": f"unknown priority_policy {priority_policy!r}; expected one of "
+                         f"cost, location, performance, random"}
+    if priority_policy == "location" and (latitude is None or longitude is None):
+        return {"error": "latitude and longitude is required for priority_policy='location'"}
+    try:
+        limit = max(1, int(limit))
+    except (TypeError, ValueError):
+        limit = 10
+
+    filters = dict(filter_policies or {})
+    if not any(str(k).lower() == "architecture" for k in filters):
+        filters["architecture"] = "x86_64"
     policies = []
-    for metric, values in filter_policies.items():
-        condition_operations = []
-        
-        # Handle different types of filter values
-        if isinstance(values, dict):
-            # Handle min/max range filters
-            if "min" in values and values["min"] is not None:
-                condition_operations.append({"operand": str(values["min"]), "operator": ">="})
-            if "max" in values and values["max"] is not None:
-                condition_operations.append({"operand": str(values["max"]), "operator": "<="})
-        else:
-            # Handle exact match filters (for strings like ProviderName)
-            if values is not None:
-                condition_operations.append({"operand": str(values), "operator": "=="})
-        
-        # Only add the policy if there are conditions
-        if condition_operations:
-            policies.append({
-                "metric": metric,
-                "condition": condition_operations
-            })
-    
-    # Configure priority policy according to API spec
-    priority_policies = []
-    if priority_policy and priority_policy != "none":
-        priority_config = {
-            "metric": priority_policy,
-            "weight": 1.0
-        }
-        
-        # Add location parameters if specified
-        if priority_policy == "location" and latitude is not None and longitude is not None:
-            priority_config["parameter"] = [
-                {"key": "coordinateClose", "val": [f"{latitude}/{longitude}"]}
-            ]
-        
-        priority_policies.append(priority_config)
-    
-    # Build the request data according to model.RecommendSpecReq
-    data = {
-        "filter": {
-            "policy": policies
-        },
-        "limit": int(limit),
-        "priority": {
-            "policy": priority_policies
-        }
-    }
-    
-    # Make API request
-    raw_response = api_request("POST", "/recommendSpec", json_data=data)
+    for metric, value in filters.items():
+        conditions = []
+        if isinstance(value, dict):
+            if value.get("min") is not None:
+                conditions.append({"operand": str(value["min"]), "operator": ">="})
+            if value.get("max") is not None:
+                conditions.append({"operand": str(value["max"]), "operator": "<="})
+        elif value is not None:
+            conditions.append({"operand": str(value), "operator": "=="})
+        if conditions:
+            policies.append({"metric": metric, "condition": conditions})
 
-    # Summarize response to reduce token usage
-    summary = _summarize_vm_specs(raw_response, include_details=include_full_details)
-    return _demote_unpriced(summary, priority_policy)
-
-# Helper functions for formatting user-friendly review results
-def _format_vm_summary_for_user(vm_reviews: List[Dict]) -> str:
-    """Format VM review summary for user display"""
-    if not vm_reviews:
-        return "No VM configurations provided"
-    
-    summary_lines = []
-    for i, vm_review in enumerate(vm_reviews, 1):
-        provider = vm_review.get("providerName", "Unknown")
-        region = vm_review.get("regionName", "Unknown")
-        status = vm_review.get("status", "Unknown")
-        can_create = vm_review.get("canCreate", False)
-        
-        status_icon = "✅" if can_create else "❌"
-        summary_lines.append(f"  {i}. {provider} ({region}) - {status} {status_icon}")
-    
-    return "\n".join(summary_lines)
-
-def _format_warnings_for_user(vm_reviews: List[Dict]) -> str:
-    """Format VM warnings for user display"""
-    warning_lines = []
-    for i, vm_review in enumerate(vm_reviews, 1):
-        if vm_review.get("status") == "Warning":
-            provider = vm_review.get("providerName", "Unknown")
-            message = vm_review.get("message", "No details available")
-            warning_lines.append(f"  {i}. {provider}: {message}")
-    
-    return "\n".join(warning_lines) if warning_lines else "No warnings found"
-
-def _format_errors_for_user(vm_reviews: List[Dict]) -> str:
-    """Format VM errors for user display"""
-    error_lines = []
-    for i, vm_review in enumerate(vm_reviews, 1):
-        if vm_review.get("status") == "Error" or not vm_review.get("canCreate", True):
-            provider = vm_review.get("providerName", "Unknown")
-            message = vm_review.get("message", "No details available")
-            error_lines.append(f"  {i}. {provider}: {message}")
-    
-    return "\n".join(error_lines) if error_lines else "No errors found"
-
-# Helper function: Internal Infra dynamic validation (used by both review and create functions)
-def _internal_review_infra_dynamic(
-    ns_id: str,
-    name: str,
-    node_groups: List[Dict],
-    description: str = "Infra created dynamically via MCP",
-    system_label: str = "",
-    label: Optional[Dict[str, str]] = None,
-    post_script: Optional[Dict] = None,
-    hold: bool = False,
-    policy_on_partial_failure: str = "continue",
-    vnet_template_id: str = "",
-    sg_template_id: str = "",
-    init_script: Optional[Dict] = None
-) -> Dict:
-    """Internal helper function to review Infra dynamic configuration"""
-    # Build request data according to model.InfraDynamicReq spec
-    data = {
-        "name": name,
-        "description": description,
-        "nodeGroups": _normalize_node_groups(node_groups),
-        "policyOnPartialFailure": policy_on_partial_failure
-    }
-    
-    # Add optional parameters
-    if system_label:
-        data["systemLabel"] = system_label
-    if label:
-        data["label"] = label
-    if post_script and post_script.get("phases"):
-        data["postScript"] = post_script
-    if init_script:
-        data["initScript"] = init_script
-    if vnet_template_id:
-        data["vNetTemplateId"] = vnet_template_id
-    if sg_template_id:
-        data["sgTemplateId"] = sg_template_id
-
-    # Make API request to review endpoint (hold is a query option, not a body field)
-    url = f"/ns/{ns_id}/infraDynamicReview"
-    if hold:
-        url += "?option=hold"
-    result = api_request("POST", url, json_data=data)
-    
-    # 🔍 ENHANCED: Add historical risk analysis for each VM configuration
-    if isinstance(result, dict) and "nodeReviews" in result:
-        enhanced_risk_analysis = []
-        
-        for i, vm_review in enumerate(result["nodeReviews"]):
-            vm_config = node_groups[i] if i < len(node_groups) else {}
-            spec_id = vm_config.get("specId")
-            image_name = vm_config.get("imageId")
-            
-            # Get historical risk analysis for this spec
-            risk_analysis = {}
-            if spec_id:
-                try:
-                    # Get basic risk analysis
-                    risk_result = get_provisioning_risk(spec_id, image_name, kind="summary")
-                    if "error" not in risk_result:
-                        risk_analysis["basic_risk"] = risk_result
-                        
-                        # Add detailed risk if high or medium risk detected
-                        risk_level = risk_result.get("riskLevel", "unknown")
-                        if risk_level in ["high", "medium"]:
-                            detailed_risk = get_provisioning_risk(spec_id, image_name, kind="detailed")
-                            if "error" not in detailed_risk:
-                                risk_analysis["detailed_risk"] = detailed_risk
-                        
-                        # Get provisioning history for context
-                        history = get_provisioning_risk(spec_id, kind="history")
-                        if "error" not in history:
-                            risk_analysis["history"] = history
-                            
-                except Exception as e:
-                    risk_analysis["risk_analysis_error"] = f"Could not analyze risk: {str(e)}"
-            
-            # Add risk analysis to VM review
-            vm_review["historical_risk_analysis"] = risk_analysis
-            enhanced_risk_analysis.append({
-                "vm_index": i,
-                "spec_id": spec_id,
-                "risk_level": risk_analysis.get("basic_risk", {}).get("riskLevel", "unknown"),
-                "failure_rate": risk_analysis.get("basic_risk", {}).get("failureRate", "N/A"),
-                "recommendations": risk_analysis.get("basic_risk", {}).get("recommendations", [])
-            })
-        
-        # Add overall risk summary
-        result["overall_risk_assessment"] = {
-            "risk_summary": enhanced_risk_analysis,
-            "high_risk_vms": [r for r in enhanced_risk_analysis if r["risk_level"] == "high"],
-            "medium_risk_vms": [r for r in enhanced_risk_analysis if r["risk_level"] == "medium"],
-            "risk_guidance": "Check individual VM risk analysis for detailed recommendations"
-        }
-        
-        # Update overall validation status based on risk analysis
-        high_risk_count = len([r for r in enhanced_risk_analysis if r["risk_level"] == "high"])
-        if high_risk_count > 0:
-            if "issues" not in result:
-                result["issues"] = []
-            result["issues"].append(f"{high_risk_count} VM(s) have HIGH provisioning failure risk based on historical data")
-            
-            if "recommendations" not in result:
-                result["recommendations"] = []
-            result["recommendations"].append("Consider using alternative specs with lower failure rates")
-            result["recommendations"].append("Use get_provisioning_risk(kind='detailed') for specific guidance on high-risk VMs")
-    
-    # Enhance result with additional guidance based on review results
+    priority: Dict[str, Any] = {"metric": priority_policy, "weight": 1.0}
+    if priority_policy == "location":
+        priority["parameter"] = [{"key": "coordinateClose", "val": [f"{latitude}/{longitude}"]}]
+    result = api_request("POST", "/recommendSpec", json_data={
+        "filter": {"policy": policies}, "limit": limit, "priority": {"policy": [priority]}})
     if isinstance(result, dict):
-        # 🚀 ENHANCED: Analyze nodeReviews for specific guidance and reconfiguration needs
-        vm_reviews = result.get("nodeReviews", [])
-        failed_vms = []
-        provisioning_issues = []
-        reconfiguration_needed = False
-        
-        # Analyze each VM review for specific issues
-        for i, vm_review in enumerate(vm_reviews):
-            vm_config = node_groups[i] if i < len(node_groups) else {}
-            can_create = vm_review.get("canCreate", True)
-            errors = vm_review.get("errors", [])
-            warnings = vm_review.get("warnings", [])
-            provider_name = vm_review.get("providerName", "")
-            
-            if not can_create:
-                failed_vms.append({
-                    "vm_index": i,
-                    "vm_name": vm_config.get("name", f"vm-{i}"),
-                    "provider": provider_name,
-                    "errors": errors,
-                    "warnings": warnings,
-                    "spec_id": vm_config.get("specId", "")
-                })
-                
-                # Check for specific provisioning issues that need reconfiguration
-                for error in errors:
-                    if any(keyword in error.lower() for keyword in ["not available", "cannot be provisioned", "not supported"]):
-                        provisioning_issues.append({
-                            "vm_index": i,
-                            "provider": provider_name,
-                            "issue": error,
-                            "spec_id": vm_config.get("specId", "")
-                        })
-                        reconfiguration_needed = True
-        
-        # Add enhanced analysis results
-        if failed_vms or provisioning_issues:
-            result["_analysis"] = {
-                "failed_vms": failed_vms,
-                "provisioning_issues": provisioning_issues,
-                "reconfiguration_needed": reconfiguration_needed,
-                "total_failed": len(failed_vms)
-            }
-        
-        # Provide specific guidance based on validation results
-        creation_viable = result.get("creationViable", False)
-        if creation_viable:
-            result["_guidance"] = "✅ Validation passed! You can proceed with create_infra_dynamic() using the same parameters."
-            result["_next_step"] = f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', node_groups=<same_configurations>)"
-            
-            # Add warnings for hold mode or other special cases
-            if hold:
-                result["_guidance"] += "\n⚠️ Note: VMs requiring manual deployment will need completion after hold mode."
-        else:
-            result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with Infra creation."
-            
-            # Provide specific guidance for failed VMs
-            if failed_vms:
-                result["_guidance"] += f"\n🚫 {len(failed_vms)} VM(s) cannot be created due to configuration or provider issues:"
-                
-                for failed_vm in failed_vms:
-                    vm_errors = '; '.join(failed_vm['errors'])
-                    result["_guidance"] += f"\n  • VM {failed_vm['vm_index']} ({failed_vm['provider']}): {vm_errors}"
-            
-            # Provide reconfiguration guidance
-            if reconfiguration_needed:
-                result["_guidance"] += "\n\n💡 RECONFIGURATION NEEDED:"
-                result["_guidance"] += "\n  1. Use recommend_vm_spec() to find alternative specifications from different providers"
-                result["_guidance"] += "\n  2. Update node_groups with working specs and run review again"
-                result["_guidance"] += "\n  3. Consider using hold=True for providers requiring manual deployment"
-                
-                # Add specific provider guidance from review results
-                for issue in provisioning_issues:
-                    if "hold" in issue["issue"].lower():
-                        result["_guidance"] += f"\n  • For {issue['provider']}: Set hold=True in create_infra_dynamic()"
-                    elif "not available" in issue["issue"].lower():
-                        result["_guidance"] += f"\n  • For {issue['provider']}: Replace with alternative provider (AWS, Azure, GCP, etc.)"
-            
-            result["_next_step"] = "Fix the reported issues and run review_infra_dynamic_request() again."
-        
-        # A review that says "viable" is routinely read as "this will succeed". It cannot
-        # be: quota, live stock and provider-internal faults are only discoverable by asking
-        # the provider to create something. Three real runs passed review and then failed on
-        # exactly those. Stating the scope turns a surprise into a planned retry.
-        result["_validation_scope"] = {
-            "checked": ["spec exists and is offered in the region",
-                        "image exists and is usable with that spec",
-                        "list price"],
-            "not_checked": ["account quota for the instance family",
-                            "live capacity or stock in the target zones",
-                            "provider-internal errors raised at creation time"],
-            "implication": ("creationViable=true means nothing was found wrong, not that "
-                            "creation will succeed - be ready to substitute a spec, region "
-                            "or provider and retry"),
-        }
+        if "error" in result:
+            return result
+        # An error from this endpoint can arrive as a bare {"message": ...}
+        return {"error": result.get("message") or "unexpected answer from recommendSpec"}
+    specs = result if isinstance(result, list) else []
 
-        # Node groups are not nodes. The server reports totalNodeCount as the number of
-        # groups - 2 for a "1 control + 4 workers" cluster - while pricing the same request
-        # correctly at five machines. Counting from nodeGroupSize here keeps the two halves
-        # of the answer agreeing; the server side is reported separately.
-        def _true_node_count(reviews):
-            total = 0
-            for review in reviews or []:
-                try:
-                    size = int(review.get("nodeGroupSize") or 1)
-                except (TypeError, ValueError):
-                    size = 1
-                total += max(1, size)
-            return total
+    note = None
+    if priority_policy == "cost":
+        specs, note = _demote_unpriced(specs)
+    level = _validate_detail(detail)
+    out: Dict[str, Any] = {"specs": [_shape_spec(s, level) for s in specs], "count": len(specs)}
+    if note:
+        out["pricing_note"] = note
+    if not specs:
+        out["next"] = ("nothing matched: loosen the filters, or check the vocabulary with "
+                       "get_search_options(kind='spec')")
+    return out
 
-        node_total = _true_node_count(vm_reviews)
+# The request both the review and the creation send (model.InfraDynamicReq)
+def _infra_request_body(name, node_groups, description="", system_label="", label=None,
+                        post_script=None, init_script=None, policy_on_partial_failure="",
+                        vnet_template_id="", sg_template_id=""):
+    body: Dict[str, Any] = {"name": name, "nodeGroups": node_groups}
+    if description:
+        body["description"] = description
+    if policy_on_partial_failure:
+        body["policyOnPartialFailure"] = policy_on_partial_failure
+    if system_label:
+        body["systemLabel"] = system_label
+    if label:
+        body["label"] = label
+    if post_script and post_script.get("phases"):
+        body["postScript"] = post_script
+    if init_script:
+        body["initScript"] = init_script
+    if vnet_template_id:
+        body["vNetTemplateId"] = vnet_template_id
+    if sg_template_id:
+        body["sgTemplateId"] = sg_template_id
+    return body
 
-        # Add summary of nodeReviews for LLM reference
-        if vm_reviews:
-            result["_vm_summary"] = {
-                "total_vms": node_total,
-                "total_node_groups": len(vm_reviews),
-                "successful_vms": len([vm for vm in vm_reviews if vm.get("canCreate", True)]),
-                "failed_vms": len([vm for vm in vm_reviews if not vm.get("canCreate", True)]),
-                "providers_used": list(set([vm.get("providerName", "") for vm in vm_reviews if vm.get("providerName")])),
-                "review_details": "Check nodeReviews field for detailed per-VM validation results"
-            }
-        
-        # Add enhanced summary with corrected VM count and cost information
-        if "totalNodeCount" in result and "estimatedCost" in result:
-            vm_count = node_total or result["totalNodeCount"]
-            estimated_cost = result.get("estimatedCost", "Cost estimation unavailable")
-            result["_deployment_summary"] = {
-                "total_vms_to_deploy": vm_count,
-                "estimated_hourly_cost": estimated_cost,
-                "estimated_monthly_cost": f"~${float(estimated_cost.replace('$', '').replace('/hour', '')) * 24 * 30:.2f}/month" if "$" in estimated_cost and "/hour" in estimated_cost else "Estimate unavailable",
-                "node_groups": len(vm_reviews),
-                "note": ("total_vms_to_deploy sums nodeGroupSize across groups. The server's "
-                         "own totalNodeCount reports the number of groups, not machines - "
-                         "its cost estimate is per machine and correct.")
-            }
-        
-        # 🎯 ENHANCED: Add LLM-friendly user interaction guidance
-        creation_viable = result.get("creationViable", False)
-        overall_status = result.get("overallStatus", "Unknown")
-        
-        if creation_viable and overall_status == "Ready":
-            result["_llm_guidance"] = {
-                "status": "READY_TO_CREATE",
-                "message": "✅ Configuration validated successfully! All VMs can be created.",
-                "next_action": "ASK_USER_CONFIRMATION",
-                "user_prompt": f"""
-🎯 **Infra Creation Plan Validated Successfully!**
 
-📊 **Deployment Summary:**
-• Total VMs: {result.get('totalNodeCount', 'N/A')}
-• Estimated Cost: {result.get('estimatedCost', 'N/A')}
-• Status: All configurations validated ✅
+def _check_node_groups(node_groups):
+    """Refuse a plan the server would reject for a missing spec or image."""
+    if not isinstance(node_groups, list) or not node_groups:
+        return {"error": "node_groups is required: a non-empty list of node group objects"}
+    for i, group in enumerate(node_groups):
+        if not isinstance(group, dict):
+            return {"error": f"node_groups[{i}] is required to be an object"}
+        if not group.get("specId"):
+            return {"error": f"node_groups[{i}].specId is required; take the id from "
+                             f"recommend_vm_spec()"}
+        if not group.get("imageId"):
+            return {"error": f"node_groups[{i}].imageId is required; take cspImageName from "
+                             f"search_images(matched_spec_id={group['specId']!r})"}
+    return None
 
-💰 **Cost Information:**
-• Hourly: {result.get('estimatedCost', 'N/A')}
-• Monthly (estimated): {result.get('_deployment_summary', {}).get('estimated_monthly_cost', 'N/A')}
 
-🔧 **Specifications:**
-{_format_vm_summary_for_user(vm_reviews)}
+_REVIEW_VALIDATION_KEYS = ("resourceId", "isAvailable", "status", "message", "quota")
 
-**Would you like to proceed with creating this Infra infrastructure?**
-- ✅ **Yes** - I'll create the Infra with these specifications
-- ❌ **No** - I want to modify the configuration first
-- 📋 **Details** - Show me more detailed validation results
 
-*Reply with your choice to continue.*
-""",
-                "confirmation_required": True,
-                "proceed_command": "create_infra_dynamic(..., force_create=True)"
-            }
-        elif creation_viable and overall_status == "Warning":
-            result["_llm_guidance"] = {
-                "status": "READY_WITH_WARNINGS",
-                "message": "⚠️ Configuration has warnings but can proceed.",
-                "next_action": "SHOW_WARNINGS_AND_ASK_CONFIRMATION",
-                "user_prompt": f"""
-⚠️ **Infra Creation Plan - Warnings Detected**
+def _slim_review(result):
+    """A review reduced to what decides the plan: verdicts, cost, quota and findings."""
+    out = {k: result[k] for k in ("overallStatus", "overallMessage", "creationViable",
+                                  "estimatedCost", "policyOnPartialFailure")
+           if result.get(k) not in (None, "")}
+    reviews, nodes = [], 0
+    for review in result.get("nodeReviews") or []:
+        try:
+            nodes += max(1, int(review.get("nodeGroupSize") or 1))
+        except (TypeError, ValueError):
+            nodes += 1
+        row = {k: review[k] for k in ("nodeName", "nodeGroupSize", "status", "canCreate",
+                                      "estimatedCost", "connectionName")
+               if review.get(k) not in (None, "")}
+        for key in ("specValidation", "imageValidation"):
+            checked = review.get(key)
+            if isinstance(checked, dict):
+                row[key] = {k: checked[k] for k in _REVIEW_VALIDATION_KEYS
+                            if checked.get(k) not in (None, "", {})}
+        for key in ("errors", "warnings", "info"):
+            if review.get(key):
+                row[key] = review[key]
+        reviews.append(row)
+    out["nodeReviews"] = reviews
+    # totalNodeCount counts machines; the server's own figure counts node groups.
+    out["nodeGroupCount"], out["totalNodeCount"] = len(reviews), nodes
+    if result.get("recommendations"):
+        out["recommendations"] = result["recommendations"]
+    summary = result.get("resourceSummary") or {}
+    for key in ("providerNames", "regionNames"):
+        if summary.get(key):
+            out[key] = summary[key]
+    return out
 
-📊 **Deployment Summary:**
-• Total VMs: {result.get('totalNodeCount', 'N/A')}
-• Estimated Cost: {result.get('estimatedCost', 'N/A')}
-• Status: Can create with warnings ⚠️
-
-⚠️ **Warnings Found:**
-{_format_warnings_for_user(vm_reviews)}
-
-💰 **Cost Information:**
-• Hourly: {result.get('estimatedCost', 'N/A')}
-• Monthly (estimated): {result.get('_deployment_summary', {}).get('estimated_monthly_cost', 'N/A')}
-
-**Despite the warnings, would you like to proceed with creating this Infra?**
-- ✅ **Yes** - Proceed anyway (warnings are acceptable)
-- ❌ **No** - I want to fix the warnings first
-- 📋 **Details** - Show me detailed warning information
-
-*Please review the warnings and let me know your decision.*
-""",
-                "confirmation_required": True,
-                "proceed_command": "create_infra_dynamic(..., force_create=True)"
-            }
-        else:
-            result["_llm_guidance"] = {
-                "status": "CANNOT_CREATE",
-                "message": "❌ Configuration has errors that must be fixed before creation.",
-                "next_action": "SHOW_ERRORS_AND_GUIDE_FIXES",
-                "user_prompt": f"""
-❌ **Infra Creation Plan - Errors Must Be Fixed**
-
-📊 **Review Results:**
-• Total VMs: {result.get('totalNodeCount', 'N/A')}
-• Status: Cannot create due to errors ❌
-
-🚫 **Errors Found:**
-{_format_errors_for_user(vm_reviews)}
-
-🔧 **Recommended Actions:**
-1. Use `recommend_vm_spec()` to get alternative VM specifications
-2. Check `search_images()` for compatible images in different regions
-3. Verify CSP provider availability and quotas
-4. Update node_groups and run review again
-
-**I'll help you fix these issues. Would you like me to:**
-- 🔄 **Find alternatives** - Search for different VM specs/images
-- 📋 **Show details** - Display detailed error information
-- 🛠️ **Guide fixes** - Step-by-step troubleshooting
-
-*Let me know how you'd like to proceed with fixing these issues.*
-""",
-                "confirmation_required": False,
-                "proceed_command": "Fix errors first, then re-run review"
-            }
-        
-        # Add workflow recommendations
-        result["_workflow_tips"] = [
-            "Always run review_infra_dynamic_request() before create_infra_dynamic()",
-            "Address all critical issues (errors) before deployment",
-            "Consider optimization suggestions for better performance",
-            "Use hold=True in create_infra_dynamic() for manual review if needed",
-            "NodeGroup sizes are automatically calculated for accurate VM counts and costs"
-        ]
-    
-    return result
 
 # Tool: Review Infra Dynamic Request (Pre-validation)
 @tool()
@@ -4691,7 +3735,7 @@ def review_infra_dynamic_request(
     ns_id: str,
     name: str,
     node_groups: List[Dict],
-    description: str = "Infra created dynamically via MCP",
+    description: str = "",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_script: Optional[Dict] = None,
@@ -4699,452 +3743,214 @@ def review_infra_dynamic_request(
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
     sg_template_id: str = "",
-    init_script: Optional[Dict] = None
+    init_script: Optional[Dict] = None,
+    detail: str = "summary"
 ) -> Dict:
     """Validate an Infra configuration and estimate its cost before creating it.
 
-    Run this before create_infra_dynamic(). It resolves every spec and image against the
-    CSP, reports per-node availability, quota headroom and init script size, estimates
-    hourly cost, and flags configurations that cannot be provisioned. Same arguments as
-    create_infra_dynamic(). Details: get_usage_guide('provision').
+    Run this before create_infra_dynamic(), with the same arguments. It resolves every spec
+    and image against the CSP and reports availability, quota headroom, past failure rate,
+    init script size and hourly cost. Nothing is created.
+    Details: get_usage_guide('provision').
 
     Args:
         ns_id: Namespace ID
         name: Infra name
-        node_groups: NodeGroup dicts - see create_infra_dynamic()
+        node_groups: Node group objects - see create_infra_dynamic()
         description: Infra description
         policy_on_partial_failure: "continue" (default) | "rollback" | "refine"
         vnet_template_id: VNet template ID, Infra-level default
         sg_template_id: Security group template ID, Infra-level default
-        system_label: Reserved system label; leave empty unless told otherwise.
-        label: Key-value pairs applied to the Infra (enables labelSelector targeting later).
-        post_script: Bootstrap to run once the nodes are up: {"phases": [...]}.
-        init_script: First-boot script for every node - see create_infra_dynamic().
-        hold: Create the records but leave provisioning paused, to be released later.
+        system_label: Reserved system label; leave empty unless told otherwise
+        label: Key-value pairs applied to the Infra
+        post_script: Bootstrap to run once the nodes are up: {"phases": [...]}
+        init_script: First-boot script for every node - see create_infra_dynamic()
+        hold: Review the request as one that will be created on hold
+        detail: "summary" (default) | "full" for the server's whole answer
 
     Returns:
         overallStatus ("Ready" | "Warning" | "Error"), creationViable, estimatedCost,
-        per-node validation in nodeReviews (info and warnings carry the quota and init
-        script findings), and resourceSummary. Fix anything reported as an error and
-        re-review until creationViable is true.
+        totalNodeCount, and per node group in nodeReviews: canCreate, the spec and image
+        checks (specValidation.quota.fitCount is how many more nodes of that spec the
+        account can start), errors, warnings and info. `next` says what to do.
     """
-    return _internal_review_infra_dynamic(
-        ns_id=ns_id,
-        name=name,
-        node_groups=node_groups,
-        description=description,
-        system_label=system_label,
-        label=label,
-        post_script=post_script,
-        hold=hold,
-        policy_on_partial_failure=policy_on_partial_failure,
-        vnet_template_id=vnet_template_id,
-        sg_template_id=sg_template_id,
-        init_script=init_script
-    )
+    groups = _normalize_node_groups(node_groups)
+    problem = _check_node_groups(groups)
+    if problem:
+        return problem
+    body = _infra_request_body(name, groups, description, system_label, label, post_script,
+                               init_script, policy_on_partial_failure, vnet_template_id,
+                               sg_template_id)
+    result = api_request("POST", f"/ns/{ns_id}/infraDynamicReview", json_data=body,
+                         params={"option": "hold"} if hold else None)
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    if _validate_detail(detail) != "full":
+        result = _slim_review(result)
+    if result.get("creationViable"):
+        result["next"] = ("show the user the node groups and estimatedCost; when they agree, "
+                          "call create_infra_dynamic() with the same arguments plus "
+                          "force_create=True, confirm=True")
+    else:
+        result["next"] = ("fix what nodeReviews[].errors report and review again; "
+                          "recommend_alternative_node_config() finds a substitute for a spec "
+                          "that cannot be provisioned")
+    return result
 
-# # Tool: Create Infra (Traditional method)
-# @mcp.tool()
-# def create_infra(
-#     ns_id: str,
-#     name: str,
-#     description: str = "Created via MCP",
-#     vm_config: List[Dict] = None,
-#     post_command: Optional[Dict] = None,
-#     hold: bool = False
-# ) -> Dict:
-#     """
-#     Create Multi-Cloud Infrastructure using traditional method with detailed VM configurations.
-#     For easier Infra creation, consider using create_infra_dynamic() instead.
-    
-#     Args:
-#         ns_id: Namespace ID
-#         name: Infra name
-#         description: Infra description
-#         vm_config: Detailed VM configuration list with specific resource IDs
-#         post_command: Post-deployment command configuration
-#         hold: Whether to hold provisioning
-    
-#     Returns:
-#         Created Infra information
-#     """
-#     if vm_config is None:
-#         vm_config = []
-    
-#     data = {
-#         "name": name,
-#         "description": description,
-#         "nodeGroups": vm_config
-#     }
-    
-#     if post_command:
-#         data["postCommand"] = post_command
-    
-#     url = f"/ns/{ns_id}/infra"
-#     if hold:
-#         url += "?option=hold"
-    
-#     return api_request("POST", url, json_data=data)
 
-# Tool: Create Infra dynamically (Recommended method)
+# Tool: Create Infra dynamically
 @tool(mutating=True, additive=True)
 def create_infra_dynamic(
     ns_id: str,
     name: str,
     node_groups: List[Dict],
-    description: str = "Infra created dynamically via MCP",
+    description: str = "",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_script: Optional[Dict] = None,
     post_script_async: bool = False,
     hold: bool = False,
-    skip_confirmation: bool = False,
     force_create: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
     sg_template_id: str = "",
     init_script: Optional[Dict] = None,
-    budget_ack: Optional[str] = None, confirm: bool = False) -> Dict:
+    budget_ack: Optional[str] = None,
+    confirm: bool = False
+) -> Dict:
     """Create a Multi-Cloud Infrastructure.
 
-    Two steps: call review_infra_dynamic_request() first, then this with force_create=True.
-    Without force_create it returns the review requirement instead of provisioning.
-
-    specId and imageId must be copied verbatim from recommend_vm_spec() and search_images(),
-    and must come from the same provider and region - a guessed or edited id fails at the CSP.
-    Worked example: get_usage_guide('provision').
+    Review first: review_infra_dynamic_request() with the same arguments, then this with
+    force_create=True and confirm=True. Without them it refuses and says what is missing.
+    specId and imageId must be copied verbatim from recommend_vm_spec() and
+    search_images(matched_spec_id=...). Worked example: get_usage_guide('provision').
 
     Args:
         ns_id: Namespace ID
         name: Infra name
-        node_groups: NodeGroup dicts (maps to the server's nodeGroups). Per entry:
-            specId (required; exact from recommend_vm_spec, "provider+region+type"),
-            imageId (required; exact cspImageName from search_images),
-            name, description, nodeGroupSize (int, default 1), connectionName,
-            rootDiskSize (int GB, 0 = CSP default), rootDiskType, zone,
-            distributeSubnets (bool; spread the group's nodes across the VNet's subnets),
-            vNetTemplateId, sgTemplateId, os_requirements,
-            initScript (overrides init_script for this group; same shape),
-            label: key-value pairs. A role label here is what label_selector targets
-            later, so {"role":"control"} / {"role":"node"} lets one remote command
-            reach a whole tier.
+        node_groups: One object per node group: specId and imageId (required), name,
+            nodeGroupSize (default 1), label ({"role": "web"} lets label_selector reach the
+            group later), rootDiskType, rootDiskSize (GB), zone, connectionName,
+            distributeSubnets, vNetTemplateId, sgTemplateId, initScript.
         description: Infra description
-        system_label: System label for special purposes
-        label: Key-value pairs for Infra labeling
-        post_script: Bootstrap script, {"phases": [...]}. Each phase is targeted by at most
-            one of nodeGroupId | nodeId | labelSelector. Omit userName so the server resolves
-            the verified account per node. Phases run in order; a failed one skips the rest by
-            default. Cumulative timeoutMinutes must stay under 120. Outcome comes back as
-            postScriptStatus / postScriptResults. Worked example: get_usage_guide('provision').
-        post_script_async: False (default) waits for post_script and returns its final status.
-            True returns once nodes are provisioned and runs the phases in the background -
-            use it when the bootstrap is long enough to outlast the call. Then poll
-            get_infra() until postScriptStatus is terminal, or stream using postScriptRequestId.
-        init_script: First-boot script, run by the node itself from its user data - no SSH,
-            so it also works on nodes CB-Tumblebug cannot reach. One of
-            {"templateId": "initscript-nginx", "env": {...}},
-            {"scripts": [{"name": "setup", "script": "#!/bin/bash\\n..."}]} or
-            {"mode": "none"} to switch it off. Each node reports its result when a notifier
-            is registered: get_init_script_status(). Templates:
-            list_init_script_templates(). Details: get_usage_guide('initscript').
-        hold: Hold provisioning for review
-        skip_confirmation: Skip the confirmation step
-        force_create: Confirms the configuration was reviewed
-        confirm: Confirms a person has seen the plan and agreed to it. Both are required:
-            force_create says the machine checks passed, confirm says a human said yes.
-        policy_on_partial_failure: "continue" (default) | "rollback" | "refine"
+        system_label: Reserved system label; leave empty unless told otherwise
+        label: Key-value pairs applied to the Infra
+        post_script: Commands run over SSH once the nodes are up:
+            {"phases": [{"nodeGroupId": "web", "command": ["..."]}]}. A phase targets one of
+            nodeGroupId | nodeId | labelSelector, or every node when none is given.
+        post_script_async: True returns when the nodes are up and runs post_script in the
+            background; poll get_infra() until postScriptStatus is terminal.
+        init_script: First-boot script run by the node itself, no SSH:
+            {"templateId": "initscript-nginx", "env": {...}}, {"script": "#!/bin/bash\\n..."}
+            or {"mode": "none"}. Details: get_usage_guide('initscript').
+        hold: Register the Infra but do not provision it yet. control_infra() with
+            action "continue" starts it, "withdraw" cancels it.
+        force_create: Set True once the review has passed
+        confirm: Set True once a person has seen the plan and agreed to it
+        policy_on_partial_failure: "continue" (default; keep what succeeded) | "rollback"
+            (remove everything) | "refine" (remove only the failed nodes)
         vnet_template_id: VNet template ID, Infra-level default
         sg_template_id: Security group template ID, Infra-level default
-        budget_ack: Approval id from request_budget_increase(), to proceed past a
-            spend limit. Single-use.
+        budget_ack: Approval id from request_budget_increase(), to pass a spend limit once
 
     Returns:
-        Without force_create: the review requirement and next steps.
-        With force_create: the created Infra - id, node list, status, deployment summary.
+        The created Infra: status, statusCount and its nodes with their addresses.
     """
-    unconfirmed = _confirm_creation_plan(node_groups, name, confirm)
-    if unconfirmed:
-        return unconfirmed
-    over_budget = _check_budget(node_groups, budget_ack)
-    if over_budget:
-        return over_budget
-    
-    # The review is a required step, not advice: without it the first sign of a spec or
-    # image that cannot be provisioned is a failed creation.
-    if not force_create and not skip_confirmation:
+    groups = _normalize_node_groups(node_groups)
+    problem = _check_node_groups(groups)
+    if problem:
+        return problem
+    if not force_create:
         return {"error": {
             "message": "Infra creation requires prior validation: run "
                        "review_infra_dynamic_request() with the same arguments first",
             "code": "REVIEW_REQUIRED",
             "how_to_proceed": ("review, fix what it reports, show the user the result, then "
-                               "repeat this call with force_create=True"),
+                               "repeat this call with force_create=True, confirm=True"),
         }}
-    
-    # STEP 1: Validate namespace first
-    ns_validation = _internal_validate_namespace(ns_id)
-    if not ns_validation["valid"]:
-        return {
-            "error": f"Namespace '{ns_id}' validation failed",
-            "details": ns_validation.get("error", "Unknown error"),
-            "suggestion": ns_validation.get("suggestion", ""),
-            "namespace_guidance": "Use manage_namespace(action='create') to see available namespaces or manage_namespace(action='create') to create a new one"
-        }
-    
-    # Validate required VM configuration fields and auto-map images if needed
-    processed_vm_configs = []
-    for i, vm_config in enumerate(node_groups):
-        vm_config = dict(vm_config)  # Work on a copy — don't mutate the caller's dicts
-        # Check if specId is provided
-        if "specId" not in vm_config:
-            return {
-                "error": f"VM configuration {i} validation failed",
-                "details": "VM configuration must include 'specId'",
-                "suggestion": "Use recommend_vm_spec() to get 'specId'"
-            }
-        
-        common_spec = vm_config["specId"]
-        common_image = vm_config.get("imageId")
-        
-        # Auto-map image if not provided or validate existing mapping
-        if not common_image:
-            # Auto-map: Find appropriate image for this spec
-            try:
-                # Extract CSP and region from spec
-                spec_parts = common_spec.split("+")
-                if len(spec_parts) < 3:
-                    return {
-                        "error": f"Invalid spec format in VM config {i}: {common_spec}",
-                        "details": "Expected format: provider+region+spec_name"
-                    }
-                
-                provider = spec_parts[0]
-                region = spec_parts[1]
-                
-                # Search for images in this specific CSP/region with default x86_64 architecture
-                os_requirements = vm_config.get("os_requirements", {})
-                os_type = os_requirements.get("os_type", "ubuntu")
-                
-                images_result = search_images(
-                    provider_name=provider,
-                    region_name=region,
-                    os_type=os_type,
-                    os_architecture="x86_64"  # Default architecture
-                )
-                
-                if not images_result or "error" in images_result:
-                    return {
-                        "error": f"Failed to find images for VM {i} in {provider}/{region}",
-                        "details": images_result.get("error", "Unknown error")
-                    }
-                
-                image_list = images_result.get("imageList", [])
-                if not image_list:
-                    return {
-                        "error": f"No images available for VM {i} in {provider}/{region}",
-                        "suggestion": f"Check image availability in {provider} {region} or try different os_type"
-                    }
-                
-                # Select best image for this specific spec
-                mock_spec = {
-                    "id": common_spec,
-                    "providerName": provider,
-                    "regionName": region,
-                    "architecture": "x86_64"  # Default to x86_64 architecture
-                }
-                
-                chosen_image = select_best_image_for_spec(image_list, mock_spec, os_requirements)
-                if not chosen_image or "error" in chosen_image:
-                    # Fallback to basic selection
-                    chosen_image = select_best_image(image_list)
-                    if not chosen_image:
-                        return {
-                            "error": f"Failed to select appropriate image for VM {i}",
-                            "suggestion": "Check image search parameters or try manual image selection"
-                        }
-                
-                # Use the auto-selected image
-                vm_config["imageId"] = chosen_image["cspImageName"]
-                vm_config["_auto_mapped_image"] = True
-                vm_config["_image_selection_info"] = {
-                    "provider": provider,
-                    "region": region,
-                    "selection_reason": chosen_image.get("_selection_reason", "Auto-selected"),
-                    "compatibility_score": chosen_image.get("_compatibility_score", "N/A")
-                }
-                
-            except Exception as e:
-                return {
-                    "error": f"Auto image mapping failed for VM {i}",
-                    "details": str(e),
-                    "suggestion": "Manually specify 'imageId' or check spec format"
-                }
-                
-        else:
-            # Validate existing image mapping
-            try:
-                spec_parts = common_spec.split("+")
-                if len(spec_parts) >= 2:
-                    spec_provider = spec_parts[0].lower()
-                    
-                    # Basic CSP-image format validation
-                    image_lower = common_image.lower()
-                    is_valid_mapping = True
-                    validation_warning = None
-                    
-                    if spec_provider == "aws" and not image_lower.startswith("ami-"):
-                        validation_warning = f"AWS spec with non-AMI image: {common_image}"
-                        is_valid_mapping = False
-                    elif spec_provider == "azure" and "microsoft" not in image_lower and "/subscriptions/" not in image_lower:
-                        validation_warning = f"Azure spec with potentially incompatible image: {common_image}"
-                    elif spec_provider == "gcp" and "google" not in image_lower and "projects/" not in image_lower:
-                        validation_warning = f"GCP spec with potentially incompatible image: {common_image}"
-                    
-                    if validation_warning:
-                        vm_config["_image_validation_warning"] = validation_warning
-                        if not is_valid_mapping:
-                            return {
-                                "error": f"Invalid image-spec mapping for VM {i}",
-                                "details": validation_warning,
-                                "suggestion": "Use auto-mapping by omitting 'imageId' or provide correct CSP-specific image"
-                            }
-                
-            except Exception as e:
-                # Continue with provided image if validation fails
-                pass
-        
-        processed_vm_configs.append(vm_config)
-    
-    # Build request data according to model.InfraDynamicReq spec
-    # (strip internal "_"-prefixed bookkeeping keys and non-API fields from each node group)
-    data = {
-        "name": name,
-        "nodeGroups": _normalize_node_groups([
-            {k: v for k, v in cfg.items() if not k.startswith("_") and k != "os_requirements"}
-            for cfg in processed_vm_configs
-        ]),
-        "policyOnPartialFailure": policy_on_partial_failure
-    }
-    
-    # Add optional fields
-    if description:
-        data["description"] = description
-    if system_label:
-        data["systemLabel"] = system_label
-    if label:
-        data["label"] = label
-    if post_script and post_script.get("phases"):
-        data["postScript"] = post_script
-    if init_script:
-        data["initScript"] = init_script
-    if vnet_template_id:
-        data["vNetTemplateId"] = vnet_template_id
-    if sg_template_id:
-        data["sgTemplateId"] = sg_template_id
+    unconfirmed = _confirm_creation_plan(groups, name, confirm)
+    if unconfirmed:
+        return unconfirmed
+    over_budget = _budget_refusal(groups, budget_ack)
+    if over_budget:
+        return over_budget
 
-    url = f"/ns/{ns_id}/infraDynamic"
-    query = []
+    body = _infra_request_body(name, groups, description, system_label, label, post_script,
+                               init_script, policy_on_partial_failure, vnet_template_id,
+                               sg_template_id)
+    params = {}
     if hold:
-        query.append("option=hold")
-    if post_script_async and data.get("postScript"):
-        query.append("postScriptAsync=true")
-    if query:
-        url += "?" + "&".join(query)
-    
-    result = api_request("POST", url, json_data=data)
-    
-    # Store interaction in memory for future reference
-    context_data = {
-        "namespace_id": ns_id,
-        "infra_name": name,
-        "vm_count": len(node_groups),
-        "hold": hold
-    }
-    
-    if "error" not in result:
-        # The server answers with the full record of every node; the caller needs the
-        # outcome, and get_infra(detail='full') has the rest.
-        result = _shape_infra(result, "summary")
-        if result.get("creationErrors") or (result.get("statusCount") or {}).get("countFailed"):
-            result["next"] = ("some nodes failed: check_infra_status_and_handle_failures() "
-                              "explains why and what can be retried")
+        params["option"] = "hold"
+    if post_script_async and body.get("postScript"):
+        params["postScriptAsync"] = "true"
+    # Provisioning answers when every node is up, which takes minutes for a large Infra.
+    result = api_request("POST", f"/ns/{ns_id}/infraDynamic", json_data=body,
+                         params=params or None, timeout_override=(60, 3600))
+    if not isinstance(result, dict) or "error" in result:
+        return result
 
-        # Store successful Infra creation with auto-mapping details
-        auto_mapped_count = sum(1 for vm in processed_vm_configs if vm.get("_auto_mapped_image", False))
-        context_data["infra_id"] = result.get("id", name)
-        context_data["auto_mapped_images"] = auto_mapped_count
-        context_data["total_vms"] = len(processed_vm_configs)
-        context_data["spec_to_image_mapping"] = "applied"
-        
-        _store_interaction_memory(
-            user_request=f"Create Infra '{name}' with {len(processed_vm_configs)} VM configurations using spec-aware image selection",
-            llm_response=f"Successfully created Infra '{name}' (ID: {result.get('id', name)}) with proper spec-to-image mapping in namespace '{ns_id}'. Auto-mapped {auto_mapped_count}/{len(processed_vm_configs)} images.",
-            operation_type="infra_creation",
-            context_data=context_data,
-            status="completed"
-        )
-    else:
-        # Store failed Infra creation
-        _store_interaction_memory(
-            user_request=f"Create Infra '{name}' with {len(processed_vm_configs)} VM configurations",
-            llm_response=f"Failed to create Infra '{name}': {result.get('error', 'Unknown error')}",
-            operation_type="infra_creation",
-            context_data=context_data,
-            status="failed"
-        )
-    
+    _record_spend(groups)
+    result = _shape_infra(result, "summary")
+    if hold:
+        result["next"] = ("held before provisioning: control_infra(action='continue') starts "
+                          "it, 'withdraw' cancels it")
+    elif result.get("creationErrors") or (result.get("statusCount") or {}).get("countFailed"):
+        result["next"] = ("some nodes failed: diagnose_infra() "
+                          "explains why and what can be retried")
     return result
-
-# Note: create_infra_with_proper_spec_mapping has been removed.
-# Use create_infra_dynamic with proper spec-to-image mapping workflow instead.
-
-# Note: create_infra_with_spec_first has been removed.
-# Use create_infra_dynamic with spec-first workflow as described in prompts.
-
-# Note: create_infra_with_namespace_management has been removed.
-# Use create_infra_dynamic with namespace management workflow as described in prompts.
 
 # Tool: Review Spec-Image Pair
 @tool()
-def review_spec_image_pair(
-    spec_id: str,
-    image_id: str
-) -> Dict:
+def review_spec_image_pair(spec_id: str, image_id: str, root_disk_type: str = "",
+                           zone: str = "") -> Dict:
     """
-    Lightweight validation of a specId + imageId pair without creating any infrastructure.
-    
-    Use this to quickly check if a spec and image combination is valid and available
-    before building full Infra configurations. Much faster than review_infra_dynamic_request().
-    
-    **Workflow:**
-    ```python
-    # Quick check before building full Infra config
-    result = review_spec_image_pair(
-        spec_id="aws+ap-northeast-2+t3.nano",
-        image_id="ami-01f71f215b23ba262"
-    )
-    if result.get("isValid"):
-        # Proceed to build full Infra configuration
-        ...
-    ```
+    Check one spec and image pair without building a whole Infra request.
+
+    Much faster than review_infra_dynamic_request(), so several candidates can be tested
+    before committing to a plan.
 
     Args:
-        spec_id: VM specification ID (e.g., "aws+ap-northeast-2+t3.nano") (REQUIRED)
-        image_id: CSP-specific image ID (e.g., "ami-01f71f215b23ba262") (REQUIRED)
+        spec_id: Spec id, e.g. "aws+ap-northeast-2+t3.nano"
+        image_id: CSP image id (cspImageName from search_images)
+        root_disk_type: Root disk type to check with the pair
+        zone: Zone to check availability in
 
     Returns:
-        Validation result including:
-        - isValid: Whether the spec+image pair is valid and available
-        - status / message: Overall review outcome
-        - specDetails: Spec details (vCPU, memory, cost)
-        - imageDetails: Image details (OS, architecture)
-        - availability, specValidation, imageValidation: Detailed checks
-        - estimatedCost (string), warnings, errors, suggestedZone
+        isValid, message, estimatedCost, availability (status and per-zone detail),
+        suggestedZone, suggestedSystemDisk, and info, warnings and errors.
     """
-    data = {
-        "specId": spec_id,
-        "imageId": image_id
-    }
-    return api_request("POST", "/specImagePairReview", json_data=data)
+    data = {"specId": spec_id, "imageId": image_id}
+    if root_disk_type:
+        data["rootDiskType"] = root_disk_type
+    if zone:
+        data["zone"] = zone
+    result = api_request("POST", "/specImagePairReview", json_data=data)
+    if isinstance(result, dict) and "error" not in result:
+        # The full spec and image records are most of the answer and add nothing to it.
+        if isinstance(result.get("specDetails"), dict):
+            result["specDetails"] = _shape_spec(result["specDetails"])
+        if isinstance(result.get("imageDetails"), dict):
+            result["imageDetails"] = _shape_image(result["imageDetails"], "summary")
+    return result
+
+# The request both the node group review and the addition send
+def _nodegroup_request_body(spec_id, image_id, name, node_group_size, description,
+                            root_disk_type, root_disk_size, connection_name, zone,
+                            post_script, init_script, vnet_template_id="", sg_template_id="",
+                            label=None, distribute_subnets=False):
+    body: Dict[str, Any] = {"specId": spec_id, "imageId": image_id,
+                            "nodeGroupSize": int(node_group_size)}
+    optional = {"name": name, "description": description, "rootDiskType": root_disk_type,
+                "rootDiskSize": int(root_disk_size or 0), "connectionName": connection_name,
+                "zone": zone, "vNetTemplateId": vnet_template_id,
+                "sgTemplateId": sg_template_id, "label": label, "initScript": init_script}
+    body.update({k: v for k, v in optional.items() if v})
+    if distribute_subnets:
+        body["distributeSubnets"] = True
+    if post_script and post_script.get("phases"):
+        body["postScript"] = post_script
+    return body
+
 
 # Tool: Add NodeGroup to existing Infra dynamically
 @tool(mutating=True, additive=True)
@@ -5166,85 +3972,71 @@ def add_nodegroup_dynamic(
     post_script: Optional[Dict] = None,
     post_script_async: bool = False,
     init_script: Optional[Dict] = None,
-    distribute_subnets: bool = False
+    distribute_subnets: bool = False,
+    budget_ack: Optional[str] = None,
+    confirm: bool = False
 ) -> Dict:
     """
     Add a new NodeGroup to an existing Infra.
 
-    Adds nodes of a new spec/image without touching the existing ones. To add more nodes
-    of a group that already exists, use scale_out_nodegroup() instead. Node ids are
-    assigned by the server ("<name>-<n>"); read them back from the result.
+    The new nodes can use another spec, image, region or provider; the existing ones are
+    not touched. To add more nodes to a group that exists, use scale_out_nodegroup().
+    Check the group with review_nodegroup_dynamic() first.
 
     Args:
-        ns_id: Namespace ID (REQUIRED)
-        infra_id: Infra ID to add the nodegroup to (REQUIRED)
-        spec_id: VM specification ID from recommend_vm_spec() (REQUIRED)
-        image_id: CSP-specific image ID from search_images() (REQUIRED)
-        name: NodeGroup name (optional)
-        node_group_size: Number of VMs in the nodegroup (int, default 1)
-        description: NodeGroup description (optional)
-        root_disk_type: Root disk type (optional)
-        root_disk_size: Root disk size in GB (int, 0 for CSP default)
-        connection_name: Specific connection name (optional)
-        zone: Availability zone (optional, e.g., "ap-northeast-2a")
-        vnet_template_id: VNet template ID (optional)
-        sg_template_id: Security group template ID (optional)
-        label: Key-value pairs for labeling (optional; enables labelSelector targeting later)
-        post_script: Bootstrap for the NEW nodes (phases are scoped to this nodeGroup), e.g.
-            {"phases": [{"command": ["curl ... | bash"], "timeoutMinutes": 10,
-            "continueOnError": False}]}
-        post_script_async: True returns as soon as the nodes exist and runs post_script in
-            the background (default False: wait for it).
-        init_script: First-boot script for the NEW nodes - see create_infra_dynamic().
-        distribute_subnets: Spread the new nodes across the VNet's subnets (zones).
-    
+        ns_id: Namespace ID
+        infra_id: Infra to add the node group to
+        spec_id: Spec id from recommend_vm_spec()
+        image_id: cspImageName from search_images(matched_spec_id=spec_id)
+        name: Node group name; its nodes are named "<name>-1", "<name>-2", ...
+        node_group_size: Number of nodes (default 1)
+        description: Node group description
+        root_disk_type: Root disk type; "" for the provider default
+        root_disk_size: Root disk size in GB; 0 for the provider default
+        connection_name: Connection to use instead of the spec's own
+        zone: Availability zone, e.g. "ap-northeast-2a"
+        vnet_template_id: VNet template ID
+        sg_template_id: Security group template ID
+        label: Key-value pairs; label_selector on a remote command targets them
+        post_script: Commands run over SSH on the new nodes once they are up:
+            {"phases": [{"command": ["..."]}]}
+        post_script_async: True returns when the nodes are up and runs post_script in the
+            background
+        init_script: First-boot script for the new nodes - see create_infra_dynamic()
+        distribute_subnets: Spread the new nodes across the VNet's subnets (zones)
+        budget_ack: Approval id from request_budget_increase(), to pass a spend limit once
+        confirm: Set True once a person has agreed to the added machines and their cost
+
     Returns:
         The Infra after the addition; addedNodeIds lists the new nodes.
     """
-    data = {
-        "specId": spec_id,
-        "imageId": image_id,
-        "nodeGroupSize": node_group_size
-    }
-    if name:
-        data["name"] = name
-    if description:
-        data["description"] = description
-    if root_disk_type:
-        data["rootDiskType"] = root_disk_type
-    if root_disk_size:
-        data["rootDiskSize"] = root_disk_size
-    if connection_name:
-        data["connectionName"] = connection_name
-    if zone:
-        data["zone"] = zone
-    if vnet_template_id:
-        data["vNetTemplateId"] = vnet_template_id
-    if sg_template_id:
-        data["sgTemplateId"] = sg_template_id
-    if label:
-        data["label"] = label
-    if init_script:
-        data["initScript"] = init_script
-    if distribute_subnets:
-        data["distributeSubnets"] = True
-    # Bootstrap commands run on the NEW nodes only (phases without an explicit
-    # target are scoped to this nodeGroup by the server)
-    params = None
-    if post_script and post_script.get("phases"):
-        data["postScript"] = post_script
-        if post_script_async:
-            params = {"postScriptAsync": "true"}
-    
-    result = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic", json_data=data, params=params)
+    body = _nodegroup_request_body(spec_id, image_id, name, node_group_size, description,
+                                   root_disk_type, root_disk_size, connection_name, zone,
+                                   post_script, init_script, vnet_template_id, sg_template_id,
+                                   label, distribute_subnets)
+    plan = [{"name": name or "-", "nodeGroupSize": node_group_size,
+             "specId": spec_id, "imageId": image_id}]
+    unconfirmed = _confirm_creation_plan(plan, f"node group {name or '(unnamed)'} in {infra_id}",
+                                         confirm)
+    if unconfirmed:
+        return unconfirmed
+    over_budget = _budget_refusal(plan, budget_ack)
+    if over_budget:
+        return over_budget
+
+    params = {"postScriptAsync": "true"} if post_script_async and "postScript" in body else None
+    result = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic",
+                         json_data=body, params=params, timeout_override=(60, 3600))
     if not isinstance(result, dict) or "error" in result:
         return result
+    _record_spend(plan)
     added = result.get("newNodeList") or [
         n.get("id") for n in (result.get("node") or []) if name and n.get("nodeGroupId") == name]
     result = _shape_infra(result, "summary")
     if added:
         result["addedNodeIds"] = added
     return result
+
 
 # Tool: Review NodeGroup Dynamic Request
 @tool()
@@ -5264,55 +4056,34 @@ def review_nodegroup_dynamic(
     init_script: Optional[Dict] = None
 ) -> Dict:
     """
-    Review/validate a NodeGroup configuration before adding it to an existing Infra.
-    
-    Similar to review_infra_dynamic_request but for a single NodeGroup being added
-    to an already-running Infra. Use this before add_nodegroup_dynamic().
-    
+    Check a node group before adding it to an existing Infra with add_nodegroup_dynamic().
+
+    The same checks as review_infra_dynamic_request(), for one group. Nothing is created.
+
     Args:
-        ns_id: Namespace ID (REQUIRED)
-        infra_id: Infra ID (REQUIRED)
-        spec_id: VM specification ID (REQUIRED)
-        image_id: CSP-specific image ID (REQUIRED)
-        name: NodeGroup name (optional)
-        node_group_size: Number of VMs (int, default 1)
-        description: NodeGroup description (optional)
-        root_disk_type: Root disk type (optional)
-        root_disk_size: Root disk size in GB (int, 0 for CSP default)
-        connection_name: Specific connection name (optional)
-        zone: Availability zone (optional)
+        ns_id: Namespace ID
+        infra_id: Infra the node group would join
+        spec_id: Spec id from recommend_vm_spec()
+        image_id: cspImageName from search_images(matched_spec_id=spec_id)
+        name: Node group name
+        node_group_size: Number of nodes (default 1)
+        description: Node group description
+        root_disk_type: Root disk type; "" for the provider default
+        root_disk_size: Root disk size in GB; 0 for the provider default
+        connection_name: Connection to use instead of the spec's own
+        zone: Availability zone
         post_script: Bootstrap to validate (same shape as add_nodegroup_dynamic)
         init_script: First-boot script to validate (same shape as add_nodegroup_dynamic)
-    
-    Returns:
-        Validation result including spec/image availability, cost estimation,
-        and compatibility with the existing Infra
-    """
-    data = {
-        "specId": spec_id,
-        "imageId": image_id,
-        "nodeGroupSize": node_group_size
-    }
-    if name:
-        data["name"] = name
-    if description:
-        data["description"] = description
-    if root_disk_type:
-        data["rootDiskType"] = root_disk_type
-    if root_disk_size:
-        data["rootDiskSize"] = root_disk_size
-    if connection_name:
-        data["connectionName"] = connection_name
-    if zone:
-        data["zone"] = zone
-    # Review accepts the same body as add_nodegroup_dynamic, so a reviewed request
-    # can be submitted unchanged (bootstrap phases are validated here too)
-    if post_script and post_script.get("phases"):
-        data["postScript"] = post_script
-    if init_script:
-        data["initScript"] = init_script
 
-    return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamicReview", json_data=data)
+    Returns:
+        canCreate, status, estimatedCost, the spec and image checks with quota, and
+        errors, warnings and info.
+    """
+    body = _nodegroup_request_body(spec_id, image_id, name, node_group_size, description,
+                                   root_disk_type, root_disk_size, connection_name, zone,
+                                   post_script, init_script)
+    return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamicReview",
+                       json_data=body)
 
 # Tool: Delete Infra
 @tool(mutating=True)
@@ -5327,75 +4098,70 @@ def terminate_infra(ns_id: str, infra_id: str, confirm: bool = False) -> Dict:
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-        confirm: Must be True to proceed. Ask the user first - this is the only
-            thing standing between a request and the destructive action.
+        confirm: Must be True to proceed. Ask the user first.
 
     Returns:
         The deletion result, and leftover_resources: the security groups, key pair and
         VNet the Infra used, which outlive it.
     """
     guard = _require_confirmation(
-        confirm, "terminating infrastructure",
+        confirm, f"terminating Infra {infra_id}",
         "every node in this Infra is terminated at the provider; this cannot be undone")
     if guard:
         return guard
-    # Get Infra associated resources before deletion for guidance
-    try:
-        associated_resources = get_infra_associated_resources(ns_id, infra_id)
-    except:
-        associated_resources = None
-    
-    # Delete the Infra.
-    # Always option=terminate: it terminates CSP nodes before removing CB-TB records.
-    # option=force is deliberately NOT exposed here — it drops CB-TB metadata without
-    # confirming CSP termination, leaving orphaned (billing) instances that also block
-    # VNet/SecurityGroup cleanup. If deletion is rejected because termination is still
-    # in progress, retry in a few minutes instead of forcing.
-    result = api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}?option=terminate")
-    
-    if isinstance(result, dict) and "error" not in result:
-        _store_interaction_memory(
-            user_request=f"Delete Infra '{infra_id}' in namespace '{ns_id}'",
-            llm_response=f"Successfully deleted Infra '{infra_id}'",
-            operation_type="infra_management",
-            context_data={"namespace_id": ns_id, "infra_id": infra_id, "operation": "delete"},
-            status="completed"
-        )
-        # The Infra's security groups and key pair outlive it, and a later Infra of the
-        # same name collides with them.
-        leftover = {}
-        if isinstance(associated_resources, dict) and "error" not in associated_resources:
-            leftover = {k: associated_resources.get(k) or [] for k in
-                        ("vNetIds", "securityGroupIds", "sshKeyIds")}
-        result["leftover_resources"] = leftover
-        result["next"] = ("release_resources(ns_id, dry_run=True) lists what nothing uses "
-                          "any more; confirm=True removes only those, leaving other Infras' "
-                          "resources alone")
+    associated = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/associatedResources")
+    # option=terminate ends the instances before the records go; option=force is not offered
+    result = api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}",
+                         params={"option": "terminate"}, timeout_override=(60, 1800))
+    if not isinstance(result, dict) or "error" in result:
+        return result
+    if isinstance(associated, dict) and "error" not in associated:
+        result["leftover_resources"] = {k: associated.get(k) or [] for k in
+                                        ("vNetIds", "securityGroupIds", "sshKeyIds")}
+    result["next"] = ("release_resources(ns_id, dry_run=True) lists what nothing uses any "
+                      "more; confirm=True removes only those")
     return result
+
+
+_INFRA_ACTIONS = ("suspend", "resume", "reboot", "terminate", "refine", "continue",
+                  "withdraw", "reconcile", "abort")
+
 
 # Tool: Control Infra
 @tool(mutating=True)
-def control_infra(ns_id: str, infra_id: str, action: str, force: bool = False) -> Dict:
+def control_infra(ns_id: str, infra_id: str, action: str, force: bool = False,
+                  confirm: bool = False) -> Dict:
     """
-    Control an Infra. Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, reconcile, abort)
+    Apply a lifecycle action to every node of an Infra.
 
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-        action: Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, reconcile, abort)
-        force: Force the action even if the Infra is in an in-progress state
+        action: "suspend" | "resume" | "reboot" | "terminate" (ends the instances, keeps
+            the Infra record) | "refine" (drop Failed nodes from the Infra) |
+            "continue" / "withdraw" (start or cancel an Infra created with hold) |
+            "reconcile" / "abort" (recover an Infra stuck mid-provisioning: adopt what
+            exists at the CSP, or terminate what is unfinished)
+        force: Apply even when the Infra is in an in-progress state
+        confirm: Must be True for "terminate" and "abort". Ask the user first.
 
     Returns:
-        Control result
+        The action result; nodeResults lists the nodes it failed on.
     """
-    valid_actions = ["refine", "suspend", "resume", "reboot", "terminate", "continue", "withdraw", "reconcile", "abort"]
-    if action not in valid_actions:
-        return {"error": f"Unsupported action: {action}. Supported actions: {', '.join(valid_actions)}"}
-
+    action = (action or "").strip().lower()
+    if action not in _INFRA_ACTIONS:
+        return {"error": f"unknown action {action!r}; expected one of {', '.join(_INFRA_ACTIONS)}"}
+    if action in ("terminate", "abort"):
+        guard = _require_confirmation(
+            confirm, f"{action} on Infra {infra_id}",
+            "instances are terminated at the provider; this cannot be undone")
+        if guard:
+            return guard
     params = {"action": action}
     if force:
         params["force"] = "true"
-    return api_request("GET", f"/ns/{ns_id}/control/infra/{infra_id}", params=params)
+    return api_request("GET", f"/ns/{ns_id}/control/infra/{infra_id}", params=params,
+                       timeout_override=(60, 1800))
 
 #####################################
 # Node-level control and scaling
@@ -5502,14 +4268,15 @@ def scale_out_nodegroup(ns_id: str, infra_id: str, nodegroup_id: str, add_count:
     unconfirmed = _confirm_creation_plan(plan, f"{add_count} more node(s) in {nodegroup_id}", confirm)
     if unconfirmed:
         return unconfirmed
-    over_budget = _check_budget(plan, budget_ack)
+    over_budget = _budget_refusal(plan, budget_ack)
     if over_budget:
         return over_budget
 
     result = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodegroup/{nodegroup_id}",
-                         json_data={"numNodesToAdd": add_count})
+                         json_data={"numNodesToAdd": add_count}, timeout_override=(60, 3600))
     if not isinstance(result, dict) or "error" in result:
         return result
+    _record_spend(plan)
     before = set(node_ids)
     added = [n.get("id") for n in (result.get("node") or [])
              if n.get("nodeGroupId") == nodegroup_id and n.get("id") not in before]
@@ -5553,9 +4320,9 @@ def retry_failed_nodes(ns_id: str, infra_id: str, dry_run: bool = True,
         confirm: Required when dry_run=False - the retry creates billable machines.
 
     Returns:
-        dry_run: retriableCount, notRetriableCount, costPerHourIfAll and a plan per node
-        (action, reason, escalation). Otherwise succeededCount, failedCount and per-node
-        results.
+        As a preview: retriableCount, notRetriableCount, costPerHourIfAll and a plan per
+        node (action, reason, escalation). Otherwise succeededCount, failedCount and
+        per-node results.
     """
     body: Dict[str, Any] = {"targets": []}
     for node_id in node_ids or []:
@@ -5680,23 +4447,59 @@ def recommend_alternative_node_config(source_spec_id: str, target_provider: str,
     return out
 
 
-# Tool: Root and data disk choices for a spec
+# Tool: Zones and disks usable with a spec
 @tool()
-def get_spec_disk_options(spec_id: str, image_id: Optional[str] = None) -> Dict:
+def get_spec_options(spec_id: str, image_id: Optional[str] = None,
+                     refresh: bool = False) -> Dict:
     """
-    Disk types and size ranges usable with a spec - the valid values for rootDiskType
-    and rootDiskSize in a node group.
+    What a node group may ask for with this spec: zones, root disk types and sizes.
+
+    These are the valid values for zone, rootDiskType and rootDiskSize in a node group,
+    plus whether the provider can start the spec right now.
 
     Args:
         spec_id: Exact spec id from recommend_vm_spec()
         image_id: Image the node will boot; adds the image's minimum root disk size
+        refresh: True asks the provider now instead of using the cached availability
 
     Returns:
-        defaultRootDiskType, whether the root disk is selectable, and per disk type its
-        availability and size range.
+        availability (status: Available | SoldOut | QuotaExceeded | Unsupported |
+        Unverified, with availableZones, unavailableZones and quota), and disk
+        (defaultRootDiskType, rootDiskSelectable, and per disk type its size range).
     """
-    return api_request("GET", f"/ns/system/resources/spec/{spec_id}/diskOptions",
+    spec = api_request("GET", f"/ns/system/resources/spec/{spec_id}",
+                       params={"forceRefresh": "true"} if refresh else None)
+    if not isinstance(spec, dict) or "error" in spec:
+        return spec
+    availability = {
+        "status": spec.get("availabilityStatus") or "Unverified",
+        "reason": spec.get("availabilityReason"),
+        "availableZones": spec.get("availableZones"),
+        "unavailableZones": spec.get("unavailableZones"),
+        "quota": spec.get("availabilityQuota"),
+        "checkedAt": spec.get("availabilityCheckedAt"),
+    }
+    out: Dict[str, Any] = {
+        "spec": _shape_spec(spec),
+        "availability": {k: v for k, v in availability.items() if v not in (None, "", [], {})},
+    }
+    disk = api_request("GET", f"/ns/system/resources/spec/{spec_id}/diskOptions",
                        params={"imageId": image_id} if image_id else None)
+    if not isinstance(disk, dict) or "error" in disk:
+        out["disk"] = disk
+        return out
+    types = [t for t in disk.get("diskTypes") or [] if isinstance(t, dict)]
+    usable = [t for t in types if t.get("rootDisk") and t.get("available") is not False]
+    out["disk"] = {k: disk[k] for k in ("supported", "rootDiskSelectable", "defaultRootDiskType",
+                                        "imageMinRootDiskSizeGB", "note", "liveCheckHint")
+                   if disk.get(k) not in (None, "", [], {})}
+    out["disk"]["rootDiskTypes"] = [
+        {k: t[k] for k in ("diskType", "description", "rootDiskSizeGB", "note") if t.get(k)}
+        for t in usable]
+    unusable = [t.get("diskType") for t in types if t not in usable]
+    if unusable:
+        out["disk"]["notUsableAsRootDisk"] = unusable
+    return out
 
 
 #####################################
@@ -5895,13 +4698,33 @@ def inspect_csp_resources(connection_name: str, resource_type: str = "node") -> 
     Args:
         connection_name: Connection to inspect, e.g. "aws-ap-northeast-2"
         resource_type: "node" (default) | "vNet" | "subnet" | "securityGroup" | "sshKey"
+            list what the provider has and CB-Tumblebug does not, whatever its state - a
+            terminated machine the provider still lists is included. "audit" checks only
+            machines CB-Tumblebug created, by their state at the provider: the check to
+            run after a termination.
 
     Returns:
-        Counts (onTumblebug, onCspTotal, onCspOnly) and the resources found only at the CSP.
+        Counts (onTumblebug, onCspTotal, onCspOnly) and the resources found only at the
+        CSP. For "audit": clean, and when not clean ghostAlive (recorded as gone, still
+        running), untrackedAlive (running, no record) and residuals (leftover parts).
     """
+    if resource_type == "audit":
+        report = api_request("POST", "/auditCspResources",
+                             json_data={"connectionName": connection_name},
+                             timeout_override=(60, 900))
+        if not isinstance(report, dict) or "error" in report:
+            return report
+        out = {"connectionName": connection_name, "clean": report.get("clean"),
+               "summary": {k: v for k, v in (report.get("summary") or {}).items() if v}}
+        for conn in report.get("connections") or []:
+            for key in ("error", "ghostAlive", "untrackedAlive", "trackedGone", "residuals"):
+                found = conn.get(key)
+                if found:
+                    out[key] = found[:NODE_LIST_LIMIT] if isinstance(found, list) else found
+        return out
     if resource_type not in _INSPECT_TYPES:
         return {"error": f"unknown resource_type {resource_type!r}; expected one of "
-                         f"{', '.join(_INSPECT_TYPES)}"}
+                         f"{', '.join(_INSPECT_TYPES)}, audit"}
     result = api_request("POST", "/inspectResources",
                          json_data={"connectionName": connection_name,
                                     "resourceType": resource_type},
@@ -5982,517 +4805,847 @@ def register_csp_resources(ns_id: str, connection_name: str,
         out["connections"].append(row)
     return out
 
-#####################################
-# NLB Management (Network Load Balancer)
-#####################################
-
-# # Tool: Create Multi-Cloud NLB
-# @mcp.tool()
-# def create_mc_nlb(ns_id: str, infra_id: str, port: int = 80, type: str = "PUBLIC", scope: str = "REGION") -> Dict:
-#     """
-#     Create Multi-Cloud NLB
-    
-#     Args:
-#         ns_id: Namespace ID
-#         infra_id: Infra ID
-#         port: Port number
-#         type: NLB type (PUBLIC/PRIVATE)
-#         scope: NLB scope (REGION)
-    
-#     Returns:
-#         Created MC-NLB information
-#     """
-#     data = {
-#         "type": type,
-#         "scope": scope,
-#         "listener": {
-#             "Protocol": "TCP",
-#             "Port": str(port)
-#         },
-#         "targetGroup": {
-#             "Protocol": "TCP",
-#             "Port": str(port)
-#         },
-#         "HealthChecker": {
-#             "Interval": "default",
-#             "Timeout": "default",
-#             "Threshold": "default"
-#         }
-#     }
-    
-#     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/mcSwNlb", json_data=data)
-
-# # Tool: Create Regional NLB
-# @mcp.tool()
-# def create_region_nlb(
-#     ns_id: str, 
-#     infra_id: str, 
-#     nodegroup_id: str, 
-#     port: int = 80, 
-#     type: str = "PUBLIC", 
-#     scope: str = "REGION"
-# ) -> Dict:
-#     """
-#     Create Regional NLB
-    
-#     Args:
-#         ns_id: Namespace ID
-#         infra_id: Infra ID
-#         nodegroup_id: NodeGroup ID
-#         port: Port number
-#         type: NLB type (PUBLIC/PRIVATE)
-#         scope: NLB scope (REGION)
-    
-#     Returns:
-#         Created NLB information
-#     """
-#     data = {
-#         "type": type,
-#         "scope": scope,
-#         "listener": {
-#             "Protocol": "TCP",
-#             "Port": str(port)
-#         },
-#         "targetGroup": {
-#             "Protocol": "TCP",
-#             "Port": str(port),
-#             "nodeGroupId": nodegroup_id
-#         },
-#         "HealthChecker": {
-#             "Interval": "default",
-#             "Timeout": "default",
-#             "Threshold": "default"
-#         }
-#     }
-    
-#     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nlb", json_data=data)
-
-# # Tool: Delete NLB
-# @mcp.tool()
-# def delete_nlb(ns_id: str, infra_id: str, nodegroup_id: str) -> Dict:
-#     """
-#     Delete NLB
-    
-#     Args:
-#         ns_id: Namespace ID
-#         infra_id: Infra ID
-#         nodegroup_id: NodeGroup ID
-    
-#     Returns:
-#         Deletion result
-#     """
-#     return api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}/nlb/{nodegroup_id}")
 
 #####################################
-# Memory & Interaction History Management
+# Single resources: delete, restore
 #####################################
 
-# Helper function: Store user interaction in memory
-def _store_interaction_memory(
-    user_request: str,
-    llm_response: str,
-    operation_type: str,
-    context_data: Optional[Dict] = None,
-    status: str = "completed",
-    **_ignored
-) -> Dict:
-    """Record an operation for the server log only.
+_MANAGED_RESOURCE_KINDS = ("vNet", "securityGroup", "sshKey", "dataDisk", "customImage")
 
-    This used to append to a process-local list that every caller shared: it leaked one
-    session's request text to the next, vanished on restart, and had no key. Nothing reads it
-    back any more - session continuity is the wrapper's automatic journal in etcd, keyed by
-    session_id - so what remains is a log line.
+
+# Tool: Delete one resource, or cancel a deletion that is still pending
+@tool(mutating=True)
+def manage_resource(action: str, kind: str, resource_id: str,
+                    ns_id: str = DEFAULT_NAMESPACE, confirm: bool = False) -> Dict:
     """
-    logger.info(f"operation: {operation_type} status={status} :: {str(user_request)[:200]}")
-    return {"recorded": True}
+    Delete one resource, or cancel a deletion the provider has not confirmed yet.
 
-# Helper function: Retrieve interaction history
-def _resume_session(
-    operation_type: Optional[str] = None,
-    days_back: int = 7,
-    max_results: int = 10
-) -> Dict:
-    """
-    Retrieve recent interaction history from memory.
-    
+    release_resources() cleans up everything a namespace no longer uses; this acts on one
+    resource. A resource whose deletion is unconfirmed keeps its record and shows
+    deletionRequestedAt in get_resources(): "delete" tries again, "restore" cancels the
+    deletion and returns it to service.
+
     Args:
-        operation_type: Filter by operation type (optional)
-        days_back: How many days back to search (default: 7)
-        max_results: Maximum number of results to return (default: 10)
-    
-    Returns:
-        Dictionary with interaction history and summary
-    """
-    try:
-        from datetime import datetime, timedelta
-        
-        # Search for recent interactions
-        search_query = "Interaction"
-        if operation_type:
-            search_query += f" {operation_type}"
-        
-        # Use local memory storage for search
-        interactions = []
-        
-        if hasattr(_store_interaction_memory, '_local_memory'):
-            cutoff_date = datetime.now() - timedelta(days=days_back)
-            
-            for memory_item in _store_interaction_memory._local_memory:
-                try:
-                    interaction_time = datetime.fromisoformat(memory_item["timestamp"])
-                    if interaction_time >= cutoff_date:
-                        # Filter by operation type if specified
-                        if not operation_type or memory_item.get("operation_type") == operation_type:
-                            interactions.append({
-                                "id": memory_item["interaction_id"],
-                                "timestamp": memory_item["timestamp"],
-                                "observations": memory_item["interaction_observations"],
-                                "operation_type": memory_item.get("operation_type", "unknown"),
-                                "status": memory_item.get("status", "unknown")
-                            })
-                except (ValueError, KeyError):
-                    continue
-        
-        # Sort by timestamp (newest first)
-        interactions.sort(key=lambda x: x["timestamp"], reverse=True)
-        
-        return {
-            "interactions": interactions[:max_results],
-            "total_found": len(interactions),
-            "search_period_days": days_back,
-            "operation_type_filter": operation_type
-        }
-        
-    except Exception as e:
-        return {
-            "error": f"Failed to retrieve interaction history: {str(e)}",
-            "interactions": [],
-            "total_found": 0
-        }
+        action: "delete" | "restore"
+        kind: "vNet" | "securityGroup" | "sshKey" | "dataDisk" | "customImage"
+            ("restore" is not available for customImage)
+        resource_id: Resource ID
+        ns_id: Namespace ID
+        confirm: Must be True for "delete". Ask the user first.
 
-# Helper function: Create session summary
-def _create_session_summary() -> Dict:
-    """
-    Create a comprehensive summary of current session activities.
-    
     Returns:
-        Dictionary with session summary and key insights
+        The server's message.
     """
+    action = (action or "").strip().lower()
+    if action not in ("delete", "restore"):
+        return {"error": f"unknown action {action!r}; expected one of delete, restore"}
+    if kind not in _MANAGED_RESOURCE_KINDS:
+        return {"error": f"unknown kind {kind!r}; expected one of "
+                         f"{', '.join(_MANAGED_RESOURCE_KINDS)}"}
+    path = f"/ns/{ns_id}/resources/{kind}/{resource_id}"
+    if action == "restore":
+        if kind == "customImage":
+            return {"error": "restore is not supported for kind 'customImage'"}
+        return api_request("PUT", f"{path}/restore")
+    guard = _require_confirmation(
+        confirm, f"deleting {kind} {resource_id}",
+        "the resource is deleted at the provider; anything still using it loses it")
+    if guard:
+        return guard
+    holders = []
+    owner = _managed_service_resources(ns_id).get((kind, resource_id))
+    if owner:
+        holders.append(owner)
+    if kind == "vNet":
+        groups = api_request("GET", f"/ns/{ns_id}/resources/securityGroup")
+        holders += [f"securityGroup {g.get('id')}"
+                    for g in (groups.get("securityGroup") or [] if isinstance(groups, dict) else [])
+                    if isinstance(g, dict) and g.get("vNetId") == resource_id]
+    if holders:
+        # The server would remove the subnets and then fail on the network itself
+        return {"error": {
+            "message": f"{kind} {resource_id} is still used by {len(holders)} resource(s); "
+                       f"nothing was deleted",
+            "code": "CONFLICT", "usedBy": holders[:20],
+            "how_to_proceed": "delete those first; release_resources() removes everything "
+                              "unused in the right order",
+        }}
+    # A VNet goes together with its subnets
+    return api_request("DELETE", path, params={"action": "withsubnets"} if kind == "vNet" else None)
+
+
+#####################################
+# Custom images (snapshots)
+#####################################
+
+# Tool: Snapshot nodes into custom images
+@tool(mutating=True, additive=True)
+def create_custom_image(ns_id: str, infra_id: str, name: str,
+                        node_id: Optional[str] = None, description: str = "") -> Dict:
+    """
+    Snapshot a node - or one node of every node group - into a reusable custom image.
+
+    The image keeps what was installed on the node, so later nodes start ready. Use it
+    with search_images(custom_images_of=ns_id) and pass its cspImageName as imageId; it
+    works only in the provider and region it was taken in. Snapshots are billed storage.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        name: Image name. Without node_id each image is named "<name>-<nodeGroupId>".
+        node_id: Snapshot just this node. Omit for one image per node group.
+        description: Image description
+
+    Returns:
+        The image, or per node group the image id and status. An image is usable when
+        get_resources(kind='customImage') shows it Available.
+    """
+    body = {"name": name}
+    if description:
+        body["description"] = description
+    path = f"/ns/{ns_id}/infra/{infra_id}"
+    if node_id:
+        path += f"/node/{node_id}"
+    result = api_request("POST", f"{path}/snapshot", json_data=body,
+                         timeout_override=(60, 3600))
+    if isinstance(result, dict) and isinstance(result.get("results"), list):
+        result = dict(result)
+        result["results"] = [{k: r[k] for k in ("nodeGroupId", "nodeId", "imageId", "status",
+                                                "error") if r.get(k)}
+                             for r in result["results"]]
+    elif isinstance(result, dict) and "error" not in result:
+        result = _summarize_resource(result, _RESOURCE_KINDS["customImage"][1] + ("cspImageId",))
+        result["next"] = ("the image is usable once get_resources(kind='customImage') shows "
+                          "status Available; pass its id as imageId")
+    return result
+
+
+#####################################
+# Object storage (buckets)
+#####################################
+
+# Tool: Buckets and their objects
+@tool(mutating=True, read_actions=("support", "list", "get", "list_objects"))
+def manage_object_storage(action: str, ns_id: str = DEFAULT_NAMESPACE,
+                          bucket_id: Optional[str] = None,
+                          connection_name: Optional[str] = None,
+                          object_key: Optional[str] = None,
+                          operation: str = "download", expires_seconds: int = 3600,
+                          description: str = "", versioning: Optional[bool] = None,
+                          cors_rules: Optional[List[Dict]] = None, force: bool = False,
+                          confirm: bool = False) -> Dict:
+    """
+    Create and delete object storage buckets, list objects, and hand out presigned URLs.
+
+    Object data never passes through here: "presigned_url" returns a time-limited URL the
+    holder uses directly - `curl -T file "<url>"` to upload, `curl -o file "<url>"` to
+    download - which is how a node moves data without holding cloud credentials.
+
+    Args:
+        action: "support" (what each provider offers) | "list" | "get" | "create" |
+            "list_objects" | "presigned_url" | "delete_object" | "set_versioning" |
+            "set_cors" | "empty" (delete every object, keep the bucket) | "delete"
+        ns_id: Namespace ID
+        bucket_id: Bucket id. For "create" it is the bucket name: 3-63 characters of
+            lowercase letters, digits and hyphens, globally unique at most providers.
+        connection_name: For "create": where the bucket lives, e.g. "aws-ap-northeast-2"
+        object_key: Object name inside the bucket, e.g. "logs/node-1.tar.gz"
+        operation: For "presigned_url": "download" (default) | "upload"
+        expires_seconds: For "presigned_url": lifetime of the URL (default 3600)
+        description: For "create": bucket description
+        versioning: For "set_versioning": True keeps old versions of overwritten and
+            deleted objects, False suspends that
+        cors_rules: For "set_cors": rules a browser needs to use the bucket directly, e.g.
+            [{"allowedOrigin": ["*"], "allowedMethod": ["GET", "PUT"],
+            "allowedHeader": ["*"], "exposeHeader": ["ETag"], "maxAgeSeconds": 3000}];
+            [] removes them
+        force: For "delete": True empties a bucket that still holds objects, then deletes it
+        confirm: Must be True for "delete", "empty" and "delete_object". Ask the user first.
+
+    Returns:
+        The bucket (cspResourceName is its name at the provider; versioning and cors when
+        set), the object list, the URL with its method and any requiredHeaders the request
+        must carry, or the result of the change.
+    """
+    action = (action or "").strip().lower()
+    base = f"/ns/{ns_id}/resources/objectStorage"
+    if action == "support":
+        return api_request("GET", "/objectStorage/support")
+    if action == "list":
+        return get_resources("objectStorage", ns_id)
+    if action == "create":
+        if not (bucket_id and connection_name):
+            return {"error": "bucket_id and connection_name is required for action='create'"}
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]", bucket_id):
+            return {"error": "bucket_id is required to be 3-63 characters of lowercase "
+                             "letters, digits and hyphens"}
+        body = {"bucketName": bucket_id, "connectionName": connection_name}
+        if description:
+            body["description"] = description
+        return _shape_bucket(api_request("PUT", base, json_data=body))
+
+    if action not in ("get", "list_objects", "presigned_url", "delete_object",
+                      "set_versioning", "set_cors", "empty", "delete"):
+        return {"error": f"unknown action {action!r}; expected one of support, list, get, "
+                         f"create, list_objects, presigned_url, delete_object, "
+                         f"set_versioning, set_cors, empty, delete"}
+    if not bucket_id:
+        return {"error": f"bucket_id is required for action={action!r}"}
+    bucket = f"{base}/{bucket_id}"
+    if action == "get":
+        found = _shape_bucket(api_request("GET", bucket))
+        if isinstance(found, dict) and "error" not in found:
+            state = api_request("GET", f"{bucket}/versioning")
+            if isinstance(state, dict) and state.get("status"):
+                found["versioning"] = state["status"]
+            rules = api_request("GET", f"{bucket}/cors")
+            if isinstance(rules, dict) and rules.get("corsRule"):
+                found["cors"] = rules["corsRule"]
+        return found
+    if action == "set_versioning":
+        if versioning is None:
+            return {"error": "versioning is required for action='set_versioning'"}
+        return api_request("PUT", f"{bucket}/versioning",
+                           json_data={"status": "Enabled" if versioning else "Suspended"})
+    if action == "set_cors":
+        if cors_rules is None:
+            return {"error": "cors_rules is required for action='set_cors'"}
+        if not cors_rules:
+            return api_request("DELETE", f"{bucket}/cors")
+        return api_request("PUT", f"{bucket}/cors", json_data={"corsRule": list(cors_rules)})
+    if action == "empty":
+        guard = _require_confirmation(confirm, f"emptying bucket {bucket_id}",
+                                      "every object in the bucket is deleted")
+        if guard:
+            return guard
+        return api_request("DELETE", bucket, params={"option": "empty"})
+    if action == "list_objects":
+        result = api_request("GET", f"{bucket}/object")
+        objects = result.get("objects") if isinstance(result, dict) else None
+        if isinstance(objects, list) and len(objects) > 200:
+            result = {"objects": objects[:200],
+                      "objectsCapped": {"total": len(objects), "shown": 200}}
+        return result
+    if action == "delete":
+        guard = _require_confirmation(
+            confirm, f"deleting bucket {bucket_id}",
+            "the bucket goes, and with force=True every object in it")
+        if guard:
+            return guard
+        return api_request("DELETE", bucket, params={"option": "force"} if force else None)
+
+    if not object_key:
+        return {"error": f"object_key is required for action={action!r}"}
+    from urllib.parse import quote
+    target = f"{bucket}/object/{quote(object_key, safe='')}"
+    if action == "delete_object":
+        guard = _require_confirmation(confirm, f"deleting object {object_key}",
+                                      "the object cannot be recovered unless versioning is on")
+        if guard:
+            return guard
+        return api_request("DELETE", target)
+    if operation not in ("download", "upload"):
+        return {"error": f"unknown operation {operation!r}; expected one of download, upload"}
+    return api_request("POST", f"{target}/presignedUrl",
+                       params={"operation": operation, "expires": int(expires_seconds)})
+
+
+def _shape_bucket(bucket):
+    """A bucket record without what repeats its id or reports nothing wrong."""
+    if not isinstance(bucket, dict) or "error" in bucket:
+        return bucket
+    out = {k: v for k, v in _slim_resource(bucket).items()
+           if k not in ("resourceType", "maxKeys", "contents") and v not in _EMPTY}
+    if isinstance(bucket.get("contents"), list) and bucket["contents"]:
+        out["objectCount"] = len(bucket["contents"])
+    for dup, of in (("name", "id"), ("cspResourceId", "cspResourceName"), ("uid", "cspResourceName")):
+        if out.get(dup) == out.get(of):
+            out.pop(dup, None)
+    conditions = out.get("conditions")
+    if isinstance(conditions, list) and all(
+            isinstance(c, dict) and c.get("status") == "True" for c in conditions):
+        out.pop("conditions")
+    return out
+
+
+#####################################
+# Load balancers
+#####################################
+
+def _shape_nlb(nlb):
+    if not isinstance(nlb, dict) or "error" in nlb:
+        return nlb
+    low = {k[:1].lower() + k[1:]: v for k, v in nlb.items()}
+    out = {k: low[k] for k in ("id", "connectionName", "type", "scope", "status",
+                               "description", "createdTime", "location")
+           if low.get(k) not in _EMPTY}
+    for part, keys in (("listener", ("protocol", "port", "dnsName", "ip")),
+                       ("targetGroup", ("protocol", "port", "nodeGroupId", "nodes")),
+                       ("healthChecker", ("protocol", "port", "interval", "timeout", "threshold"))):
+        value = low.get(part)
+        if isinstance(value, dict):
+            out[part] = {k: value[k] for k in keys if value.get(k) not in _EMPTY}
+    return out
+
+
+def _global_nlb_result(ns_id, infra_id, made, port, protocol):
+    """Open the listener port on the HAProxy hosts and report where clients connect."""
+    host = made.get("mcNlbHostInfo") or {}
+    nodes = [n for n in host.get("node") or [] if isinstance(n, dict)]
+    groups = sorted({sg for n in nodes for sg in n.get("securityGroupIds") or []})
+    rule = {"Ports": str(port), "Protocol": "UDP" if protocol.upper() == "UDP" else "TCP",
+            "Direction": "inbound", "CIDR": "0.0.0.0/0"}
+    unopened = [sg for sg in groups
+                if "error" in (_add_firewall_rules(ns_id, sg, [rule]) or {})]
+    log = (made.get("deploymentLog") or {}).get("results") or []
+    failed = [r.get("nodeId") for r in log if isinstance(r, dict) and r.get("err")]
+    out = {"hostInfraId": host.get("id") or f"{infra_id}-nlb",
+           "addresses": [f"{n.get('publicIP')}:{port}" for n in nodes if n.get("publicIP")],
+           "hosts": [{k: n[k] for k in ("id", "status", "publicIP", "specId") if n.get(k)}
+                     for n in nodes]}
+    if failed:
+        out["installFailedOn"] = failed
+    if unopened:
+        out["listenerNotOpenedOn"] = unopened
+    out["next"] = (f"clients use any of addresses; target nodes must accept the target port "
+                   f"from the hosts; terminate_infra('{out['hostInfraId']}') removes it")
+    return out
+
+
+# Tool: Network load balancers of an Infra
+@tool(mutating=True, read_actions=("list", "get", "health"))
+def manage_nlb(action: str, ns_id: str, infra_id: str, nlb_id: Optional[str] = None,
+               nodegroup_id: Optional[str] = None, port: int = 80,
+               target_port: Optional[int] = None, protocol: str = "TCP",
+               scope: str = "REGION", confirm: bool = False) -> Dict:
+    """
+    Put a load balancer in front of an Infra's nodes.
+
+    scope "REGION" creates the provider's own NLB in front of one node group, which lives
+    in one region. scope "GLOBAL" covers every node of the Infra, wherever it runs: it
+    builds a billed HAProxy Infra named "<infra_id>-nlb" and opens the listener port on
+    it. It reaches the nodes on their public addresses, so target_port must be open on
+    their SecurityGroups.
+
+    Args:
+        action: "list" | "get" | "health" | "create" | "delete"
+        ns_id: Namespace ID
+        infra_id: Infra whose nodes are the targets
+        nlb_id: NLB id, for get, health and delete. A regional NLB takes the id of its
+            node group.
+        nodegroup_id: For "create" with scope "REGION": the node group to balance
+        port: Listener port (default 80)
+        target_port: Port on the nodes (default: the listener port)
+        protocol: "TCP" (default) | "UDP"; scope "GLOBAL" also takes "HTTP"
+        scope: "REGION" (default) | "GLOBAL"
+        confirm: Must be True for "create" with scope "GLOBAL" and for "delete"
+
+    Returns:
+        The NLB with its listener address (listener.dnsName), the list, or healthyNodes
+        and unhealthyNodes. A global NLB returns its client addresses and host Infra.
+    """
+    action = (action or "").strip().lower()
+    scope = (scope or "REGION").strip().upper()
+    base = f"/ns/{ns_id}/infra/{infra_id}/nlb"
+    if action == "list":
+        result = api_request("GET", base)
+        if isinstance(result, dict) and isinstance(result.get("nlb"), list):
+            result = {"nlb": [_shape_nlb(n) for n in result["nlb"]]}
+        return result
+    if action == "create":
+        if scope not in ("REGION", "GLOBAL"):
+            return {"error": f"unknown scope {scope!r}; expected one of REGION, GLOBAL"}
+        spec = {"protocol": protocol.upper(), "port": str(port)}
+        target = {"protocol": protocol.upper(), "port": str(target_port or port)}
+        body = {"type": "PUBLIC", "scope": scope, "listener": spec, "targetGroup": target,
+                "healthChecker": {"interval": 10, "timeout": 10, "threshold": 3}}
+        if scope == "GLOBAL":
+            guard = _require_confirmation(
+                confirm, f"creating a global load balancer for {infra_id}",
+                f"a new billed Infra '{infra_id}-nlb' running HAProxy is created")
+            if guard:
+                return guard
+            made = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/mcSwNlb",
+                               json_data=body, timeout_override=(60, 3600))
+            if not isinstance(made, dict) or "error" in made:
+                return made
+            return _global_nlb_result(ns_id, infra_id, made, port, protocol)
+        if not nodegroup_id:
+            return {"error": "nodegroup_id is required for action='create' with scope "
+                             "'REGION'"}
+        target["nodeGroupId"] = nodegroup_id
+        created = _shape_nlb(api_request("POST", base, json_data=body,
+                                         timeout_override=(60, 1800)))
+        if isinstance(created, dict) and "error" not in created:
+            created["next"] = ("targets pass their health checks a few minutes after "
+                               "creation: manage_nlb(action='health'); clients use "
+                               "listener.dnsName")
+        return created
+    if action not in ("get", "health", "delete"):
+        return {"error": f"unknown action {action!r}; expected one of list, get, health, "
+                         f"create, delete"}
+    if not nlb_id:
+        return {"error": f"nlb_id is required for action={action!r}"}
+    if action == "get":
+        return _shape_nlb(api_request("GET", f"{base}/{nlb_id}"))
+    if action == "health":
+        health = api_request("GET", f"{base}/{nlb_id}/healthz")
+        if not isinstance(health, dict) or "error" in health:
+            return health
+        low = {k.lower(): v or [] for k, v in health.items()}
+        return {"healthyNodes": low.get("healthynodes", []),
+                "unhealthyNodes": low.get("unhealthynodes", []),
+                "allNodes": low.get("allnodes", [])}
+    guard = _require_confirmation(confirm, f"deleting NLB {nlb_id}",
+                                  "traffic through this load balancer stops")
+    if guard:
+        return guard
+    return api_request("DELETE", f"{base}/{nlb_id}", timeout_override=(60, 1800))
+
+
+#####################################
+# Managed Kubernetes clusters
+#####################################
+
+_K8S_NODEGROUP_SUMMARY = ("name", "status", "specId", "imageId", "desiredNodeSize",
+                          "minNodeSize", "maxNodeSize", "onAutoScaling")
+
+
+def _shape_k8s_cluster(cluster, detail="summary"):
+    if detail == "full" or not isinstance(cluster, dict) or "error" in cluster:
+        return cluster
+    out = {k: cluster[k] for k in ("id", "connectionName", "version", "status", "description",
+                                   "systemMessage", "createdTime", "cspResourceName")
+           if cluster.get(k) not in _EMPTY}
+    network = cluster.get("network")
+    if isinstance(network, dict):
+        out["network"] = {k: network[k] for k in ("vNetId", "subnetIds", "securityGroupIds")
+                          if network.get(k) not in _EMPTY}
+    endpoint = (cluster.get("accessInfo") or {}).get("endpoint")
+    if endpoint:
+        out["endpoint"] = endpoint
+    out["k8sNodeGroupList"] = [
+        {k: g[k] for k in _K8S_NODEGROUP_SUMMARY if g.get(k) not in (None, "")}
+        for g in cluster.get("k8sNodeGroupList") or [] if isinstance(g, dict)]
+    label = {k: v for k, v in (cluster.get("label") or {}).items() if not k.startswith("sys.")}
+    if label:
+        out["label"] = label
+    return out
+
+
+def _standalone_kubeconfig(text, token):
+    """Swap a credential-plugin user for a bearer token, so the file works on its own."""
     try:
-        # Get recent interactions
-        history = _resume_session(days_back=1, max_results=20)
-        
-        if not history.get("interactions"):
-            return {
-                "summary": "No recent interactions found",
-                "key_operations": [],
-                "recommendations": ["Start by checking available namespaces", "Review cloud connections"]
-            }
-        
-        # Analyze interaction patterns
-        operation_types = {}
-        namespaces_used = set()
-        infras_created = []
-        errors_encountered = []
-        
-        for interaction in history["interactions"]:
-            observations = interaction.get("observations", [])
-            
-            # Extract operation type
-            op_type = next((obs.split(": ")[1] for obs in observations if obs.startswith("Operation type:")), "unknown")
-            operation_types[op_type] = operation_types.get(op_type, 0) + 1
-            
-            # Extract namespace information
-            namespace_obs = next((obs for obs in observations if "namespace" in obs.lower()), None)
-            if namespace_obs:
-                namespaces_used.add(namespace_obs)
-            
-            # Extract Infra information
-            infra_obs = next((obs for obs in observations if "infra" in obs.lower()), None)
-            if infra_obs:
-                infras_created.append(infra_obs)
-            
-            # Check for errors
-            status_obs = next((obs for obs in observations if obs.startswith("Status:")), None)
-            if status_obs and "failed" in status_obs.lower():
-                errors_encountered.append(interaction["id"])
-        
-        # Generate recommendations
-        recommendations = []
-        if "infra_creation" in operation_types:
-            recommendations.append("Monitor created Infras for optimal resource usage")
-        if errors_encountered:
-            recommendations.append("Review error logs and retry failed operations")
-        if len(namespaces_used) > 3:
-            recommendations.append("Consider consolidating resources into fewer namespaces")
-        
-        return {
-            "summary": f"Found {len(history['interactions'])} recent interactions",
-            "operation_summary": operation_types,
-            "namespaces_used": list(namespaces_used),
-            "infras_info": infras_created,
-            "errors_count": len(errors_encountered),
-            "key_insights": [
-                f"Most common operation: {max(operation_types.keys(), key=operation_types.get) if operation_types else 'none'}",
-                f"Success rate: {((len(history['interactions']) - len(errors_encountered)) / len(history['interactions']) * 100):.1f}%" if history['interactions'] else "No data"
-            ],
-            "recommendations": recommendations
-        }
-        
-    except Exception as e:
-        return {
-            "error": f"Failed to create session summary: {str(e)}",
-            "summary": "Unable to analyze session data"
-        }
+        import yaml
+        config = yaml.safe_load(text)
+        for user in config.get("users") or []:
+            if "exec" in (user.get("user") or {}):
+                user["user"] = {"token": token}
+        return yaml.safe_dump(config, sort_keys=False)
+    except Exception:
+        return None
+
+
+# Tool: Managed Kubernetes clusters (EKS, GKE, AKS and the like)
+@tool(mutating=True, read_actions=("info", "versions", "list", "get"))
+def manage_k8s_cluster(action: str, ns_id: str = DEFAULT_NAMESPACE,
+                       cluster_id: Optional[str] = None, spec_id: Optional[str] = None,
+                       image_id: str = "default", version: Optional[str] = None,
+                       nodegroup_name: Optional[str] = None, desired_node_size: int = 1,
+                       min_node_size: int = 1, max_node_size: int = 3,
+                       root_disk_type: str = "", root_disk_size: int = 0,
+                       detail: str = "summary", budget_ack: Optional[str] = None,
+                       confirm: bool = False) -> Dict:
+    """
+    Create and operate a provider-managed Kubernetes cluster.
+
+    This is the CSP's own service (EKS, GKE, AKS, ...), billed for its control plane as
+    well as its nodes and taking 10-20 minutes to create. Where "info" reports
+    nodegroups_on_creation false (AWS, Alibaba), "create" makes the control plane only
+    and the first node group is added once it is Active. A cluster built on plain VMs
+    with kubeadm is a different path: create_infra_dynamic() plus the k8s_* scripts in
+    list_predefined_scripts().
+
+    Args:
+        action: "info" (what each provider supports; spec_id narrows it to that
+            provider) | "versions" (needs spec_id) |
+            "list" | "get" | "create" | "add_nodegroup" | "scale" (set a node group's
+            sizes) | "delete_nodegroup" | "kubeconfig" | "delete"
+        ns_id: Namespace ID
+        cluster_id: Cluster id; for "create" the name of the new cluster
+        spec_id: Node spec from recommend_vm_spec(); it also decides provider and region
+        image_id: Node image. "default" lets the provider choose, and is required where
+            "info" reports that node images cannot be designated.
+        version: Kubernetes version from "versions"; omitted, the provider's default
+        nodegroup_name: Node group name
+        desired_node_size: Nodes to run (default 1)
+        min_node_size: Autoscaling lower bound (default 1)
+        max_node_size: Autoscaling upper bound (default 3)
+        root_disk_type: Node root disk type; "" for the provider default
+        root_disk_size: Node root disk size in GB; 0 for the provider default
+        detail: "summary" (default) | "full"
+        budget_ack: Approval id from request_budget_increase(), to pass a spend limit once
+        confirm: Must be True for create, add_nodegroup, delete_nodegroup, delete and
+            kubeconfig (it returns credentials). Ask the user first.
+
+    Returns:
+        The cluster with its node groups and status ("Active" when usable), the list, the
+        supported versions, the resized node group, or the kubeconfig text.
+    """
+    action = (action or "").strip().lower()
+    actions = ("info", "versions", "list", "get", "create", "add_nodegroup", "scale",
+               "delete_nodegroup", "kubeconfig", "delete")
+    if action not in actions:
+        return {"error": f"unknown action {action!r}; expected one of {', '.join(actions)}"}
+    level = _validate_detail(detail)
+    base = f"/ns/{ns_id}/k8sCluster"
+    if action == "info":
+        info = api_request("GET", "/k8sClusterInfo")
+        providers = info.get("k8s_cluster") if isinstance(info, dict) else None
+        provider = str(spec_id or "").split("+")[0]
+        if provider and isinstance(providers, dict) and provider in providers:
+            return {"k8s_cluster": {provider: providers[provider]}}
+        return info
+    if action == "versions":
+        parts = str(spec_id or "").split("+")
+        if len(parts) < 3:
+            return {"error": "spec_id is required for action='versions' "
+                             "(provider and region are read from it)"}
+        return api_request("GET", "/availableK8sVersion",
+                           params={"providerName": parts[0], "regionName": parts[1]})
+    if action == "list":
+        result = api_request("GET", base)
+        clusters = None
+        if isinstance(result, dict):
+            clusters = result.get("K8sClusterInfo", result.get("cluster"))
+        if isinstance(clusters, list):
+            return {"cluster": [_shape_k8s_cluster(c, level) for c in clusters],
+                    "count": len(clusters)}
+        return result
+
+    if not cluster_id:
+        return {"error": f"cluster_id is required for action={action!r}"}
+    sizes = {"desiredNodeSize": int(desired_node_size), "minNodeSize": int(min_node_size),
+             "maxNodeSize": int(max_node_size)}
+    if not sizes["minNodeSize"] <= sizes["desiredNodeSize"] <= sizes["maxNodeSize"]:
+        return {"error": "min_node_size <= desired_node_size <= max_node_size is required"}
+    disk = {}
+    if root_disk_type:
+        disk["rootDiskType"] = root_disk_type
+    if root_disk_size:
+        disk["rootDiskSize"] = int(root_disk_size)
+
+    if action == "get":
+        return _shape_k8s_cluster(api_request("GET", f"{base}/{cluster_id}"), level)
+    if action == "scale":
+        if not nodegroup_name:
+            return {"error": "nodegroup_name is required for action='scale'"}
+        scaled = api_request(
+            "PUT", f"{base}/{cluster_id}/k8sNodeGroup/{nodegroup_name}/autoscaleSize",
+            json_data=sizes, timeout_override=(60, 1800))
+        if level == "full" or not isinstance(scaled, dict) or "error" in scaled:
+            return scaled
+        out = {k: scaled[k] for k in _K8S_NODEGROUP_SUMMARY if scaled.get(k) not in (None, "")}
+        out["nodeCount"] = len(scaled.get("k8sNodes") or [])
+        return out
+
+    if action in ("create", "add_nodegroup"):
+        if not spec_id:
+            return {"error": f"spec_id is required for action={action!r}"}
+        if action == "add_nodegroup" and not nodegroup_name:
+            return {"error": "nodegroup_name is required for action='add_nodegroup'"}
+        plan = [{"name": nodegroup_name or cluster_id, "nodeGroupSize": sizes["desiredNodeSize"],
+                 "specId": spec_id, "imageId": image_id}]
+        # Some providers create the control plane alone and take node groups afterwards
+        with_nodes = True
+        if action == "create":
+            answer = api_request("GET", "/checkK8sNodeGroupsOnK8sCreation",
+                                 params={"providerName": spec_id.split("+")[0]})
+            with_nodes = not (isinstance(answer, dict)
+                              and str(answer.get("result")).lower() == "false")
+        if with_nodes:
+            unconfirmed = _confirm_creation_plan(plan, f"Kubernetes cluster {cluster_id}", confirm)
+            if unconfirmed:
+                unconfirmed["error"]["cost_caveat"] = (
+                    "node list price only - the managed control plane is billed on top")
+                return unconfirmed
+            over_budget = _budget_refusal(plan, budget_ack)
+            if over_budget:
+                return over_budget
+        else:
+            guard = _require_confirmation(
+                confirm, f"creating Kubernetes cluster {cluster_id}",
+                "a managed control plane is created and billed until it is deleted; this "
+                "provider takes node groups only after the cluster is Active")
+            if guard:
+                return guard
+        body = {"specId": spec_id, "imageId": image_id, **sizes, **disk}
+        if action == "create":
+            body["name"] = cluster_id
+            if nodegroup_name:
+                body["nodeGroupName"] = nodegroup_name
+            if version:
+                body["version"] = version
+            result = api_request("POST", f"/ns/{ns_id}/k8sClusterDynamic", json_data=body,
+                                 timeout_override=(60, 3600))
+        else:
+            body["name"] = nodegroup_name
+            result = api_request("POST", f"{base}/{cluster_id}/k8sNodeGroupDynamic",
+                                 json_data=body, timeout_override=(60, 3600))
+        if not isinstance(result, dict) or "error" in result:
+            return result
+        result = _shape_k8s_cluster(result, level)
+        if with_nodes:
+            _record_spend(plan)
+        if action == "create" and level != "full":
+            result["next"] = (
+                "poll action='get' until status is Active (10-20 minutes)" + (
+                    "" if with_nodes else
+                    "; then action='add_nodegroup' with nodegroup_name and spec_id - no "
+                    "node group was created with the cluster"))
+        return result
+
+    what = {"delete_nodegroup": (f"deleting node group {nodegroup_name}",
+                                 "its nodes and the workloads on them are removed"),
+            "delete": (f"deleting Kubernetes cluster {cluster_id}",
+                       "the cluster and everything running in it is removed"),
+            "kubeconfig": (f"reading the kubeconfig of {cluster_id}",
+                           "cluster-admin credentials are placed in this transcript")}[action]
+    guard = _require_confirmation(confirm, *what)
+    if guard:
+        return guard
+    if action == "kubeconfig":
+        found = api_request("GET", f"{base}/{cluster_id}/kubeconfig")
+        text = found.get("kubeconfig") if isinstance(found, dict) else None
+        if isinstance(text, str) and "exec:" in text:
+            issued = api_request("GET", f"{base}/{cluster_id}/token")
+            status = ((issued if isinstance(issued, dict) else {}).get("execCredential")
+                      or {}).get("status") or {}
+            standalone = status.get("token") and _standalone_kubeconfig(text, status["token"])
+            if standalone:
+                return {"kubeconfig": standalone,
+                        "credentialExpires": status.get("expirationTimestamp"),
+                        "note": "holds a short-lived token in place of the provider's "
+                                "credential plugin; read it again once it expires"}
+        return found
+    if action == "delete_nodegroup":
+        if not nodegroup_name:
+            return {"error": "nodegroup_name is required for action='delete_nodegroup'"}
+        return api_request("DELETE", f"{base}/{cluster_id}/k8sNodeGroup/{nodegroup_name}",
+                           timeout_override=(60, 3600))
+    result = api_request("DELETE", f"{base}/{cluster_id}", timeout_override=(60, 3600))
+    refused = result.get("error") if isinstance(result, dict) else None
+    if isinstance(refused, dict) and "nodegroups attached" in str(refused.get("message")).lower():
+        return {"error": {
+            "message": f"cluster {cluster_id} still has node groups; nothing was deleted",
+            "code": "CONFLICT",
+            "how_to_proceed": "action='delete_nodegroup' for each, wait until action='get' "
+                              "lists none, then delete the cluster",
+        }}
+    return result
+
+
+#####################################
+# Managed databases (RDBMS)
+#####################################
+
+_RDBMS_SUMMARY = ("id", "name", "connectionName", "status", "endpoint", "publicAccess",
+                  "dbEngine", "dbEngineVersion", "dbInstanceSpec", "storageType", "storageSize",
+                  "highAvailability", "deletionProtection", "vNetId", "subnetIds",
+                  "securityGroupIds", "description", "systemMessage", "deletionRequestedAt")
+_RDBMS_ACTIONS = ("support", "capability", "list", "get", "validate", "create", "reconcile",
+                  "delete", "list_databases", "create_database", "delete_database",
+                  "secure_transport")
+
+
+# Tool: Managed relational databases (RDS, Cloud SQL and the like)
+@tool(mutating=True, read_actions=("support", "capability", "list", "get", "validate",
+                                   "list_databases", "secure_transport"))
+def manage_rdbms(action: str, ns_id: str = DEFAULT_NAMESPACE,
+                 rdbms_id: Optional[str] = None, connection_name: Optional[str] = None,
+                 vnet_id: Optional[str] = None, db_engine: str = "mysql",
+                 admin_user_name: Optional[str] = None,
+                 admin_user_password: Optional[str] = None,
+                 subnet_ids: Optional[List[str]] = None,
+                 security_group_ids: Optional[List[str]] = None,
+                 public_access: bool = False, options: Optional[Dict] = None,
+                 database_name: Optional[str] = None, force: bool = False,
+                 detail: str = "summary", confirm: bool = False) -> Dict:
+    """
+    Create and operate a provider-managed MySQL or MariaDB instance.
+
+    The instance joins a VNet that already exists in the namespace - normally the one an
+    Infra in that region created - so its nodes reach the database by private address.
+    Creation takes 5-15 minutes and is billed until deleted. Providers differ in what
+    they need; details and a worked example: get_usage_guide('services').
+
+    Args:
+        action: "support" (what each provider offers) | "capability" (versions, instance
+            specs and storage for connection_name) | "list" | "get" | "validate" (check a
+            create request and see the defaults it would get) | "create" | "reconcile"
+            (refresh the record from the provider) | "delete" | "list_databases" |
+            "create_database" | "delete_database" | "secure_transport" (TLS state and CA)
+        ns_id: Namespace ID
+        rdbms_id: Instance id; for "create" and "validate" the name of the new instance
+        connection_name: Where the instance runs, e.g. "aws-ap-northeast-2"
+        vnet_id: VNet the instance joins; get_resources(kind='vNet') lists them
+        db_engine: "mysql" (default) | "mariadb"
+        admin_user_name: Admin login, for create and for the database and TLS actions
+        admin_user_password: Admin password. It is not stored by CB-Tumblebug: keep it.
+        subnet_ids: Subnets of the VNet for the instance (AWS needs two in different zones)
+        security_group_ids: Security groups applied to the instance, where the provider
+            takes them
+        public_access: True gives the instance a public endpoint (default False)
+        options: Other create fields: dbEngineVersion, dbInstanceSpec, storageType,
+            storageSize, highAvailability, deletionProtection, backupRetentionDays,
+            description. Left out, valid defaults are filled in.
+        database_name: Logical database name, for create_database and delete_database
+        force: For "delete": delete despite deletion protection
+        detail: "summary" (default) | "full". For "capability", summary lists the
+            smallest instance specs and full the provider's whole catalogue.
+        confirm: Must be True for create, delete and delete_database. Ask the user first.
+
+    Returns:
+        The instance with its status ("Available" when usable) and endpoint, the list,
+        the provider's capabilities, or the logical databases (also after creating or
+        deleting one).
+    """
+    action = (action or "").strip().lower()
+    if action not in _RDBMS_ACTIONS:
+        return {"error": f"unknown action {action!r}; expected one of "
+                         f"{', '.join(_RDBMS_ACTIONS)}"}
+    base = f"/ns/{ns_id}/resources/rdbms"
+    if action == "support":
+        return api_request("GET", "/rdbms/support")
+    if action == "list":
+        return get_resources("rdbms", ns_id)
+    if action == "capability":
+        if not connection_name:
+            return {"error": "connection_name is required for action='capability'"}
+        connection = api_request("GET", f"/connConfig/{connection_name}")
+        if not isinstance(connection, dict) or "error" in connection:
+            return connection
+        region = (connection.get("regionDetail") or {}).get("regionName") \
+            or (connection.get("regionZoneInfo") or {}).get("assignedRegion")
+        found = api_request("GET", "/rdbms/capability", params={
+            "providerName": connection.get("providerName"), "regionName": region,
+            "dbEngine": db_engine}, timeout_override=(60, 300))
+        supports = found.get("supports") if isinstance(found, dict) else None
+        if _validate_detail(detail) == "full" or not isinstance(supports, dict):
+            return found
+
+        def size(spec):
+            try:
+                return float(spec.get("vCpuCount") or 0), float(spec.get("memSizeMiB") or 0)
+            except (TypeError, ValueError):
+                return 0.0, 0.0
+        specs = sorted((x for x in supports.get("dbInstanceSpecs") or [] if isinstance(x, dict)),
+                       key=size)
+        out = {k: v for k, v in supports.items()
+               if k not in ("dbInstanceSpecs", "dbInstanceSpecOptions", "notes")
+               and v not in _EMPTY}
+        out["dbInstanceSpecs"] = [
+            {k: v for k, v in (("name", x.get("name")), ("vCPU", x.get("vCpuCount")),
+                               ("memMiB", x.get("memSizeMiB")))
+             if v not in (None, "", "-1", -1)} for x in specs[:15]]
+        total = len(specs) or len(supports.get("dbInstanceSpecOptions") or [])
+        if total > 15:
+            out["dbInstanceSpecCount"] = total
+            out["note"] = "the 15 smallest instance specs are listed; detail='full' has all"
+        if not specs and supports.get("dbInstanceSpecOptions"):
+            out["dbInstanceSpecOptions"] = supports["dbInstanceSpecOptions"][:30]
+        storage = (supports.get("notes") or {}).get("storageTypes") or []
+        if storage:
+            out["storageTypeNotes"] = {
+                x.get("storageType"): " ".join(filter(None, (x.get("recommendationLevel"),
+                                                             x.get("constraints"))))
+                for x in storage if isinstance(x, dict)}
+        return out
+
+    if not rdbms_id:
+        return {"error": f"rdbms_id is required for action={action!r}"}
+    if action in ("validate", "create"):
+        missing = [name for name, value in (("connection_name", connection_name),
+                                            ("vnet_id", vnet_id),
+                                            ("admin_user_name", admin_user_name),
+                                            ("admin_user_password", admin_user_password))
+                   if not value]
+        if missing:
+            return {"error": f"{', '.join(missing)} is required for action={action!r}"}
+        body: Dict[str, Any] = {"autoFillDefaults": True, **(options or {})}
+        body.update({"name": rdbms_id, "connectionName": connection_name, "vNetId": vnet_id,
+                     "dbEngine": db_engine, "adminUserName": admin_user_name,
+                     "adminUserPassword": admin_user_password,
+                     "publicAccess": bool(public_access)})
+        if subnet_ids:
+            body["subnetIds"] = list(subnet_ids)
+        if security_group_ids:
+            body["securityGroupIds"] = list(security_group_ids)
+        if action == "validate":
+            return api_request("POST", f"{base}/validate", json_data=body)
+        guard = _require_confirmation(
+            confirm, f"creating database instance {rdbms_id}",
+            "a managed database is created at the provider and billed until it is deleted; "
+            "its price is not part of the spend limits")
+        if guard:
+            return guard
+        created = api_request("POST", base, json_data=body, timeout_override=(60, 3600))
+        if not isinstance(created, dict) or "error" in created:
+            return created
+        created = _summarize_resource(created, _RDBMS_SUMMARY)
+        created["next"] = ("open the database port in a security group of the VNet, then "
+                           "connect to endpoint from a node there")
+        return created
+
+    instance = f"{base}/{rdbms_id}"
+    if action == "get":
+        found = api_request("GET", instance)
+        if not isinstance(found, dict) or "error" in found or _validate_detail(detail) == "full":
+            return found
+        return _summarize_resource(found, _RDBMS_SUMMARY)
+    if action == "reconcile":
+        return api_request("PUT", f"{instance}/reconcile")
+    if action == "delete":
+        guard = _require_confirmation(confirm, f"deleting database instance {rdbms_id}",
+                                      "the instance and all data in it are removed")
+        if guard:
+            return guard
+        return api_request("DELETE", instance, params={"option": "force"} if force else None,
+                           timeout_override=(60, 3600))
+
+    # The remaining actions log in to the instance as its admin
+    if not (admin_user_name and admin_user_password):
+        return {"error": f"admin_user_name and admin_user_password is required for "
+                         f"action={action!r}"}
+    login = {"X-Admin-User-Name": admin_user_name, "X-Admin-User-Password": admin_user_password}
+    if action == "secure_transport":
+        return api_request("GET", f"{instance}/secure-transport", headers=login)
+    if action == "list_databases":
+        return api_request("GET", f"{instance}/database", headers=login)
+    if not database_name:
+        return {"error": f"database_name is required for action={action!r}"}
+    if action == "create_database":
+        changed = api_request("POST", f"{instance}/database", headers=login,
+                              json_data={"databaseName": database_name})
+    else:
+        guard = _require_confirmation(confirm, f"deleting database {database_name}",
+                                      "the database and its tables are dropped")
+        if guard:
+            return guard
+        changed = api_request("DELETE", f"{instance}/database/{database_name}", headers=login)
+    if not isinstance(changed, dict) or "error" in changed:
+        return changed
+    # The server caches the list for two seconds
+    time.sleep(2.2)
+    listed = api_request("GET", f"{instance}/database", headers=login)
+    if isinstance(listed, dict) and isinstance(listed.get("databases"), list):
+        changed["databases"] = listed["databases"]
+    return changed
 
 #####################################
 # Command & File Management
 #####################################
 
-# Helper function: Summarize VM spec response
-def _demote_unpriced(summary, priority_policy):
-    """Under a cost priority, a spec with no published price must not rank as cheapest.
-
-    costPerHour = -1 means "unknown", and the server sorts it ahead of every real price.
-    Asked for the cheapest option in us-west-1, the recommender returned an unpriced spec
-    that also turned out to be unprovisionable - the caller only found out at review.
-    Unknown is not cheap, so unpriced specs move to the end and say why.
-    """
-    if str(priority_policy or "").lower() != "cost":
-        return summary
-    if not isinstance(summary, dict):
-        return summary
-    specs = summary.get("summarized_specs")
-    if not isinstance(specs, list):
-        return summary
-
-    def unpriced(spec):
-        try:
-            return float(spec.get("costPerHour", -1)) < 0
-        except (TypeError, ValueError):
-            return True
-
-    priced = [x for x in specs if not unpriced(x)]
-    unknown = [x for x in specs if unpriced(x)]
-    for spec in unknown:
-        spec["_note"] = "price not published by the provider - ranked last under a cost priority"
-    summary["summarized_specs"] = priced + unknown
-    if unknown and priced:
-        summary["_pricing"] = (f"{len(unknown)} of {len(specs)} specs publish no price and were "
-                               f"moved to the end; they are not necessarily cheap")
-    elif unknown:
-        # Nothing here can be compared on cost. Saying so is more useful than returning an
-        # arbitrary pick: whole provider/region combinations publish no prices at all
-        # (alibaba us-west-1 has 247 specs and not one price), and a caller asked for the
-        # cheapest option should hear that before it commits to one.
-        where = {f"{x.get('providerName')}/{x.get('regionName')}" for x in unknown}
-        summary["_pricing"] = (
-            f"none of the {len(unknown)} matching specs in {', '.join(sorted(where))} "
-            f"publishes a price, so none can be ranked by cost. If cost matters, try another "
-            f"region or provider; if this one is required, treat the spend as unknown.")
-    return summary
-
-
-def _summarize_vm_specs(specs_response: Any, include_details: bool = False) -> Dict:
-    """
-    Summarize VM spec recommendations to reduce token usage while preserving essential information.
-    
-    Args:
-        specs_response: Raw response from recommend_vm_spec API
-        include_details: Whether to include detailed technical specifications
-    
-    Returns:
-        Dictionary with summarized specs and metadata
-    """
-    if not specs_response:
-        return {
-            "summarized_specs": [],
-            "total_count": 0,
-            "details_included": include_details,
-            "summary_applied": True
-        }
-    
-    # Handle different response formats
-    specs_list = []
-    if isinstance(specs_response, list):
-        specs_list = specs_response
-    elif isinstance(specs_response, dict):
-        if "result" in specs_response:
-            specs_list = specs_response["result"] or []
-        elif "message" in specs_response and "id" not in specs_response:
-            # API error response — surface it instead of an empty spec
-            return {
-                "error": specs_response["message"],
-                "summarized_specs": [],
-                "total_count": 0,
-                "details_included": include_details,
-                "summary_applied": True,
-            }
-        else:
-            specs_list = [specs_response]
-    
-    summarized_specs = []
-    
-    for spec in specs_list:
-        if not isinstance(spec, dict):
-            continue
-            
-        # Extract essential information
-        summarized_spec = {
-            "id": spec.get("id", ""),
-            "name": spec.get("name", ""),
-            "providerName": spec.get("providerName", ""),
-            "regionName": spec.get("regionName", ""),
-            "architecture": spec.get("architecture", ""),
-            "vCPU": spec.get("vCPU", 0),
-            "memoryGiB": spec.get("memoryGiB", 0),
-            "costPerHour": spec.get("costPerHour", -1),
-            "cspSpecName": spec.get("cspSpecName", ""),
-            "connectionName": spec.get("connectionName", "")
-        }
-        
-        # Accelerator. The model name alone does not say how much of that card you get:
-        # AWS g6f.large reports "NVIDIA L4" like g6.xlarge does, but is a fractional slice
-        # with 3 GB against the full card's 24 GB. Count and memory are therefore reported
-        # whenever the spec has an accelerator at all - including count 0, which is what a
-        # fractional slice carries and what an `if` on the value silently dropped.
-        if spec.get("acceleratorModel"):
-            summarized_spec["acceleratorModel"] = spec.get("acceleratorModel")
-            summarized_spec["acceleratorCount"] = spec.get("acceleratorCount", 0)
-            summarized_spec["acceleratorMemoryGB"] = spec.get("acceleratorMemoryGB", 0)
-            if not spec.get("acceleratorCount"):
-                summarized_spec["_accelerator_note"] = (
-                    "count 0 means a fractional GPU - acceleratorMemoryGB is the share you "
-                    "actually get, not the card's full memory")
-        if spec.get("acceleratorType"):
-            summarized_spec["acceleratorType"] = spec.get("acceleratorType")
-        
-        # Add disk information if available
-        if spec.get("diskSizeGB", -1) > 0:
-            summarized_spec["diskSizeGB"] = spec.get("diskSizeGB")
-        if spec.get("rootDiskType"):
-            summarized_spec["rootDiskType"] = spec.get("rootDiskType")
-        if spec.get("rootDiskSize") and spec.get("rootDiskSize") != "-1":
-            summarized_spec["rootDiskSize"] = spec.get("rootDiskSize")
-        
-        # Include evaluation scores if they are meaningful (not -1)
-        evaluation_scores = {}
-        for i in range(1, 11):
-            score_key = f"evaluationScore{i:02d}"
-            score_value = spec.get(score_key, -1)
-            if score_value != -1:
-                evaluation_scores[score_key] = score_value
-        
-        if evaluation_scores:
-            summarized_spec["evaluationScores"] = evaluation_scores
-        
-        # Include detailed specs only if requested
-        if include_details and "details" in spec:
-            # Categorize details for better readability
-            details = spec["details"]
-            if isinstance(details, list):
-                categorized_details = {
-                    "compute": {},
-                    "storage": {},
-                    "network": {},
-                    "general": {}
-                }
-                
-                for detail in details:
-                    key = detail.get("key", "")
-                    value = detail.get("value", "")
-                    
-                    # Categorize based on key names
-                    if any(keyword in key.lower() for keyword in ["cpu", "vcpu", "processor", "core"]):
-                        categorized_details["compute"][key] = value
-                    elif any(keyword in key.lower() for keyword in ["ebs", "storage", "disk", "nvme"]):
-                        categorized_details["storage"][key] = value
-                    elif any(keyword in key.lower() for keyword in ["network", "bandwidth", "interface"]):
-                        categorized_details["network"][key] = value
-                    else:
-                        categorized_details["general"][key] = value
-                
-                # Only include non-empty categories
-                detail_categories = {k: v for k, v in categorized_details.items() if v}
-                if detail_categories:
-                    summarized_spec["technicalDetails"] = detail_categories
-        
-        summarized_specs.append(summarized_spec)
-    
-    return {
-        "summarized_specs": summarized_specs,
-        "total_count": len(summarized_specs),
-        "details_included": include_details,
-        "summary_applied": True,
-        "note": (
-            "Technical details have been summarized to reduce token usage. "
-            "Use include_details=True parameter to get full specifications if needed."
-        )
-    }
-
-# Helper function: Summarize command output
-def _summarize_command_output(output: str, max_lines: int = 5, max_chars: int = 1000) -> Dict:
-    """
-    Summarize command output to reduce token usage while preserving important information.
-    
-    Args:
-        output: Raw command output
-        max_lines: Maximum number of lines to show from start and end
-        max_chars: Maximum character limit for the output
-    
-    Returns:
-        Dictionary with summarized output and metadata
-    """
-    if not output:
-        return {
-            "summary": "",
-            "truncated": False,
-            "original_length": 0,
-            "lines_count": 0
-        }
-    
-    original_length = len(output)
-    lines = output.split('\n')
-    total_lines = len(lines)
-    
-    # If output is short enough, return as-is
-    if original_length <= max_chars and total_lines <= max_lines * 2:
-        return {
-            "summary": output.strip(),
-            "truncated": False,
-            "original_length": original_length,
-            "lines_count": total_lines
-        }
-    
-    # Create summary with first and last lines
-    if total_lines > max_lines * 2:
-        first_lines = lines[:max_lines]
-        last_lines = lines[-max_lines:]
-        
-        summary_parts = []
-        summary_parts.extend(first_lines)
-        summary_parts.append(f"... [truncated {total_lines - (max_lines * 2)} lines] ...")
-        summary_parts.extend(last_lines)
-        
-        summary = '\n'.join(summary_parts)
-    else:
-        summary = output
-    
-    # If still too long, truncate by characters
-    if len(summary) > max_chars:
-        half_chars = (max_chars - 50) // 2  # Reserve space for truncation message
-        summary = (
-            summary[:half_chars] + 
-            f"\n... [truncated {original_length - max_chars} characters] ...\n" + 
-            summary[-half_chars:]
-        )
-    
-    return {
-        "summary": summary.strip(),
-        "truncated": True,
-        "original_length": original_length,
-        "lines_count": total_lines
-    }
 
 # Tool: Execute remote command to VMs in Infra
 @tool(mutating=True)
@@ -6505,269 +5658,145 @@ def execute_command_infra(
     nodegroup_id: Optional[str] = None,
     node_id: Optional[str] = None,
     label_selector: Optional[str] = None,
-    summarize_output: bool = True,
-    max_output_lines: Union[int, str] = 5,
-    max_output_chars: Union[int, str] = 1000,
-    timeout_minutes: Optional[int] = None
-, run_async: bool = False, contains: Optional[str] = None) -> Dict:
+    timeout_minutes: Optional[int] = None,
+    run_async: bool = False,
+    tail_lines: int = 20,
+    contains: Optional[str] = None,
+    template_id: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None
+) -> Dict:
     """Run shell commands on the nodes of an Infra over SSH.
 
-    Each entry in commands runs in its own SSH session, so shell state does not carry over:
-    a variable set in one entry is empty in the next. Put dependent steps in a single entry
-    joined with && or ;. Predefined scripts: list_predefined_scripts().
-    Targeting and long-running commands: get_usage_guide("commands").
+    Each entry in commands is its own SSH session, so shell state does not carry over: put
+    dependent steps in one entry joined with &&. Without a target the command runs on
+    every node. Details: get_usage_guide('commands').
 
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
         commands: Shell commands. Each element is a separate SSH session.
-        script_name: Run a predefined script instead of (or before) commands.
+        script_name: Run a predefined script, before any commands given.
             See list_predefined_scripts().
         template_variables: Values for {{placeholder}} in the script or commands.
-            public_ip / public_ips_space / public_ips_comma / private_ips_space /
-            infra_id / ns_id are filled in automatically when left unset.
+            public_ip, public_ips_space, public_ips_comma, private_ips_space, infra_id and
+            ns_id are filled in automatically when left unset.
         node_id: Run on one node only
         nodegroup_id: Run on one NodeGroup only
-        label_selector: Run on nodes matching a label, e.g. "role=node"
+        label_selector: Run on nodes matching a label, e.g. "role=worker"
         timeout_minutes: Per-command timeout (server default 30, max 120)
-        contains: Keep only output lines matching this regex (with 3 lines of context)
-        summarize_output: Trim each stream to max_output_lines/max_output_chars
-            (default True). Ignored when contains is given.
-        max_output_lines: Lines kept per stream when summarizing (default 5)
-        max_output_chars: Characters kept per stream when summarizing (default 1000)
-            instead of summarizing. Reaches a block a tail cannot, e.g. the credentials
-            an installer prints in the middle of a long log.
-        run_async: Return a request_id immediately instead of waiting. Use it for anything
-            slow - a driver install, a package build - so a dropped connection cannot lose
-            the result. Follow up with get_command_result(request_id=...).
+        run_async: Return a request_id at once instead of waiting; follow up with
+            get_command_result(). Use it for anything slow, so a dropped connection
+            cannot lose the result.
+        tail_lines: Lines of each output stream kept per node (default 20)
+        contains: Keep only output lines matching this regex, with 3 lines of context,
+            instead of the tail - reaches a block in the middle of a long log
+        template_id: Run an init script template over SSH (as root) instead of commands;
+            see list_init_script_templates()
+        env: Environment variables exported to the commands or the template
 
     Returns:
-        Per-node results with stdout, stderr and error, plus the request id used to
-        retrieve output later.
+        request_id, nodes {total, succeeded, failed} and per-node results with stdout,
+        stderr and error. A node failing does not make the call an error: read nodes.
     """
-    # Handle type conversion for numeric parameters (MCP client may send strings)
-    if isinstance(max_output_lines, str):
-        try:
-            max_output_lines = int(max_output_lines)
-        except ValueError:
-            max_output_lines = 5  # Default value
-    
-    if isinstance(max_output_chars, str):
-        try:
-            max_output_chars = int(max_output_chars)
-        except ValueError:
-            max_output_chars = 1000  # Default value
-    
-    # A predefined script contributes its commands ahead of any given explicitly.
+    script = None
     if script_name:
-        if script_name not in PREDEFINED_SCRIPTS:
-            return {"error": f"Script '{script_name}' not found",
-                    "available_scripts": sorted(PREDEFINED_SCRIPTS.keys())}
-        commands = list(PREDEFINED_SCRIPTS[script_name]["commands"]) + list(commands or [])
+        script = PREDEFINED_SCRIPTS.get(script_name)
+        if not script:
+            return {"error": f"unknown script_name {script_name!r}; expected one of "
+                             f"{', '.join(sorted(PREDEFINED_SCRIPTS))}"}
+        commands = list(script["commands"]) + list(commands or [])
+        template_variables = {**script.get("defaults", {}), **(template_variables or {})}
+        timeout_minutes = timeout_minutes or script.get("timeout_minutes")
+    commands = [c.strip() for c in (commands or []) if isinstance(c, str) and c.strip()]
+    if not commands and not template_id:
+        return {"error": "commands is required (or script_name, or template_id)"}
 
-    # 🚨 CRITICAL: Validate commands before execution
-    if not commands or len(commands) == 0:
-        return {
-            "error": "Empty command list provided",
-            "message": "At least one command must be specified for execution",
-            "suggestion": "Provide meaningful commands like 'ls -la', 'ps aux', 'df -h', etc."
-        }
-
-    commands = _substitute_template_variables(commands, template_variables, ns_id, infra_id)
-
-    # Check for empty or whitespace-only commands
-    valid_commands = []
-    for cmd in commands:
-        if not cmd or not cmd.strip():
-            return {
-                "error": f"Empty or whitespace-only command detected: '{cmd}'",
-                "message": "All commands must contain actual executable content",
-                "suggestion": "Remove empty commands and provide meaningful command strings"
-            }
-        valid_commands.append(cmd.strip())
-    
-    if len(valid_commands) == 0:
-        return {
-            "error": "No valid commands found after filtering",
-            "message": "All provided commands were empty or contained only whitespace",
-            "suggestion": "Provide meaningful commands with actual content"
-        }
-    
-    data = {
-        "command": valid_commands  # Use validated commands
-    }
-
-    # The server defaults to 30 minutes and kills the session at that point. Long
-    # installs (a DevStack build runs 20-40 minutes) must raise it or they are cut off
-    # mid-way, leaving a half-configured host.
-    request_timeout = None
+    data: Dict[str, Any] = {}
+    if commands:
+        data["command"] = _substitute_template_variables(commands, template_variables,
+                                                         ns_id, infra_id)
+    if script:
+        # An unfilled placeholder would reach the node as literal text
+        unfilled = sorted({name for c in data["command"][:len(script["commands"])]
+                           for name in re.findall(r"\{\{(\w+)\}\}", c)})
+        if unfilled:
+            return {"error": f"template_variables is required for {', '.join(unfilled)} "
+                             f"(script {script_name}); list_predefined_scripts(name=...) "
+                             f"describes them"}
+    if template_id:
+        data["templateId"] = template_id
+    if env:
+        data["env"] = {str(k): str(v) for k, v in env.items()}
+    request_timeout = (60, 1920)
     if timeout_minutes:
-        capped = max(1, min(int(timeout_minutes), 120))  # server clamps to 1..120
+        capped = max(1, min(int(timeout_minutes), 120))
         data["timeoutMinutes"] = capped
-        # Give the HTTP read a margin over the command's own budget.
         request_timeout = (60, capped * 60 + 120)
 
-    url = f"/ns/{ns_id}/cmd/infra/{infra_id}"
     params = {}
-    
     if nodegroup_id:
         params["nodeGroupId"] = nodegroup_id
     if node_id:
         params["nodeId"] = node_id
     if label_selector:
         params["labelSelector"] = label_selector
+    # The id lets the output be fetched again if this call is cut off.
+    request_id = f"mcp-cmd-{infra_id}-{int(time.time() * 1000)}"
+    url = f"/ns/{ns_id}/cmd/infra/{infra_id}"
 
     if run_async:
-        # The server runs the command in the background and answers immediately with an id.
-        # Results are collected by polling, not by streaming: an SSE feed of a long install
-        # is tens of thousands of tokens of progress output that nobody reads, and the same
-        # information is available trimmed once the command finishes.
         params["async"] = "true"
         started = api_request("POST", url, json_data=data, params=params,
+                              headers={"x-request-id": request_id},
                               timeout_override=(60, 120))
-        request_id = None
-        if isinstance(started, dict):
-            request_id = (started.get("xRequestId") or started.get("x-request-id")
-                          or started.get("requestId"))
-        if not request_id:
-            return started if isinstance(started, dict) else {"error": "no request id returned"}
-        return {
-            "started": True,
-            "request_id": request_id,
-            "note": ("running in the background; the connection can drop without losing it"),
-            "how_to_follow": [
-                f"get_command_result(ns_id='{ns_id}', infra_id='{infra_id}', "
-                f"request_id='{request_id}') for the outcome",
-                f"list_node_command_status(ns_id='{ns_id}', infra_id='{infra_id}', "
-                f"node_id=...) per node",
-            ],
-        }
+        if not isinstance(started, dict) or "error" in started:
+            return started
+        request_id = started.get("xRequestId") or request_id
+        return {"started": True, "request_id": request_id,
+                "next": f"get_command_result(request_id='{request_id}', "
+                        f"ns_id='{ns_id}', infra_id='{infra_id}') for the outcome"}
 
     result = api_request("POST", url, json_data=data, params=params or None,
+                         headers={"x-request-id": request_id},
                          timeout_override=request_timeout)
-
-    # A grep beats a summary when the caller already knows what it is looking for.
-    if contains and isinstance(result, dict) and "results" in result:
-        for node_result in result["results"]:
-            for stream in ("stdout", "stderr"):
-                value = node_result.get(stream)
-                if isinstance(value, dict):
-                    node_result[stream] = {k: (_grep_stream(v, contains, 3)
-                                               if isinstance(v, str) else v)
-                                           for k, v in value.items()}
-                elif isinstance(value, str):
-                    node_result[stream] = _grep_stream(value, contains, 3)
-        result["_note"] = f"output filtered to lines matching {contains!r}"
+    if not isinstance(result, dict) or "results" not in result:
         return result
 
-    # Apply output summarization if enabled
-    if summarize_output and "results" in result:
-        total_original_size = 0
-        total_summarized_size = 0
-        summarization_applied = False
-
-        def _summarize_entry(text):
-            nonlocal total_original_size, total_summarized_size, summarization_applied
-            info = _summarize_command_output(text, max_output_lines, max_output_chars)
-            total_original_size += info["original_length"]
-            total_summarized_size += len(info["summary"])
-            if info["truncated"]:
-                summarization_applied = True
-            return {
-                "output": info["summary"],
-                "truncated": info["truncated"],
-                "original_length": info["original_length"],
-                "lines_count": info["lines_count"]
-            }
-
-        for vm_result in result["results"]:
-            for stream in ("stdout", "stderr"):
-                value = vm_result.get(stream)
-                # Current API returns a map of command-index -> output
-                if isinstance(value, dict):
-                    vm_result[stream] = {
-                        k: (_summarize_entry(v) if isinstance(v, str) else v)
-                        for k, v in value.items()
-                    }
-                elif isinstance(value, list):
-                    vm_result[stream] = [
-                        (dict(_summarize_entry(item), command_index=i) if isinstance(item, str) else item)
-                        for i, item in enumerate(value)
-                    ]
-                elif isinstance(value, str):
-                    vm_result[stream] = _summarize_entry(value)
-
-        # Add summarization metadata
-        result["output_summary"] = {
-            "summarization_enabled": True,
-            "summarization_applied": summarization_applied,
-            "total_original_size": total_original_size,
-            "total_summarized_size": total_summarized_size,
-            "size_reduction_percent": round(
-                ((total_original_size - total_summarized_size) / total_original_size * 100) 
-                if total_original_size > 0 else 0, 2
-            ),
-            "max_lines_per_output": max_output_lines,
-            "max_chars_per_output": max_output_chars,
-            "note": "Output has been summarized to reduce token usage. Use summarize_output=False to get full output."
-        }
-    else:
-        result["output_summary"] = {
-            "summarization_enabled": False,
-            "note": "Full output returned without summarization."
-        }
-    
-    # Store command execution in memory
-    context_data = {
-        "namespace_id": ns_id,
-        "infra_id": infra_id,
-        "commands": commands,
-        "vm_count": len(result.get("results", [])),
-        "summarize_output": summarize_output
+    rows = []
+    for item in result.get("results") or []:
+        row = _trim_command_record(
+            {k: item[k] for k in ("nodeId", "nodeIp", "stdout", "stderr", "error")
+             if item.get(k)}, tail_lines, contains)
+        for stream in ("stdout", "stderr"):
+            if isinstance(row.get(stream), dict):
+                row[stream] = {k: v for k, v in row[stream].items() if v}
+                if not row[stream]:
+                    del row[stream]
+        rows.append(row)
+    failed = [r for r in rows if r.get("error")]
+    out: Dict[str, Any] = {
+        "request_id": request_id,
+        "nodes": {"total": len(rows), "succeeded": len(rows) - len(failed),
+                  "failed": len(failed)},
     }
-    
-    if nodegroup_id:
-        context_data["nodegroup_id"] = nodegroup_id
-    if node_id:
-        context_data["node_id"] = node_id
-    if label_selector:
-        context_data["label_selector"] = label_selector
-    
-    # Determine success status ("error" per node result; whole call may also be an error dict)
-    success_count = 0
-    total_count = len(result.get("results", []))
+    if len(rows) > NODE_LIST_LIMIT:
+        rows = (failed + [r for r in rows if not r.get("error")])[:NODE_LIST_LIMIT]
+        out["resultsCapped"] = "failed nodes are listed first; narrow the target to see others"
+    out["results"] = rows
+    errors = " ".join(str(r.get("error")) for r in failed).lower()
+    if any(sign in errors for sign in ("authentication failed", "unable to authenticate",
+                                       "connection refused")):
+        out["hint"] = ("a node that was just created or rebooted refuses SSH until its login "
+                       "user and key are in place, usually under a minute - retry before "
+                       "treating this as a failure")
+    if script and script.get("ports"):
+        out["ports"] = script["ports"]
+        out["next"] = ("the service listens on these ports: open the ones that must be "
+                       "reachable with add_security_group_rules()")
+    return out
 
-    for vm_result in result.get("results", []):
-        if not vm_result.get("error"):
-            success_count += 1
-
-    if "results" not in result:
-        status = "failed"
-    else:
-        status = "completed" if success_count == total_count else "partial_failure" if success_count > 0 else "failed"
-    
-    _store_interaction_memory(
-        user_request=f"Execute commands {commands} on Infra '{infra_id}' in namespace '{ns_id}'",
-        llm_response=f"Command execution {status}: {success_count}/{total_count} VMs successful",
-        operation_type="command_execution",
-        context_data=context_data,
-        status=status
-    )
-
-    # The per-node error sits inside results, where a caller checking only isError misses it.
-    if "results" in result:
-        result["nodes"] = {"total": total_count, "succeeded": success_count,
-                           "failed": total_count - success_count}
-        errors = " ".join(str(r.get("error") or "") for r in result["results"]).lower()
-        if any(sign in errors for sign in ("authentication failed", "unable to authenticate",
-                                           "connection refused")):
-            result["hint"] = ("a node that was just created or rebooted refuses SSH until its login "
-                              "user and key are in place, usually under a minute - retry before "
-                              "treating this as a failure")
-
-    return result
-
-# PREDEFINED_SCRIPTS: Enhanced remote command scripts based on MapUI patterns
+# Predefined scripts, mirroring the CB-MapUI usecase menus. {{name}} placeholders are filled
+# from template_variables, then from "defaults"; "ports" are what the service listens on.
 PREDEFINED_SCRIPTS = {
     "system_info": {
         "commands": [
@@ -6776,70 +5805,73 @@ PREDEFINED_SCRIPTS = {
             "cat /etc/os-release",
             "echo '=== Memory Info ==='",
             "free -h",
-            "echo '=== Disk Info ==='", 
+            "echo '=== Disk Info ==='",
             "df -h",
             "echo '=== Network Info ==='",
             "ip addr show",
             "echo '=== Process Info ==='",
-            "ps aux | head -20"
+            "ps aux | head -20",
         ],
-        "description": "Comprehensive system information collection"
+        "description": "Comprehensive system information collection",
     },
-    # --- Nested-cloud scenario -------------------------------------------------
-    # Mirrors the CB-MapUI usecase menus ("☁️ OpenStack (DevStack)" and
-    # "☸️ Kubernetes"), so an agent can run the same flows an operator clicks
-    # through. Placeholders are filled by
-    # execute_command_infra(template_variables={...}) using the
-    # double-brace form - not the <NAME> form CB-MapUI uses in its own templates.
     "devstack_install": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/1.installDevStack.sh -o /tmp/installDevStack.sh && bash /tmp/installDevStack.sh --csp-name {{csp_name}} --latitude {{latitude}} --longitude {{longitude}} --location \"{{location}}\""
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/1.installDevStack.sh -o /tmp/installDevStack.sh && bash /tmp/installDevStack.sh --csp-name {{csp_name}} --latitude {{latitude}} --longitude {{longitude}} --location \"{{location}}\"",
         ],
-        "description": "Install OpenStack (DevStack) on a BARE-METAL node. Requires a *.metal spec: nested KVM needs hardware virtualization, and ordinary instances fall back to slow QEMU emulation. Takes 20-40 minutes, so pass timeout_minutes=120. Safe to re-run: it attaches to an install in progress instead of starting a second one. Prints credentials.yaml/cloudinfo.yaml snippets at the end - feed those to register_csp_definition() and register_csp_credential()."
+        "description": "Install OpenStack (DevStack) on a BARE-METAL node. Requires a *.metal spec: nested KVM needs hardware virtualization, and ordinary instances fall back to slow QEMU emulation. Takes 20-40 minutes, so pass timeout_minutes=120. Safe to re-run: it attaches to an install in progress instead of starting a second one. Prints credentials.yaml/cloudinfo.yaml snippets at the end - feed those to register_csp_definition() and register_csp_credential().",
+        "defaults": {"csp_name": "openstack-$$Func(GetInfraId())-$$Func(GetNodeId())", "latitude": "$$Func(GetLocationLatitude())", "longitude": "$$Func(GetLocationLongitude())", "location": "$$Func(GetLocationDisplay())"},
+        "ports": ["80/tcp", "6080/tcp", "8774/tcp", "9292/tcp", "9696/tcp", "8776/tcp", "9876/tcp"],
+        "min_disk_gb": 100,
+        "timeout_minutes": 120,
     },
     "devstack_registration_info": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/2.getRegistrationInfo.sh -o /tmp/getRegistrationInfo.sh && bash /tmp/getRegistrationInfo.sh --csp-name {{csp_name}}"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/2.getRegistrationInfo.sh -o /tmp/getRegistrationInfo.sh && bash /tmp/getRegistrationInfo.sh --csp-name {{csp_name}} --latitude {{latitude}} --longitude {{longitude}} --location \"{{location}}\"",
         ],
-        "description": "Re-print the registration snippets (Keystone endpoint, ProjectID, region/zone) for an already-installed DevStack."
+        "description": "Re-print the registration snippets (Keystone endpoint, ProjectID, region/zone) for an already-installed DevStack.",
+        "defaults": {"csp_name": "openstack-$$Func(GetInfraId())-$$Func(GetNodeId())", "latitude": "$$Func(GetLocationLatitude())", "longitude": "$$Func(GetLocationLongitude())", "location": "$$Func(GetLocationDisplay())"},
     },
     "devstack_update_endpoints": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/3.updateEndpoints.sh -o /tmp/updateEndpoints.sh && bash /tmp/updateEndpoints.sh --csp-name {{csp_name}}"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/3.updateEndpoints.sh -o /tmp/updateEndpoints.sh && bash /tmp/updateEndpoints.sh --csp-name {{csp_name}}",
         ],
-        "description": "Repoint the OpenStack service catalog after the host's public IP changed (stop/start, or no elastic IP). Re-register the credential afterwards."
+        "description": "Repoint the OpenStack service catalog after the host's public IP changed (stop/start, or no elastic IP). Re-register the credential afterwards.",
+        "defaults": {"csp_name": "openstack-$$Func(GetInfraId())-$$Func(GetNodeId())"},
     },
     "devstack_clean": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/4.cleanDevStack.sh -o /tmp/cleanDevStack.sh && bash /tmp/cleanDevStack.sh"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/4.cleanDevStack.sh -o /tmp/cleanDevStack.sh && bash /tmp/cleanDevStack.sh",
         ],
-        "description": "Tear down a failed or stale DevStack so it can be installed cleanly again."
+        "description": "Tear down a failed or stale DevStack so it can be installed cleanly again.",
     },
     "k8s_control_plane": {
         "commands": [
-            "CNI=$(echo \"{{k8s_cni}}\" | tr 'A-Z' 'a-z' | xargs); [ -z \"$CNI\" ] && CNI=flannel; curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/k8s/k8s-control-plane-setup.sh | bash -s -- --cni \"$CNI\""
+            "CNI=$(echo \"{{k8s_cni}}\" | tr 'A-Z' 'a-z' | xargs); [ -z \"$CNI\" ] && CNI=flannel; curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/k8s/k8s-control-plane-setup.sh | bash -s -- --cni \"$CNI\"",
         ],
-        "description": "Install a Kubernetes control plane. K8S_CNI selects the CNI: empty or 'flannel' (default), or 'cilium'. Needs working outbound access - verify the security group has an outbound rule first, since a stateful firewall keeps SSH alive while blocking every package download. Before joining workers, also open the cluster's inbound ports - see k8s_worker_join for the list."
+        "description": "Install a Kubernetes control plane. K8S_CNI selects the CNI: empty or 'flannel' (default), or 'cilium'. Needs working outbound access - verify the security group has an outbound rule first, since a stateful firewall keeps SSH alive while blocking every package download. Before joining workers, also open the cluster's inbound ports - see k8s_worker_join for the list.",
+        "defaults": {"k8s_cni": "flannel"},
+        "ports": ["6443/tcp"],
+        "min_disk_gb": 50,
     },
     "k8s_get_join_command": {
         "commands": [
-            "echo '[K8S_JOIN_COMMAND]'; sudo kubeadm token create --print-join-command"
+            "echo '[K8S_JOIN_COMMAND]'; sudo kubeadm token create --print-join-command",
         ],
-        "description": "Print the kubeadm join command, to be handed to workers. Run on the CONTROL PLANE. Tokens expire (24h by default), so fetch this immediately before joining workers rather than reusing an old one. Use summarize_output=false so the command is not truncated."
+        "description": "Print the kubeadm join command, to be handed to workers. Run on the CONTROL PLANE. Tokens expire (24h by default), so fetch this immediately before joining workers rather than reusing an old one. Use summarize_output=false so the command is not truncated.",
     },
     "k8s_worker_join": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/k8s/k8s-worker-setup.sh | bash -s -- -j \"{{join_command}}\""
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/k8s/k8s-worker-setup.sh | bash -s -- -j \"{{join_command}}\"",
         ],
-        "description": "Install the kubelet stack and join this node to an existing cluster. Run on the WORKER nodes (target them with node_id or label_selector - never the control plane, which is already a member). join_command comes from k8s_get_join_command. OPEN THE CLUSTER PORTS FIRST - a CB-Tumblebug security group allows only SSH, so the join times out at 'couldn't validate the identity of the API Server'. On the control plane's group allow inbound TCP 6443,2379-2380,10250,10257,10259,4240 and UDP 8472; on the workers' group TCP 10250,4240,30000-32767 and UDP 8472; source is the node subnet (get_infra shows the private addresses). 4240 and 8472 are Cilium's health and VXLAN ports - without them nodes join and then stay NotReady."
+        "description": "Install the kubelet stack and join this node to an existing cluster. Run on the WORKER nodes (target them with node_id or label_selector - never the control plane, which is already a member). join_command comes from k8s_get_join_command. OPEN THE CLUSTER PORTS FIRST - a CB-Tumblebug security group allows only SSH, so the join times out at 'couldn't validate the identity of the API Server'. On the control plane's group allow inbound TCP 6443,2379-2380,10250,10257,10259,4240 and UDP 8472; on the workers' group TCP 10250,4240,30000-32767 and UDP 8472; source is the node subnet (get_infra shows the private addresses). 4240 and 8472 are Cilium's health and VXLAN ports - without them nodes join and then stay NotReady.",
     },
     "k8s_storage_default": {
         "commands": [
             "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.31/deploy/local-path-storage.yaml",
             "kubectl patch storageclass local-path -p '{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'",
-            "kubectl get storageclass"
+            "kubectl get storageclass",
         ],
-        "description": "Install local-path as the default StorageClass. Required in EVERY topology before deploying anything with a PVC (Open WebUI has one): nothing else installs a StorageClass unless the full KServe stack is deployed. Use this for MULTI-NODE clusters; for a single-node cluster use k8s_single_node_prep, which also removes the control-plane taint."
+        "description": "Install local-path as the default StorageClass. Required in EVERY topology before deploying anything with a PVC (Open WebUI has one): nothing else installs a StorageClass unless the full KServe stack is deployed. Use this for MULTI-NODE clusters; for a single-node cluster use k8s_single_node_prep, which also removes the control-plane taint.",
     },
     "k8s_single_node_prep": {
         "commands": [
@@ -6847,98 +5879,110 @@ PREDEFINED_SCRIPTS = {
             "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.31/deploy/local-path-storage.yaml",
             "kubectl patch storageclass local-path -p '{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'",
             "kubectl get nodes -o wide",
-            "kubectl get storageclass"
+            "kubectl get storageclass",
         ],
-        "description": "Prepare a SINGLE-NODE cluster for workloads: remove the control-plane taint and install local-path as the default StorageClass. Without both, pods stay Pending forever with no error explaining why. Use this ONLY when the cluster has no workers - with workers joined, keep the taint (so the control plane stays reserved) and run k8s_storage_default instead."
+        "description": "Prepare a SINGLE-NODE cluster for workloads: remove the control-plane taint and install local-path as the default StorageClass. Without both, pods stay Pending forever with no error explaining why. Use this ONLY when the cluster has no workers - with workers joined, keep the taint (so the control plane stays reserved) and run k8s_storage_default instead.",
     },
     "gpu_driver_install": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/installGpuDriver.sh -o /tmp/installGpuDriver.sh && bash /tmp/installGpuDriver.sh --no-reboot"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/installGpuDriver.sh -o /tmp/installGpuDriver.sh && bash /tmp/installGpuDriver.sh --no-reboot",
         ],
         "description": "Install the NVIDIA driver on a GPU node. --no-reboot is used deliberately: the installer reboots by default, which drops the SSH channel mid-command and looks like a failure. Reboot separately afterwards with gpu_node_reboot, then confirm with gpu_driver_check.",
-        "timeout_minutes": 30
     },
     "gpu_node_reboot": {
-        "commands": ["sudo systemctl reboot || sudo reboot"],
+        "commands": [
+            "sudo systemctl reboot || sudo reboot",
+        ],
         "description": "Reboot a node so a freshly installed GPU driver loads. The command drops the connection by design; wait about a minute, then run gpu_driver_check.",
-        "timeout_minutes": 5
     },
     "gpu_driver_check": {
-        "commands": ["nvidia-smi || rocm-smi || echo 'no accelerator driver responded'"],
+        "commands": [
+            "nvidia-smi || rocm-smi || echo 'no accelerator driver responded'",
+        ],
         "description": "Confirm the accelerator driver is loaded and the card is visible. Run this before installing vLLM - vLLM on a node without a working driver fails much later and less clearly.",
-        "timeout_minutes": 5
     },
     "vllm_install": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployvLLM.sh -o /tmp/deployvLLM.sh && bash /tmp/deployvLLM.sh"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployvLLM.sh -o /tmp/deployvLLM.sh && bash /tmp/deployvLLM.sh",
         ],
         "description": "Install vLLM on a GPU node, directly on the VM - no Kubernetes involved. Requires a working NVIDIA driver (gpu_driver_check). This is the simple path; the KServe route (k8s_kserve_stack) is only worth it when the cluster is wanted for other reasons.",
-        "timeout_minutes": 40
+        "ports": ["8000/tcp"],
+        "min_disk_gb": 100,
     },
     "vllm_serve": {
         "commands": [
             "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/servevLLM.sh -o /tmp/servevLLM.sh && bash /tmp/servevLLM.sh --model '{{model_id}}' --port 8000",
-            "curl -s -m 20 http://127.0.0.1:8000/v1/models | head -c 400"
+            "curl -s -m 20 http://127.0.0.1:8000/v1/models | head -c 400",
         ],
         "description": "Serve a Hugging Face model with vLLM on port 8000, OpenAI-compatible. model_id is the HF repo, e.g. Qwen/Qwen2.5-1.5B-Instruct, which fits a 16 GB T4 in half precision. The model is downloaded on first run, so allow time. Verifies /v1/models afterwards.",
-        "timeout_minutes": 60
+        "ports": ["8000/tcp"],
+        "min_disk_gb": 100,
     },
     "ollama_install": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
         ],
-        "description": "Install Ollama on a GPU node and serve it on port 3000 (not the 11434 default). Run gpu_driver_install first, or it falls back to CPU. Pull a model afterwards with ollama_pull. Open port 3000 to reach the API from outside."
+        "description": "Install Ollama on a GPU node and serve it on port 3000 (not the 11434 default). Run gpu_driver_install first, or it falls back to CPU. Pull a model afterwards with ollama_pull. Open port 3000 to reach the API from outside.",
+        "ports": ["3000/tcp"],
+        "min_disk_gb": 50,
     },
     "ollama_pull": {
         "commands": [
-            "export OLLAMA_HOST=127.0.0.1:3000; ollama pull {{model}} && ollama list"
+            "export OLLAMA_HOST=127.0.0.1:3000; ollama pull {{model}} && ollama list",
         ],
-        "description": "Download a model into an Ollama installed by ollama_install. OLLAMA_HOST is set because that install moves the server to port 3000 while the CLI still defaults to 11434 - without it every ollama command fails with 'could not connect to ollama server'. Size the model to the card: a 14B at Q4 is ~9 GB, a 32B ~20 GB. Set model, e.g. qwen2.5:14b."
+        "description": "Download a model into an Ollama installed by ollama_install. OLLAMA_HOST is set because that install moves the server to port 3000 while the CLI still defaults to 11434 - without it every ollama command fails with 'could not connect to ollama server'. Size the model to the card: a 14B at Q4 is ~9 GB, a 32B ~20 GB. Set model, e.g. qwen2.5:14b.",
+        "ports": ["3000/tcp"],
+        "min_disk_gb": 50,
     },
     "open_webui_ollama": {
         "commands": [
             "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOpenWebUI.sh -o /tmp/deployOpenWebUI.sh && bash /tmp/deployOpenWebUI.sh ollama {{ollama_url}}",
-            "sleep 20; curl -s -o /dev/null -w 'local check: %{http_code}\\n' http://127.0.0.1/"
+            "sleep 20; curl -s -o /dev/null -w 'local check: %{http_code}\\n' http://127.0.0.1/",
         ],
-        "description": "Run Open WebUI in Docker on port 80 against an Ollama backend. ollama_url is reached from inside the container, so for an Ollama on the same node use the Docker bridge address http://172.17.0.1:3000 - localhost there is the container itself. Open port 80 in the security group."
+        "description": "Run Open WebUI in Docker on port 80 against an Ollama backend. ollama_url is reached from inside the container, so for an Ollama on the same node use the Docker bridge address http://172.17.0.1:3000 - localhost there is the container itself. Open port 80 in the security group.",
+        "ports": ["80/tcp"],
     },
     "open_webui_vllm": {
         "commands": [
             "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOpenWebUI.sh -o /tmp/deployOpenWebUI.sh && bash /tmp/deployOpenWebUI.sh vllm '{{vllm_url}}'",
-            "sleep 10; curl -s -o /dev/null -w 'local check: %{http_code}\n' http://127.0.0.1/"
+            "sleep 10; curl -s -o /dev/null -w 'local check: %{http_code}\n' http://127.0.0.1/",
         ],
         "description": "Run Open WebUI in Docker on port 80, pointed at a vLLM endpoint. vllm_url is the OpenAI-compatible base, e.g. http://<gpu-node-ip>:8000/v1 - use the node's own address when the UI and vLLM share a node. Open port 80 in the security group to reach it.",
-        "timeout_minutes": 20
+        "ports": ["80/tcp"],
     },
     "k8s_kserve_stack": {
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/kserve/deploy-kserve-stack.sh -o /tmp/deploy-kserve-stack.sh && bash /tmp/deploy-kserve-stack.sh"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/kserve/deploy-kserve-stack.sh -o /tmp/deploy-kserve-stack.sh && bash /tmp/deploy-kserve-stack.sh",
         ],
         "description": "Install the model-serving stack on the control plane: a default StorageClass, Helm, the NVIDIA GPU Operator, cert-manager and KServe in RawDeployment mode. Takes 10-20 minutes. Required before serve_vllm_model. Skip it only if the cluster already has KServe.",
-        "timeout_minutes": 30
+        "min_disk_gb": 80,
     },
     "serve_vllm_model": {
         "commands": [
             "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/kserve/serve-vllm-model.sh -o /tmp/serve-vllm-model.sh && bash /tmp/serve-vllm-model.sh --model '{{model_id}}' --name '{{isvc_name}}'",
-            "kubectl get isvc"
+            "kubectl get isvc",
         ],
         "description": "Serve a Hugging Face model with vLLM through KServe. model_id is the HF repo, e.g. Qwen/Qwen2.5-1.5B-Instruct for a small one that fits a single T4. isvc_name is the InferenceService name Open WebUI will connect to. Needs an NVIDIA GPU node and k8s_kserve_stack already installed; AMD accelerators will not work, the stack is CUDA-based.",
-        "timeout_minutes": 60
+        "defaults": {"isvc_name": "llm"},
+        "ports": ["30800/tcp"],
+        "min_disk_gb": 100,
     },
     "k8s_open_webui": {
         "commands": [
             "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/kserve/deploy-open-webui-kserve.sh -o /tmp/deploy-open-webui.sh",
             "BACKEND='{{backend_url}}'; case \"$BACKEND\" in http*) ;; *) BACKEND='' ;; esac; if [ -n \"$BACKEND\" ]; then echo \"Connecting Open WebUI to: $BACKEND\"; bash /tmp/deploy-open-webui.sh --nodeport {{node_port}} --backend-url \"$BACKEND\"; else echo 'No backend URL given - the UI will come up with an empty model list.'; bash /tmp/deploy-open-webui.sh --nodeport {{node_port}}; fi",
             "kubectl get svc open-webui -o wide",
-            "code=$(curl -s -m 8 -o /dev/null -w '%{http_code}' http://127.0.0.1:{{node_port}}/); if [ \"$code\" != 200 ]; then echo \"NodePort did not answer ($code); restarting kube-proxy\"; kubectl -n kube-system rollout restart ds/kube-proxy > /dev/null; kubectl -n kube-system rollout status ds/kube-proxy --timeout=180s > /dev/null; sleep 5; code=$(curl -s -m 8 -o /dev/null -w '%{http_code}' http://127.0.0.1:{{node_port}}/); fi; echo \"local NodePort check: $code\""
+            "code=$(curl -s -m 8 -o /dev/null -w '%{http_code}' http://127.0.0.1:{{node_port}}/); if [ \"$code\" != 200 ]; then echo \"NodePort did not answer ($code); restarting kube-proxy\"; kubectl -n kube-system rollout restart ds/kube-proxy > /dev/null; kubectl -n kube-system rollout status ds/kube-proxy --timeout=180s > /dev/null; sleep 5; code=$(curl -s -m 8 -o /dev/null -w '%{http_code}' http://127.0.0.1:{{node_port}}/); fi; echo \"local NodePort check: $code\"",
         ],
-        "description": "Deploy Open WebUI as a NodePort service and confirm it answers locally. node_port is typically 30080. Set backend_url to an OpenAI-compatible endpoint (or several joined by ';') - get it from discover_service_endpoints() first, otherwise the UI deploys with an empty model list and chat does not answer. Requires a default StorageClass: the data PVC is a hard precondition, and nothing installs one unless the KServe stack was deployed, so run k8s_single_node_prep first. KServe itself is NOT required - the script falls back cleanly when no InferenceService exists."
+        "description": "Deploy Open WebUI as a NodePort service and confirm it answers locally. node_port is typically 30080. Set backend_url to an OpenAI-compatible endpoint (or several joined by ';') - get it from discover_service_endpoints() first, otherwise the UI deploys with an empty model list and chat does not answer. Requires a default StorageClass: the data PVC is a hard precondition, and nothing installs one unless the KServe stack was deployed, so run k8s_single_node_prep first. KServe itself is NOT required - the script falls back cleanly when no InferenceService exists.",
+        "defaults": {"backend_url": "", "node_port": "30080"},
+        "ports": ["30080/tcp"],
     },
     "publish_nodeport_via_host": {
         "commands": [
-            "set -e; IFACE=$(ip route show 0.0.0.0/0 | grep -oE 'dev [^ ]+' | cut -c5- | head -1); echo \"forwarding via $IFACE\"; sudo sysctl -w net.ipv4.ip_forward=1; sudo iptables -t nat -C PREROUTING -i \"$IFACE\" -p tcp --dport {{ext_port}} -j DNAT --to-destination {{target_ip}}:{{target_port}} 2>/dev/null || sudo iptables -t nat -A PREROUTING -i \"$IFACE\" -p tcp --dport {{ext_port}} -j DNAT --to-destination {{target_ip}}:{{target_port}}; sudo iptables -C FORWARD -p tcp -d {{target_ip}} --dport {{target_port}} -j ACCEPT 2>/dev/null || sudo iptables -A FORWARD -p tcp -d {{target_ip}} --dport {{target_port}} -j ACCEPT; sudo iptables -t nat -C POSTROUTING -d {{target_ip}} -p tcp --dport {{target_port}} -j MASQUERADE 2>/dev/null || sudo iptables -t nat -A POSTROUTING -d {{target_ip}} -p tcp --dport {{target_port}} -j MASQUERADE; echo '--- active rules ---'; sudo iptables -t nat -L PREROUTING -n -v --line-numbers | grep {{ext_port}}"
+            "set -e; IFACE=$(ip route show 0.0.0.0/0 | grep -oE 'dev [^ ]+' | cut -c5- | head -1); echo \"forwarding via $IFACE\"; sudo sysctl -w net.ipv4.ip_forward=1; sudo iptables -t nat -C PREROUTING -i \"$IFACE\" -p tcp --dport {{ext_port}} -j DNAT --to-destination {{target_ip}}:{{target_port}} 2>/dev/null || sudo iptables -t nat -A PREROUTING -i \"$IFACE\" -p tcp --dport {{ext_port}} -j DNAT --to-destination {{target_ip}}:{{target_port}}; sudo iptables -C FORWARD -p tcp -d {{target_ip}} --dport {{target_port}} -j ACCEPT 2>/dev/null || sudo iptables -A FORWARD -p tcp -d {{target_ip}} --dport {{target_port}} -j ACCEPT; sudo iptables -t nat -C POSTROUTING -d {{target_ip}} -p tcp --dport {{target_port}} -j MASQUERADE 2>/dev/null || sudo iptables -t nat -A POSTROUTING -d {{target_ip}} -p tcp --dport {{target_port}} -j MASQUERADE; echo '--- active rules ---'; sudo iptables -t nat -L PREROUTING -n -v --line-numbers | grep {{ext_port}}",
         ],
-        "description": "Publish a service that lives behind a private address. RUN THIS ON THE HOST that owns the public IP and can route to target_ip - never on the target itself, where DNAT to its own unreachable address becomes an infinite loop. Kept as ONE command on purpose: CB-Tumblebug runs each entry of a command list in a SEPARATE SSH session, so a shell variable set in one entry is empty in the next. The MASQUERADE is required: with DNAT alone the target replies straight to the client and that reply never passes back through this host's conntrack. Also open ext_port in the host's security group AND target_port in the target's security group. Rules are added idempotently, so re-running is safe."
+        "description": "Publish a service that lives behind a private address. RUN THIS ON THE HOST that owns the public IP and can route to target_ip - never on the target itself, where DNAT to its own unreachable address becomes an infinite loop. Kept as ONE command on purpose: CB-Tumblebug runs each entry of a command list in a SEPARATE SSH session, so a shell variable set in one entry is empty in the next. The MASQUERADE is required: with DNAT alone the target replies straight to the client and that reply never passes back through this host's conntrack. Also open ext_port in the host's security group AND target_port in the target's security group. Rules are added idempotently, so re-running is safe.",
     },
     "docker_install": {
         "commands": [
@@ -6952,23 +5996,9 @@ PREDEFINED_SCRIPTS = {
             "sudo systemctl start docker",
             "sudo systemctl enable docker",
             "sudo usermod -aG docker $USER",
-            "docker --version"
+            "docker --version",
         ],
-        "description": "Install Docker on Ubuntu/Debian systems"
-    },
-    "nginx_install": {
-        "commands": [
-            "echo 'Installing Nginx...'",
-            "sudo apt-get update",
-            "sudo apt-get install -y nginx",
-            "sudo systemctl start nginx",
-            "sudo systemctl enable nginx",
-            "sudo ufw allow 'Nginx Full'",
-            "echo 'Nginx Status:'",
-            "sudo systemctl status nginx",
-            "echo 'Access URL: http://{{public_ip}}'"
-        ],
-        "description": "Install and configure Nginx web server"
+        "description": "Install Docker on Ubuntu/Debian systems",
     },
     "node_install": {
         "commands": [
@@ -6978,9 +6008,9 @@ PREDEFINED_SCRIPTS = {
             "echo 'Node.js version:'",
             "node --version",
             "echo 'NPM version:'",
-            "npm --version"
+            "npm --version",
         ],
-        "description": "Install Node.js 18.x LTS"
+        "description": "Install Node.js 18.x LTS",
     },
     "python_install": {
         "commands": [
@@ -6990,9 +6020,9 @@ PREDEFINED_SCRIPTS = {
             "echo 'Python version:'",
             "python3 --version",
             "echo 'Pip version:'",
-            "pip3 --version"
+            "pip3 --version",
         ],
-        "description": "Install Python 3 development environment"
+        "description": "Install Python 3 development environment",
     },
     "firewall_setup": {
         "commands": [
@@ -7004,9 +6034,9 @@ PREDEFINED_SCRIPTS = {
             "sudo ufw allow 80/tcp",
             "sudo ufw allow 443/tcp",
             "sudo ufw --force enable",
-            "sudo ufw status"
+            "sudo ufw status",
         ],
-        "description": "Configure basic UFW firewall rules"
+        "description": "Configure basic UFW firewall rules",
     },
     "security_hardening": {
         "commands": [
@@ -7019,21 +6049,215 @@ PREDEFINED_SCRIPTS = {
             "sudo apt-get install -y unattended-upgrades",
             "echo 'Disabling root SSH login...'",
             "sudo sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config",
-            "sudo systemctl reload sshd"
+            "sudo systemctl reload sshd",
         ],
-        "description": "Apply basic security hardening measures"
+        "description": "Apply basic security hardening measures",
     },
-    "monitoring_setup": {
+    "k8s_cluster_status": {
         "commands": [
-            "echo 'Installing monitoring tools...'",
-            "sudo apt-get update",
-            "sudo apt-get install -y htop iotop nethogs ncdu",
-            "echo 'Installing netdata...'",
-            "bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait",
-            "echo 'Monitoring dashboard: http://{{public_ip}}:19999'"
+            "echo '=== Nodes ===' && kubectl get nodes -o wide && echo '' && echo '=== Pods ===' && kubectl get pods -A",
         ],
-        "description": "Install system monitoring tools and Netdata dashboard"
-    }
+        "description": "Nodes and pods of a kubeadm cluster. Run on the control plane.",
+    },
+    "k8s_get_kubeconfig": {
+        "commands": [
+            "echo '[K8S_KUBECONFIG_BASE64]' && base64 -w 0 ~/kubeconfig-external.yaml && echo ''",
+        ],
+        "description": "Print the kubeconfig for kubectl from outside, base64-encoded after the [K8S_KUBECONFIG_BASE64] marker. Run on the control plane; open TCP 6443 to use it.",
+        "ports": ["6443/tcp"],
+    },
+    "k8s_get_kubeconfig_external": {
+        "commands": [
+            "ADDR=\"{{k8s_external_ip}}\"; PORT=\"{{k8s_api_port}}\"; [ -z \"$PORT\" ] && PORT=6443; if [ -z \"$ADDR\" ]; then echo 'ERROR: K8S_EXTERNAL_IP is required'; exit 1; fi; SANS=$(sudo openssl x509 -in /etc/kubernetes/pki/apiserver.crt -noout -ext subjectAltName | tr ',' '\\n' | sed -n -e 's/.*DNS://p' -e 's/.*IP Address://p' | tr -d ' ' | paste -sd, -); case \",$SANS,\" in *\",$ADDR,\"*) echo \"API server cert already covers $ADDR\";; *) echo \"Re-issuing API server cert with SAN $ADDR ...\"; ADV=$(sudo sed -n 's/.*--advertise-address=\\([0-9.]*\\).*/\\1/p' /etc/kubernetes/manifests/kube-apiserver.yaml | head -1); TS=$(date +%s); sudo mv /etc/kubernetes/pki/apiserver.crt /etc/kubernetes/pki/apiserver.crt.bak.$TS; sudo mv /etc/kubernetes/pki/apiserver.key /etc/kubernetes/pki/apiserver.key.bak.$TS; sudo kubeadm init phase certs apiserver --apiserver-advertise-address \"$ADV\" --apiserver-cert-extra-sans \"$SANS,$ADDR\" || { echo 'ERROR: cert re-issue failed'; exit 1; }; sudo mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/kube-apiserver.yaml; sleep 8; sudo mv /tmp/kube-apiserver.yaml /etc/kubernetes/manifests/kube-apiserver.yaml; for i in $(seq 1 60); do kubectl get --raw /healthz >/dev/null 2>&1 && break; sleep 3; done; echo 'API server restarted with the new cert';; esac; KC=$HOME/kubeconfig-external.yaml; cp $HOME/.kube/config $KC; kubectl --kubeconfig=$KC config set-cluster \"$(kubectl --kubeconfig=$KC config view -o jsonpath='{.clusters[0].name}')\" --server=\"https://$ADDR:$PORT\" >/dev/null; chmod 600 $KC; kubectl --kubeconfig=$KC get nodes >/dev/null 2>&1 && echo \"Verified: https://$ADDR:$PORT is reachable from this node\" || echo \"NOTE: https://$ADDR:$PORT not reachable from this node - expected when the address is a NAT/port-forward entry point; forward $PORT to this node's :6443 and open it in the security group\"; echo ''; echo '[K8S_KUBECONFIG_BASE64]'; base64 -w 0 $KC; echo ''; printf '$$FILEPATH[Kubeconfig for %s:%s](%s)\\n' \"$ADDR\" \"$PORT\" \"$KC\"",
+        ],
+        "description": "Kubeconfig for an address the cluster was not created with (NAT, a port-forward, a nested cloud). Re-issues the API server certificate with k8s_external_ip added and prints the kubeconfig base64-encoded. Run on the control plane.",
+        "defaults": {"k8s_api_port": "6443"},
+        "ports": ["6443/tcp"],
+    },
+    "k8s_gpu_status": {
+        "commands": [
+            "echo '=== GPU Operator Pods ==='; kubectl get pods -n gpu-operator 2>/dev/null || echo '  (GPU Operator not installed or namespace not found)'; echo ''; echo '=== GPU Resources per Node ==='; kubectl get nodes -o custom-columns='NAME:.metadata.name,GPU:.status.allocatable.nvidia\\.com/gpu' 2>/dev/null || echo '  (no GPU resources detected)'",
+        ],
+        "description": "GPU Operator pods and the GPUs each node offers. Run on the control plane.",
+    },
+    "kserve_status": {
+        "commands": [
+            "echo '=== InferenceServices ==='; kubectl get isvc 2>/dev/null || echo '  (KServe not installed)'; echo ''; echo '=== Predictor Pods ==='; kubectl get pods -l serving.kserve.io/inferenceservice -o wide 2>/dev/null; echo ''; echo '=== GPU Resources ==='; kubectl get nodes -o custom-columns='NAME:.metadata.name,GPU:.status.allocatable.nvidia\\.com/gpu' 2>/dev/null; echo ''; echo '=== External APIs (per served LLM) ==='; APIS=$(kubectl get svc -o jsonpath='{range .items[*]}{.metadata.name}{\" \"}{.spec.ports[0].nodePort}{\"\\n\"}{end}' 2>/dev/null | grep -- '-api '); if [ -n \"$APIS\" ]; then echo \"$APIS\" | sed 's|\\(.*\\)-api \\(.*\\)|  \\1: http://$$Func(GetPublicIP(target=this)):\\2/openai/v1|'; else echo '  (not exposed; serve with --nodeport to expose)'; fi; echo ''; echo '=== Model Logs (tail) ==='; kubectl logs -l serving.kserve.io/inferenceservice --tail=5 2>/dev/null || echo '  (no model pods yet)'",
+        ],
+        "description": "InferenceServices, predictor pods and GPU allocation of a KServe cluster. Run on the control plane.",
+    },
+    "kserve_gpu_timeslice": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/kserve/config-gpu-timeslicing.sh -o /tmp/config-gpu-timeslicing.sh && NODE=\"{{gpu_timeslice_node}}\"; ARGS=(--replicas {{gpu_timeslice_replicas}}); [ -n \"$NODE\" ] && ARGS+=(--node \"$NODE\"); bash /tmp/config-gpu-timeslicing.sh \"${ARGS[@]}\"",
+        ],
+        "description": "Let several models share one GPU by time-slicing (no memory isolation, so cap each model's GPU share). Run on the control plane after k8s_kserve_stack. gpu_timeslice_node limits it to one node; empty slices every GPU node.",
+        "defaults": {"gpu_timeslice_node": "", "gpu_timeslice_replicas": "2"},
+    },
+    "kserve_gpu_mig": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/kserve/config-gpu-mig.sh | bash -s -- --profile {{mig_profile}}",
+        ],
+        "description": "Partition A100/H100 GPUs into isolated MIG slices. Run on the control plane after k8s_kserve_stack.",
+        "defaults": {"mig_profile": "all-3g.40gb"},
+    },
+    "ray_head": {
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-head-setup.sh",
+            "chmod +x ~/ray-head-setup.sh",
+            "~/ray-head-setup.sh -i $$Func(GetPublicIP(target=this))",
+        ],
+        "description": "Start a Ray head node (dashboard on port 8265).",
+        "ports": ["8265/tcp", "6379/tcp", "10001/tcp"],
+    },
+    "ray_worker": {
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-worker-setup.sh",
+            "chmod +x ~/ray-worker-setup.sh",
+            "~/ray-worker-setup.sh -i $$Func(GetPublicIP(target=this)) -h $$Func(GetPublicIP(target={{head_node}}))",
+        ],
+        "description": "Join a node to a Ray cluster. head_node names the head as '<infraId>.<nodeId>', e.g. 'mc-ray.g1-1'.",
+    },
+    "xonotic_server": {
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/xonotic/startServer.sh; chmod +x ~/startServer.sh",
+            "sudo ~/startServer.sh Cloud-Barista-$$Func(GetInfraId()) 26000 8 8",
+            "echo '$$Func(GetPublicIP(target=this,postfix=:26000))'",
+        ],
+        "description": "Start a Xonotic game server on port 26000 - the classic multi-region latency demo.",
+        "ports": ["26000/udp", "26000/tcp"],
+    },
+    "nginx_server": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/nginx/startServer.sh | bash -s -- --ip $$Func(GetPublicIP(target=this))",
+            "which unzip || sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y unzip; f=$(ls /home/cb-user/*.zip /home/cb-user/*.tar.gz /home/cb-user/*.tgz /home/cb-user/*.tar.bz2 2>/dev/null | head -1); [ -n \"$f\" ] && case \"$f\" in *.zip) sudo unzip -o \"$f\" -d /var/www/html/ ;; *.tar.gz|*.tgz) sudo tar -xzf \"$f\" -C /var/www/html/ ;; *.tar.bz2) sudo tar -xjf \"$f\" -C /var/www/html/ ;; esac || echo 'No archive found in /home/cb-user/, skipping extraction.'",
+            "echo 'Access to $$Func(GetPublicIP(target=this, prefix=http://))'",
+        ],
+        "description": "Install nginx and serve a page identifying the node. An archive placed in /home/cb-user (transfer_file_infra) is unpacked into the web root.",
+        "ports": ["80/tcp"],
+    },
+    "jitsi": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/jitsi/startServer.sh | sudo bash -s -- {{dns_domain}} {{email_address}}",
+        ],
+        "description": "Install Jitsi Meet. dns_domain must already resolve to the node (manage_dns_record); email_address is used for the certificate.",
+        "ports": ["80/tcp", "443/tcp", "10000/udp", "3478/udp", "5349/tcp"],
+        "min_disk_gb": 30,
+    },
+    "netdata_install": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployNetdataMonitor.sh | sh",
+            "echo '$$Func(GetPublicIP(target=this, prefix=http://, postfix=:19999))'",
+        ],
+        "description": "Install the Netdata live monitor (UI on port 19999, unauthenticated - restrict the CIDR).",
+        "ports": ["19999/tcp"],
+    },
+    "netdata_status": {
+        "commands": [
+            "sudo systemctl status netdata --no-pager",
+        ],
+        "description": "Service state of Netdata.",
+    },
+    "weavescope": {
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/weavescope/startServer.sh",
+            "chmod +x ~/startServer.sh",
+            "sudo ~/startServer.sh $$Func(GetPublicIPs(separator=' ')) $$Func(GetPrivateIPs(separator=' '))",
+        ],
+        "description": "Install Weave Scope to visualise the hosts of the Infra (UI on port 4040, unauthenticated - restrict the CIDR). Run on every node.",
+        "ports": ["4040/tcp"],
+    },
+    "stress_test": {
+        "commands": [
+            "sudo apt install -y stress > /dev/null; stress -c 16 -t 60",
+        ],
+        "description": "Load 16 CPU workers for 60 seconds - useful to watch monitoring react.",
+    },
+    "cross_cloud_nat": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setup-cross-cloud-nat.sh -o ~/setup-cross-cloud-nat.sh && chmod +x ~/setup-cross-cloud-nat.sh",
+            "sudo ~/setup-cross-cloud-nat.sh pub=$$Func(GetPublicIPs(separator=,)) priv=$$Func(GetPrivateIPs(separator=,))",
+        ],
+        "description": "Let the nodes of a multi-cloud Infra reach each other by private address, by NAT between each node's public and private IP. Run on every node.",
+    },
+    "wireguard_mesh": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/k8s/setup-wireguard-mesh.sh -o ~/setup-wireguard-mesh.sh && chmod +x ~/setup-wireguard-mesh.sh",
+            "sudo ~/setup-wireguard-mesh.sh --nodes \"{{nodes_mapping}}\"",
+        ],
+        "description": "Build a WireGuard mesh between nodes in different clouds, e.g. before a cross-cloud Kubernetes cluster. nodes_mapping is 'public_ip:wg_ip' pairs, comma-separated ('54.1.1.1:10.200.0.1,35.2.2.2:10.200.0.2'). Run on every node; open UDP 51820.",
+        "ports": ["51820/udp"],
+    },
+    "kolla_install": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/kolla/1.installKolla.sh -o /tmp/installKolla.sh && bash /tmp/installKolla.sh --csp-name openstack-$$Func(GetInfraId())-$$Func(GetNodeId()) --latitude $$Func(GetLocationLatitude()) --longitude $$Func(GetLocationLongitude()) --location \"$$Func(GetLocationDisplay())\"",
+            "echo 'Kolla-Ansible installed. Horizon: $$Func(GetPublicIP(target=this, prefix=http://, postfix=/))'",
+        ],
+        "description": "Install OpenStack with Kolla-Ansible on a BARE-METAL node - closer to a production layout than DevStack. Takes 30-60 minutes: pass timeout_minutes=120 and run_async=True. Prints the registration snippets when it finishes.",
+        "ports": ["80/tcp", "5000/tcp", "6080/tcp", "8774/tcp", "8776/tcp", "8780/tcp", "9292/tcp", "9696/tcp", "9876/tcp"],
+        "min_disk_gb": 100,
+    },
+    "kolla_registration_info": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/kolla/2.getRegistrationInfo.sh -o /tmp/getKollaInfo.sh && bash /tmp/getKollaInfo.sh --csp-name openstack-$$Func(GetInfraId())-$$Func(GetNodeId()) --latitude $$Func(GetLocationLatitude()) --longitude $$Func(GetLocationLongitude()) --location \"$$Func(GetLocationDisplay())\"",
+        ],
+        "description": "Re-print the registration snippets (Keystone endpoint, ProjectID, region/zone) of a Kolla-Ansible OpenStack.",
+    },
+    "kolla_update_endpoints": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/kolla/3.updateEndpoints.sh -o /tmp/updateKollaEndpoints.sh && bash /tmp/updateKollaEndpoints.sh --csp-name openstack-$$Func(GetInfraId())-$$Func(GetNodeId())",
+        ],
+        "description": "Repoint the Kolla-Ansible service catalog after the host's public IP changed. Re-register the credential afterwards.",
+    },
+    "kolla_clean": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/kolla/4.cleanKolla.sh -o /tmp/cleanKolla.sh && bash /tmp/cleanKolla.sh",
+        ],
+        "description": "Tear down a failed or stale Kolla-Ansible deployment so it can be installed again.",
+    },
+    "mcp_registry_db": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/mcp/deploy-registry-db.sh | bash",
+        ],
+        "description": "Model-registry demo 1/6: PostgreSQL with a sample model catalog. Run on the control plane of a kubeadm cluster with a default StorageClass.",
+    },
+    "mcp_registry_backend": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/mcp/deploy-registry-backend.sh | bash",
+        ],
+        "description": "Model-registry demo 2/6: the REST backend. Run on the control plane.",
+    },
+    "mcp_registry_web": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/mcp/deploy-registry-web.sh | bash; echo ''; echo '[MODEL_REGISTRY_WEB]'; echo 'http://$$Func(GetPublicIP(target=this)):30902'",
+        ],
+        "description": "Model-registry demo 3/6: the web catalog on NodePort 30902. Run on the control plane.",
+        "ports": ["30902/tcp"],
+    },
+    "mcp_servers": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/mcp/deploy-mcp-servers.sh | bash",
+        ],
+        "description": "Model-registry demo 4/6: the MCP adapters (catalog tools and read-only SQL). Run on the control plane.",
+    },
+    "mcp_agentgateway": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/mcp/deploy-agentgateway.sh | bash; echo ''; echo '[MCP_ENDPOINT (all tools)]'; echo 'http://$$Func(GetPublicIP(target=this)):30900/mcp'; echo '[MCP_ENDPOINT_REGISTRY (catalog view)]'; echo 'http://$$Func(GetPublicIP(target=this)):30900/mcp-registry'; echo '[MCP_ENDPOINT_SERVING (KServe view; needs step 8-opt)]'; echo 'http://$$Func(GetPublicIP(target=this)):30900/mcp-serving'; echo '[AGENTGATEWAY_UI]'; echo 'http://$$Func(GetPublicIP(target=this)):30901/ui/'; echo ''; echo 'Register in Claude Code:'; echo 'claude mcp add --transport http model-registry http://$$Func(GetPublicIP(target=this)):30900/mcp'; echo ''; echo 'Register in VS Code Copilot:'; echo 'Ctrl+Shift+P -> MCP: Add Server... -> HTTP -> paste an endpoint URL above, then use Copilot Chat in Agent mode'",
+        ],
+        "description": "Model-registry demo 5/6: agentgateway federating the adapters at http://<node>:30900/mcp. Run on the control plane.",
+        "ports": ["30900/tcp", "30901/tcp"],
+    },
+    "mcp_e2e_test": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/mcp/test-mcp-e2e.sh | bash",
+        ],
+        "description": "Model-registry demo 6/6: call the tools through the gateway end to end. Run on the control plane.",
+    },
+    "mcp_status": {
+        "commands": [
+            "echo '=== MCP demo stack (namespace mcp-demo) ==='; kubectl -n mcp-demo get pods,svc 2>/dev/null || echo '  (mcp-demo namespace not found)'; echo ''; echo '=== External endpoints ==='; echo '  Web:  http://$$Func(GetPublicIP(target=this)):30902'; echo '  MCP:  http://$$Func(GetPublicIP(target=this)):30900/mcp (views: /mcp-registry, /mcp-serving)'; echo '  UI:   http://$$Func(GetPublicIP(target=this)):30901/ui/'; echo ''; echo '=== agentgateway logs (tail) ==='; kubectl -n mcp-demo logs deploy/agentgateway --tail=5 2>/dev/null || echo '  (agentgateway not deployed yet)'",
+        ],
+        "description": "Pods, services and external endpoints of the model-registry demo. Run on the control plane.",
+    },
 }
 
 # Tool: Find HTTP endpoints served by the nodes of matching Infras
@@ -7154,111 +6378,126 @@ def discover_service_endpoints(
     return result
 
 
-
-
-
 # Tool: List available predefined scripts
 @tool()
-def list_predefined_scripts() -> Dict:
+def list_predefined_scripts(name: Optional[str] = None) -> Dict:
     """
-    List all available predefined scripts for enhanced remote command execution.
-    
+    The predefined scripts execute_command_infra(script_name=...) can run.
+
+    The same setups CB-MapUI offers: GPU drivers, vLLM, Ollama, Open WebUI, Kubernetes on
+    VMs, KServe, OpenStack (DevStack, Kolla), Ray, cross-cloud networking and demo services.
+
+    Args:
+        name: Return this script in full
+
     Returns:
-        Dictionary containing all available predefined scripts with descriptions
+        scripts: name -> what it does. With name: its commands, each {{placeholder}} and
+        whether it is required, the ports the service listens on, and the disk it needs.
     """
-    scripts_info = {}
-    
-    for script_name, script_config in PREDEFINED_SCRIPTS.items():
-        scripts_info[script_name] = {
-            "description": script_config["description"],
-            "command_count": len(script_config["commands"]),
-            "commands_preview": script_config["commands"][:3] + ["..."] if len(script_config["commands"]) > 3 else script_config["commands"]
-        }
-    
-    return {
-        "predefined_scripts": scripts_info,
-        "total_scripts": len(PREDEFINED_SCRIPTS),
-        "usage_note": "Run one with execute_command_infra(script_name=...)",
-        "template_variables_supported": [
-            "{{public_ip}}", "{{public_ips_space}}", "{{public_ips_comma}}", 
-            "{{private_ips_space}}", "{{infra_id}}", "{{ns_id}}"
-        ]
-    }
+    if name:
+        script = PREDEFINED_SCRIPTS.get(name)
+        if not script:
+            return {"error": f"unknown name {name!r}; expected one of "
+                             f"{', '.join(sorted(PREDEFINED_SCRIPTS))}"}
+        automatic = _AUTO_TEMPLATE_VARS + ("infra_id", "ns_id")
+        defaults = script.get("defaults", {})
+        placeholders = {}
+        for token in sorted({m for c in script["commands"]
+                             for m in re.findall(r"\{\{(\w+)\}\}", c)}):
+            if token in defaults:
+                placeholders[token] = f"optional, default {defaults[token]!r}"
+            elif token in automatic:
+                placeholders[token] = "filled automatically"
+            else:
+                placeholders[token] = "required"
+        out = {"name": name, "description": script["description"],
+               "commands": script["commands"], "placeholders": placeholders}
+        for key in ("ports", "min_disk_gb", "timeout_minutes"):
+            if key in script:
+                out[key] = script[key]
+        return out
+    def first_sentence(text):
+        head = str(text).split(". ")[0].rstrip(".")
+        return head if len(head) <= 140 else head[:137] + "..."
+    return {"scripts": {k: first_sentence(v["description"]) for k, v in PREDEFINED_SCRIPTS.items()},
+            "count": len(PREDEFINED_SCRIPTS),
+            "next": "list_predefined_scripts(name=...) for a script's full notes, commands "
+                    "and placeholders; execute_command_infra(script_name=...) runs it"}
 
 
-
-
-
-
-# Tool: Transfer file to VMs in Infra
+# Tool: Put a file on nodes
 @tool(mutating=True)
 def transfer_file_infra(
     ns_id: str,
     infra_id: str,
-    file_path: str,
     target_path: str,
+    content: Optional[str] = None,
+    file_name: Optional[str] = None,
+    file_path: Optional[str] = None,
     nodegroup_id: Optional[str] = None,
     node_id: Optional[str] = None
 ) -> Dict:
     """
-    Transfer a file to nodes of an Infra via SCP.
+    Place a file on the nodes of an Infra (SCP through the bastion, 10 MB at most).
 
-    The file is read from the MCP SERVER's own filesystem, not from yours - an LLM client
-    has no way to put a file there, so this is usable only for paths that already exist in
-    the server container. To place content you are holding, write it with a heredoc through
-    execute_command_infra; for anything binary or large, have the node fetch it from a URL.
+    Give the text as content - a configuration file, a script, a manifest. For anything
+    binary or large, have the node fetch it from a URL with execute_command_infra().
 
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-        file_path: Path on the MCP server's filesystem - see the note above
-        target_path: Destination path on the remote node
-        nodegroup_id: NodeGroup ID to limit transfer to nodes in a nodegroup (optional)
-        node_id: Node ID to transfer to a single node (optional)
+        target_path: Directory on the node that receives the file, e.g. "/home/cb-user"
+        content: Text to write into the file
+        file_name: Name of the file on the node; required with content
+        file_path: Instead of content: a file on the MCP server's own filesystem
+        nodegroup_id: Only the nodes of this NodeGroup
+        node_id: Only this node
 
     Returns:
-        File transfer result
+        nodes {total, succeeded, failed} and per-node results, failed nodes first. It is
+        an error only when no node received the file.
     """
-    url = f"/ns/{ns_id}/transferFile/infra/{infra_id}"
+    if content is None and not file_path:
+        return {"error": "content is required (with file_name), or file_path"}
+    if content is not None and not file_name:
+        return {"error": "file_name is required with content"}
     params = {}
-
     if nodegroup_id:
         params["nodeGroupId"] = nodegroup_id
     if node_id:
         params["nodeId"] = node_id
-
-    # Open file
     try:
-        with open(file_path, 'rb') as file:
-            files = {'file': (os.path.basename(file_path), file)}
-            data = {'path': target_path}
+        if content is not None:
+            payload = (os.path.basename(file_name), content.encode("utf-8"))
+        else:
+            with open(file_path, "rb") as fh:
+                payload = (os.path.basename(file_path), fh.read())
+    except OSError as exc:
+        return {"error": f"could not read {file_path}: {exc}"}
+    result = api_request("POST", f"/ns/{ns_id}/transferFile/infra/{infra_id}",
+                         files={"file": payload}, json_data={"path": target_path},
+                         params=params or None, timeout_override=(60, 1200))
+    if not isinstance(result, dict) or not isinstance(result.get("results"), list):
+        return result
+    rows = [{k: r[k] for k in ("nodeId", "nodeIp", "stdout", "stderr", "error") if r.get(k)}
+            for r in result["results"] if isinstance(r, dict)]
+    failed = [r for r in rows if r.get("error")]
+    if rows and len(failed) == len(rows):
+        return {"error": {"message": f"the file reached none of the {len(rows)} node(s): "
+                                     f"{failed[0]['error']}",
+                          "failedNodes": [r.get("nodeId") for r in failed][:NODE_LIST_LIMIT]}}
+    return {"nodes": {"total": len(rows), "succeeded": len(rows) - len(failed),
+                      "failed": len(failed)},
+            "results": (failed + [r for r in rows if not r.get("error")])[:NODE_LIST_LIMIT]}
 
-            # Request with multipart form data
-            return api_request("POST", url, files=files, json_data=data, params=params or None)
-    except Exception as e:
-        return {"error": f"File transfer error: {str(e)}"}
 
-# Tool: Get request by ID
-@tool()
-def get_request_by_id(request_id: str) -> Dict:
-    """
-    Get request by request ID
-
-    Args:
-        request_id: Request ID
-
-    Returns:
-        Request information
-    """
-    return api_request("GET", f"/request/{request_id}")
-
-
-# Tool: List node command status
+# Tool: Command history of one node
 @tool()
 def list_node_command_status(
     ns_id: str,
     infra_id: str,
     node_id: str,
+    index: Optional[int] = None,
     status: Optional[List[str]] = None,
     request_id: Optional[str] = None,
     page: Optional[int] = None,
@@ -7267,25 +6506,31 @@ def list_node_command_status(
     tail_lines: int = 20
 ) -> Dict:
     """
-    List remote command execution status records for a specific node.
-
-    Supports filtering by status, requestId, and pagination.
+    Remote command records of one node, or one record by index.
 
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-        node_id: Node ID (e.g., g1-1)
-        status: Filter by status values (e.g., ["Completed", "Failed"])
-        request_id: Filter by x-request-id of the command execution
-        page: Page number for pagination (converted to offset)
-        size: Page size for pagination (max records to return)
+        node_id: Node ID, e.g. "g1-1"
+        index: Return this one record with its output
+        status: Only records in these states, e.g. ["Completed", "Failed"]
+        request_id: Only records of this command request
+        page: Page number (with size)
+        size: Records per page
         detail: "summary" (default) keeps output only for the newest record and any that
             did not finish; "full" returns every record's output.
         tail_lines: Lines of stdout/stderr kept per record (default 20)
 
     Returns:
-        List of command status records for the node
+        commands: the records, oldest first.
     """
+    base = f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatus"
+    if index is not None:
+        record = api_request("GET", f"{base}/{index}")
+        if _validate_detail(detail) == "full" or not isinstance(record, dict) \
+                or "error" in record:
+            return record
+        return _trim_command_record(record, tail_lines)
     params = {}
     if status:
         params["status"] = status
@@ -7295,51 +6540,20 @@ def list_node_command_status(
         params["limit"] = size
     if page is not None:
         params["offset"] = (max(page, 1) - 1) * (size or 50)
-    result = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatus", params=params)
+    result = api_request("GET", base, params=params)
     if _validate_detail(detail) == "full" or not isinstance(result, dict):
-        return _redact_secrets(result)
+        return result
     cmds = result.get("commands")
     if not isinstance(cmds, list):
-        return _redact_secrets(result)
-    # Output is kept only where it is actually read: the newest record, and anything that
-    # did not complete. Older successful commands keep their metadata and resultSummary.
-    keep_output = set()
-    for i, c in enumerate(cmds):
-        if not isinstance(c, dict):
-            continue
-        if i >= len(cmds) - 1 or c.get("status") not in ("Completed", None):
-            keep_output.add(i)
+        return result
     out = dict(result)
     out["commands"] = [
-        _trim_command_record(c, tail_lines) if i in keep_output else _drop_command_output(c)
+        _trim_command_record(c, tail_lines)
+        if i >= len(cmds) - 1 or (isinstance(c, dict) and c.get("status") not in ("Completed", None))
+        else _drop_command_output(c)
         for i, c in enumerate(cmds)
     ]
-    out["_note"] = (f"output kept for the newest record and any that did not complete, "
-                    f"trimmed to {tail_lines} lines; detail='full' returns everything")
-    return _redact_secrets(out)
-
-
-# Tool: Get specific node command status by index
-@tool()
-def get_node_command_status(
-    ns_id: str,
-    infra_id: str,
-    node_id: str,
-    index: int
-) -> Dict:
-    """
-    Get a specific remote command execution status record by index for a node.
-
-    Args:
-        ns_id: Namespace ID
-        infra_id: Infra ID
-        node_id: Node ID (e.g., g1-1)
-        index: Command status record index
-
-    Returns:
-        Command status record details
-    """
-    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatus/{index}")
+    return out
 
 
 # Tool: Clear all node command status
@@ -7364,2632 +6578,113 @@ def clear_all_node_command_status( ns_id: str, infra_id: str, node_id: str , con
     return api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatusAll")
 
 
-
-
-
-
-# Tool: Check available region zones for a spec
+# Tool: Health of an Infra and what to do about failures
 @tool()
-def check_available_region_zones_for_spec(
-    provider: str,
-    spec_name: str
-) -> Dict:
-    """
-    Check available region zones for a specific VM specification.
-
-    Only Alibaba Cloud is implemented server-side today; any other provider comes back
-    "not supported yet". Do not reach for this to validate an AWS or Azure spec.
-
-    Use this to verify which regions/zones can actually provision a given spec
-    before attempting infra creation.
-
-    Args:
-        provider: Cloud provider name (e.g., "aws", "gcp", "azure")
-        spec_name: CSP spec name to check (e.g., "t3.medium")
-
-    Returns:
-        Available region zones for the spec
-    """
-    data = {
-        "provider": provider,
-        "cspSpecName": spec_name
-    }
-    return api_request("POST", "/availableRegionZonesForSpec", json_data=data)
-
-
-# Tool: Check available region zones for a list of specs
-@tool()
-def check_available_region_zones_for_spec_list(
-    provider: str,
-    spec_names: List[str]
-) -> Dict:
-    """
-    Check available region zones for multiple VM specifications of one provider at once.
-
-    Only Alibaba Cloud is implemented server-side today; any other provider comes back
-    "not supported yet". Do not reach for this to validate an AWS or Azure spec.
-
-    Args:
-        provider: Cloud provider name (e.g., "aws")
-        spec_names: List of CSP spec names (e.g., ["t3.medium", "m5.large"])
-
-    Returns:
-        Available region zones for each spec in the list
-    """
-    data = {"provider": provider, "cspSpecNames": spec_names}
-    return api_request("POST", "/availableRegionZonesForSpecList", json_data=data)
-
-
-# Tool: Update existing spec list by available region zones
-@tool(mutating=True)
-def update_existing_spec_list_by_available_region_zones(
-    ns_id: str,
-    provider: str
-) -> Dict:
-    """
-    Update the availability status of existing specs in the namespace by checking
-
-    Only Alibaba Cloud is implemented server-side today; any other provider comes back
-    "not supported yet". Do not reach for this to validate an AWS or Azure spec.
-    actual available region zones from the CSP.
-
-    This refreshes which specs can be provisioned in which zones (and removes
-    stale unavailable specs), helping avoid failures caused by outdated data.
-
-    Args:
-        ns_id: Namespace ID
-        provider: Cloud provider name to refresh (e.g., "aws")
-
-    Returns:
-        Cleanup result (specsDeleted, specsToDelete, availabilityResults, ...)
-    """
-    return api_request("POST", f"/ns/{ns_id}/updateExistingSpecListByAvailableRegionZones", json_data={"provider": provider})
-
-
-#####################################
-# Prompts
-#####################################
-
-# Prompt: Namespace management prompt
-@mcp.prompt()
-def namespace_management_prompt() -> str:
-    """Prompt for namespace management"""
-    return """
-    You are a namespace management expert for Cloud-Barista CB-Tumblebug.
-    You can perform the following tasks:
-    
-    1. View list of namespaces
-    2. View specific namespace information
-    3. Create a new namespace
-    4. Update namespace information
-    5. Delete a namespace
-    
-    Perform appropriate actions according to the user's request and explain the results clearly.
-    
-    Current namespace list:
-    {{namespace://list}}
-    
-    How can I help you?
-    """
-
-# Prompt: Infra management prompt
-@mcp.prompt()
-def infra_management_prompt() -> str:
-    """Prompt for Infra management with comprehensive create_infra_dynamic usage patterns"""
-    return """
-    You are a Multi-Cloud Infrastructure (Infra) management expert for Cloud-Barista CB-Tumblebug.
-    
-    🚨 **CRITICAL: ONLY USE create_infra_dynamic FOR ALL Infra CREATION**
-    
-    All Infra creation MUST use `create_infra_dynamic` with proper workflow patterns. 
-    Other Infra creation tools have been deprecated.
-    
-    **🔥 MANDATORY WORKFLOW FOR create_infra_dynamic:**
-    
-    **PATTERN 1: SPEC-FIRST WORKFLOW (RECOMMENDED)**
-    ```python
-    # Step 1: Find VM specifications first (determines CSP and region)
-    specs = recommend_vm_spec(
-        filter_policies={
-            "vCPU": {"min": 2, "max": 8},
-            "memoryGiB": {"min": 4, "max": 16}
-        },
-        priority_policy="cost"  # or "performance", "location"
-    )
-    
-    # Step 2: For each spec, find compatible images in same CSP/region
-    vm_configs = []
-    for spec in specs["summarized_specs"][:2]:  # Use multiple specs for multi-CSP
-        spec_id = spec["id"]  # e.g., "aws+us-east-1+t3.medium"
-        
-        # Extract CSP and region from spec ID
-        provider, region, instance_type = spec_id.split("+")
-        
-        # Step 3: Search for images in the SAME CSP/region as the spec
-        images = search_images(
-            provider_name=provider,  # Must match spec's provider
-            region_name=region,      # Must match spec's region
-            os_type="ubuntu 22.04"
-        )
-        
-        # Step 4: Select best image for this specific spec
-        # Use intelligent image selection instead of arbitrary first choice
-        best_image = select_best_image_for_spec(
-            images["imageList"], spec, {"os_type": "ubuntu 22.04"}
-        )
-        # Alternative: best_image = select_best_image(images["imageList"])
-        
-        # Step 5: Create VM config with spec-matched image
-        vm_configs.append({
-            "specId": spec_id,                          # Exact spec ID from API
-            "imageId": best_image["cspImageName"],      # Intelligently selected image
-            "name": f"vm-{provider}-{len(vm_configs)+1}",
-            "description": f"VM on {provider} in {region}",
-            "nodeGroupSize": 1
-        })
-    
-    # Step 6: Create Infra with properly mapped configurations
-    infra = create_infra_dynamic(
-        ns_id="my-project",
-        name="multi-csp-infra",
-        node_groups=vm_configs
-    )
-    ```
-    
-    **PATTERN 2: AUTO-MAPPING WORKFLOW (SIMPLER)**
-    ```python
-    # Let create_infra_dynamic auto-map images for specs
-    specs = recommend_vm_spec(
-        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
-    )
-    
-    vm_configs = []
-    for spec in specs["summarized_specs"][:2]:
-        vm_configs.append({
-            "specId": spec["id"],  # REQUIRED: Exact spec ID
-            "name": f"vm-{spec['providerName']}-{len(vm_configs)+1}",
-            "os_requirements": {"os_type": "ubuntu", "use_case": "web-server"}
-            # imageId omitted - will be auto-mapped to compatible image
-        })
-    
-    infra = create_infra_dynamic(
-        ns_id="my-project",
-        name="auto-mapped-infra",
-        node_groups=vm_configs  # Auto-mapping ensures compatibility
-    )
-    ```
-    
-    **PATTERN 3: LOCATION-BASED WORKFLOW**
-    ```python
-    # User says: "Deploy in Silicon Valley"
-    
-    # Step 1: Convert location to coordinates
-    latitude, longitude = 37.4419, -122.1430  # Silicon Valley coordinates
-    
-    # Step 2: Get location-optimized specs
-    specs = recommend_vm_spec(
-        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-        priority_policy="location",
-        latitude=latitude,
-        longitude=longitude
-    )
-    
-    # Step 3: Create Infra with location-optimized specs
-    infra = create_infra_dynamic(
-        ns_id="production",
-        name="silicon-valley-infra",
-        node_groups=[
-            {"specId": spec["id"], "name": f"vm-{spec['regionName']}-{i+1}"}
-            for i, spec in enumerate(specs["summarized_specs"][:3])
-        ]
-    )
-    ```
-    
-    **🔍 PATTERN 4: RISK-AWARE WORKFLOW (NEW - ENHANCED)**
-    ```python
-    # CRITICAL: Always analyze historical risk before Infra creation
-    
-    # Step 1: Prepare initial VM configurations
-    vm_configs = [
-        {"specId": "aws+us-east-1+t2.small", "name": "web-server"},
-        {"specId": "azure+eastus+Standard_B2s", "name": "api-server"}
-    ]
-    
-    # Step 2: Review configurations with risk analysis
-    review_result = review_infra_dynamic_request(
-        ns_id="production",
-        name="web-application",
-        node_groups=vm_configs
-    )
-    
-    # Step 3: Check for high-risk VMs and get mitigation guidance
-    if review_result.get("overall_risk_assessment", {}).get("high_risk_vms"):
-        guidance = get_provisioning_risk(vm_configs)
-        
-        # Step 4: Reconfigure based on risk analysis
-        for alt_config in guidance["alternative_configurations"]:
-            vm_index = alt_config["original_vm_index"]
-            search_criteria = alt_config["search_criteria"]
-            
-            # Find safer alternatives
-            safer_specs = recommend_vm_spec(
-                filter_policies={
-                    "ProviderName": search_criteria["provider"],
-                    "RegionName": search_criteria["region"],
-                    "vCPU": {"min": 1, "max": 4}
-                },
-                priority_policy="cost"
-            )
-            
-            # Replace high-risk spec with safer alternative
-            if safer_specs["summarized_specs"]:
-                vm_configs[vm_index]["specId"] = safer_specs["summarized_specs"][0]["id"]
-        
-        # Step 5: Re-review with updated configurations
-        final_review = review_infra_dynamic_request(
-            ns_id="production",
-            name="web-application",
-            node_groups=vm_configs
-        )
-    
-    # Step 6: Create Infra only after acceptable risk level
-    if final_review.get("creationViable", False):
-        infra = create_infra_dynamic(
-            ns_id="production",
-            name="web-application",
-            node_groups=vm_configs
-        )
-    ```
-    
-    **🔧 PATTERN 5: PROGRESSIVE RISK MITIGATION**
-    ```python
-    # For high-risk scenarios, deploy in stages
-    
-    # Step 1: Separate VMs by risk level
-    guidance = get_provisioning_risk(original_vm_configs)
-    low_risk_configs = []
-    high_risk_configs = []
-    
-    for i, vm_guidance in enumerate(guidance["vm_specific_guidance"]):
-        if vm_guidance["risk_level"] in ["low", "unknown"]:
-            low_risk_configs.append(original_vm_configs[i])
-        else:
-            high_risk_configs.append(original_vm_configs[i])
-    
-    # Step 2: Deploy low-risk VMs first
-    if low_risk_configs:
-        stable_infra = create_infra_dynamic(
-            ns_id="production",
-            name="stable-infrastructure",
-            node_groups=low_risk_configs
-        )
-    
-    # Step 3: Research and deploy high-risk VMs with alternatives
-    for high_risk_config in high_risk_configs:
-        risk_analysis = get_provisioning_risk(
-            high_risk_config["specId"], kind="summary"
-        )
-        
-        if risk_analysis.get("riskLevel") == "high":
-            # Get detailed analysis and alternatives
-            detailed_risk = get_provisioning_risk(
-                high_risk_config["specId"], kind="detailed"
-            )
-            # Apply recommendations from detailed analysis
-        
-        # Add to Infra after risk mitigation
-        enhanced_vm = add_nodegroup_dynamic(
-            ns_id="production",
-            infra_id="stable-infrastructure",
-            req=modified_high_risk_config
-        )
-    ```
-    
-    # Step 3: Use specs with auto-mapping or manual image selection
-    vm_configs = []
-    for spec in specs["summarized_specs"][:2]:
-        vm_configs.append({
-            "specId": spec["id"],
-            "name": f"vm-{spec['regionName']}-{len(vm_configs)+1}",
-            "description": f"VM near Silicon Valley in {spec['regionName']}"
-        })
-    
-    infra = create_infra_dynamic(
-        ns_id="location-project",
-        name="silicon-valley-infra",
-        node_groups=vm_configs
-    )
-    ```
-    
-    **PATTERN 4: NAMESPACE MANAGEMENT WORKFLOW**
-    ```python
-    # Check namespace first
-    ns_check = manage_namespace(action='create', name="my-project")
-    
-    # Create namespace if needed
-    if not ns_check["namespace_exists"]:
-        manage_namespace(action='create'"my-project", "Project namespace")
-    
-    # Then create Infra
-    infra = create_infra_dynamic(
-        ns_id="my-project",
-        name="managed-infra",
-        node_groups=vm_configs
-    )
-    ```
-    
-    **PATTERN 5: CONFIRMATION WORKFLOW**
-    ```python
-    # Preview configuration first
-    preview = create_infra_dynamic(
-        ns_id="my-project",
-        name="preview-infra",
-        node_groups=vm_configs,
-        skip_confirmation=False  # Returns preview only
-    )
-    
-    # User reviews preview, then confirms
-    infra = create_infra_dynamic(
-        ns_id="my-project",
-        name="confirmed-infra",
-        node_groups=vm_configs,
-        force_create=True  # Actually creates after confirmation
-    )
-    ```
-    
-    **PATTERN 6: COMPREHENSIVE REVIEW WORKFLOW (MANDATORY)**
-    ```python
-    # Step 1: Pre-creation validation
-    validation = review_infra_dynamic_request(
-        ns_id="my-project",
-        name="web-application",
-        node_groups=vm_configs
-    )
-    
-    # Step 2: CRITICAL - Comprehensive review result analysis
-    # YOU MUST analyze ALL aspects of the review result before proceeding
-    
-    # 2A. Overall Validation Status
-    creation_viable = validation.get("creationViable", False)
-    validation_passed = validation.get("validation_passed", False)
-    
-    # 2B. VM-Level Analysis
-    vm_reviews = validation.get("nodeReviews", [])
-    for i, vm_review in enumerate(vm_reviews):
-        vm_name = vm_configs[i].get("name", f"VM-{i+1}")
-        print(f"\\n🔍 VM Review: {vm_name}")
-        
-        # Check individual VM status
-        vm_viable = vm_review.get("viable", False)
-        vm_issues = vm_review.get("issues", [])
-        
-        if not vm_viable:
-            print(f"❌ VM {vm_name} has issues:")
-            for issue in vm_issues:
-                print(f"   • {issue}")
-        else:
-            print(f"✅ VM {vm_name} configuration is valid")
-        
-        # Analyze spec-image compatibility
-        spec_image_compat = vm_review.get("specImageCompatibility", {})
-        if spec_image_compat:
-            compat_score = spec_image_compat.get("compatibility_score", 0)
-            compat_issues = spec_image_compat.get("issues", [])
-            
-            if compat_score < 80:
-                print(f"⚠️  VM {vm_name} spec-image compatibility: {compat_score}%")
-                for issue in compat_issues:
-                    print(f"   • Compatibility issue: {issue}")
-    
-    # 2C. Risk Assessment Analysis  
-    risk_assessment = validation.get("overall_risk_assessment", {})
-    if risk_assessment:
-        risk_level = risk_assessment.get("overall_risk", "unknown")
-        high_risk_vms = risk_assessment.get("high_risk_vms", [])
-        risk_factors = risk_assessment.get("risk_factors", [])
-        
-        print(f"\\n🎯 Risk Assessment: {risk_level.upper()}")
-        
-        if high_risk_vms:
-            print("⚠️  High-risk VMs detected:")
-            for high_risk_vm in high_risk_vms:
-                vm_name = high_risk_vm.get("vm_name", "Unknown")
-                risk_reasons = high_risk_vm.get("risk_reasons", [])
-                print(f"   • {vm_name}: {', '.join(risk_reasons)}")
-        
-        if risk_factors:
-            print("📊 Overall risk factors:")
-            for factor in risk_factors:
-                print(f"   • {factor}")
-    
-    # 2D. Cost and Resource Analysis
-    estimated_cost = validation.get("estimatedCost", {})
-    if estimated_cost:
-        total_cost = estimated_cost.get("totalCostPerHour", 0)
-        cost_breakdown = estimated_cost.get("vmCosts", [])
-        
-        print(f"\\n💰 Cost Analysis: ${total_cost:.3f}/hour")
-        for cost_item in cost_breakdown:
-            vm_name = cost_item.get("vmName", "Unknown")
-            vm_cost = cost_item.get("costPerHour", 0)
-            print(f"   • {vm_name}: ${vm_cost:.3f}/hour")
-    
-    # 2E. Network and Security Analysis
-    network_analysis = validation.get("networkAnalysis", {})
-    if network_analysis:
-        network_complexity = network_analysis.get("complexity", "unknown")
-        security_groups = network_analysis.get("securityGroups", [])
-        
-        print(f"\\n🔒 Network Complexity: {network_complexity}")
-        if security_groups:
-            print("Security groups to be created:")
-            for sg in security_groups:
-                print(f"   • {sg}")
-    
-    # Step 3: Decision making based on comprehensive analysis
-    print("\\n📋 REVIEW SUMMARY:")
-    print(f"Creation Viable: {'✅ YES' if creation_viable else '❌ NO'}")
-    print(f"Validation Passed: {'✅ YES' if validation_passed else '❌ NO'}")
-    
-    # Step 4: Handle different review outcomes
-    if not creation_viable:
-        print("\\n🚨 CRITICAL ISSUES DETECTED - Creation not recommended")
-        print("Required actions before proceeding:")
-        
-        issues = validation.get("issues", [])
-        for issue in issues:
-            print(f"   • Fix: {issue}")
-        
-        # Don't proceed with creation - user must fix issues first
-        return validation
-        
-    elif not validation_passed:
-        print("\\n⚠️  VALIDATION WARNINGS - Proceed with caution")
-        
-        # Ask user for confirmation before proceeding
-        user_wants_to_proceed = input("Do you want to proceed despite warnings? (yes/no): ")
-        if user_wants_to_proceed.lower() != 'yes':
-            return validation
-    
-    else:
-        print("\\n✅ ALL VALIDATIONS PASSED - Safe to proceed")
-    
-    # Step 5: Only proceed with creation after thorough review
-    print("\\n🚀 Proceeding with Infra creation...")
-    infra = create_infra_dynamic(
-        ns_id="my-project",
-        name="web-application",
-        node_groups=vm_configs
-    )
-    
-    # Step 6: Post-creation status monitoring
-    print("\\n📊 Monitoring deployment progress...")
-    status = check_infra_status_and_handle_failures(
-        ns_id="my-project",
-        infra_id=infra["id"],
-        detailed_analysis=True
-    )
-    ```
-    
-    **🔍 MANDATORY REVIEW RESULT ANALYSIS CHECKLIST:**
-    
-    Before proceeding with any Infra creation, you MUST analyze and report:
-    
-    ✅ **Overall Status:**
-    - [ ] creationViable (true/false)
-    - [ ] validation_passed (true/false) 
-    - [ ] Total estimated cost per hour
-    
-    ✅ **Per-VM Analysis:**
-    - [ ] Each VM's viable status
-    - [ ] Individual VM issues and warnings
-    - [ ] Spec-image compatibility scores
-    - [ ] Resource allocation validation
-    
-    ✅ **Risk Assessment:**
-    - [ ] Overall risk level (low/medium/high)
-    - [ ] Identification of high-risk VMs
-    - [ ] Specific risk factors and mitigation suggestions
-    - [ ] Historical failure analysis results
-    
-    ✅ **Resource Planning:**
-    - [ ] Network complexity analysis
-    - [ ] Security group requirements
-    - [ ] Resource dependencies and conflicts
-    - [ ] Multi-region deployment considerations
-    
-    ✅ **User Communication:**
-    - [ ] Clear explanation of any issues found
-    - [ ] Specific steps to resolve problems
-    - [ ] Cost implications and resource usage
-    - [ ] Risk trade-offs and recommendations
-    
-    **❌ NEVER proceed with create_infra_dynamic() until:**
-    - All critical issues are resolved
-    - User understands and accepts any risks
-    - Cost implications are clearly communicated
-    - Alternative configurations are considered if needed
-    
-    **🔑 CRITICAL VM CONFIGURATION REQUIREMENTS:**
-    
-    **specId (ALWAYS REQUIRED):**
-    - MUST be exact spec ID from recommend_vm_spec() results
-    - Format: "{provider}+{region}+{instance_type}" (e.g., "aws+us-east-1+t3.medium")
-    - ❌ NEVER manually create spec IDs
-    - ✅ ALWAYS get from recommend_vm_spec() API
-    
-    **imageId (RECOMMENDED):**
-    - Should be exact cspImageName from search_images() results
-    - Must be compatible with specId's CSP/region
-    - If omitted: Auto-mapped by create_infra_dynamic
-    - Provider-specific formats:
-      * AWS: "ami-0123456789abcdef0"
-      * Azure: "/subscriptions/.../resourceGroups/.../providers/Microsoft.Compute/images/ubuntu-20.04"
-      * GCP: "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307a"
-    
-    **🔄 COMPLETE CREATE_Infra_DYNAMIC WORKFLOW:**
-    
-    **1. PREPARATION PHASE:**
-    ```python
-    # A. Check/create namespace
-    ns_result = manage_namespace(action='create', name=preferred_ns_id)
-    
-    # B. Get VM specifications (determines CSP and region)
-    specs = recommend_vm_spec(
-        filter_policies=user_requirements,
-        priority_policy="cost|performance|location",
-        latitude=lat,  # if location-based
-        longitude=lon  # if location-based
-    )
-    ```
-    
-    **2. CONFIGURATION PHASE:**
-    ```python
-    # A. For each spec, build VM configuration
-    vm_configs = []
-    for spec in specs["summarized_specs"]:
-        spec_id = spec["id"]
-        
-        # B. Extract CSP info from spec
-        provider, region, instance = spec_id.split("+")
-        
-        # C. Find compatible images (optional but recommended)
-        images = search_images(
-            provider_name=provider,
-            region_name=region,
-            os_type=desired_os
-        )
-        
-        # D. Create VM config
-        vm_config = {
-            "specId": spec_id,  # Required: exact spec ID
-            "imageId": images["imageList"][0]["cspImageName"],  # Optional
-            "name": f"vm-{provider}-{vm_index}",
-            "description": f"VM on {provider} in {region}",
-            "nodeGroupSize": 1
-        }
-        vm_configs.append(vm_config)
-    ```
-    
-    **3. CREATION PHASE:**
-    ```python
-    # A. Validate configuration (optional but recommended)
-    validation = review_infra_dynamic_request(ns_id, name, vm_configs)
-    
-    # B. Create Infra
-    infra = create_infra_dynamic(
-        ns_id=target_namespace,
-        name=infra_name,
-        node_groups=vm_configs,
-        description="Multi-CSP infrastructure",
-        hold=False,  # Set True to hold for review
-        skip_confirmation=False,  # Set True for automated workflows
-        force_create=False  # Set True after user confirmation
-    )
-    ```
-    
-    **4. POST-CREATION PHASE (MANDATORY):**
-    ```python
-    # A. Check deployment status
-    status = check_infra_status_and_handle_failures(
-        ns_id=target_namespace,
-        infra_id=infra["id"],
-        auto_cleanup_failed=False
-    )
-    
-    # B. Handle different outcomes
-    if status["deployment_health"] == "healthy":
-        print("✅ All VMs deployed successfully!")
-    elif status["deployment_health"] == "partial-failed":
-        # Offer cleanup of failed VMs
-        recovery = interactive_infra_recovery(
-            ns_id, infra["id"], 
-            recovery_action="refine"
-        )
-    elif status["deployment_health"] == "critical":
-        print("❌ All VMs failed - investigate and retry")
-    ```
-    
-    **🚨 CRITICAL SPEC-TO-IMAGE MAPPING RULES:**
-    
-    **Why Proper Mapping Matters:**
-    - AWS uses AMI IDs, Azure uses Image IDs, GCP uses Image URIs
-    - Same OS in different regions has different image identifiers
-    - Cross-CSP image references cause deployment failures
-    
-    **Correct Mapping Pattern:**
-    ```python
-    # ✅ CORRECT: Each VM gets spec-matched image
-    vm_configs = [
-        {
-            "specId": "aws+us-east-1+t3.medium",
-            "imageId": "ami-0123456789abcdef0"  # AWS AMI in us-east-1
-        },
-        {
-            "specId": "azure+eastus+Standard_B2s", 
-            "imageId": "/subscriptions/.../images/ubuntu-20.04"  # Azure Image in eastus
-        }
-    ]
-    ```
-    
-    **Wrong Mapping Pattern:**
-    ```python
-    # ❌ WRONG: Using same image for different CSPs
-    vm_configs = [
-        {
-            "specId": "aws+us-east-1+t3.medium",
-            "imageId": "ami-0123456789abcdef0"
-        },
-        {
-            "specId": "azure+eastus+Standard_B2s",
-            "imageId": "ami-0123456789abcdef0"  # ERROR: AWS AMI for Azure spec
-        }
-    ]
-    ```
-    
-    **📍 LOCATION-TO-COORDINATES MAPPING:**
-    When users mention locations, use these coordinates for location-based priority:
-    - **Silicon Valley**: 37.4419° N, 122.1430° W
-    - **Seoul**: 37.5665° N, 126.9780° E
-    - **Tokyo**: 35.6762° N, 139.6503° E
-    - **London**: 51.5074° N, 0.1278° W
-    - **Sydney**: 33.8688° S, 151.2093° E
-    - **Frankfurt**: 50.1109° N, 8.6821° E
-    - **Singapore**: 1.3521° N, 103.8198° E
-    - **Mumbai**: 19.0760° N, 72.8777° E
-    - **Virginia**: 38.7223° N, 78.1692° W
-    
-    **� FAILURE RECOVERY STRATEGIES:**
-    
-    **Partial-Failed State:**
-    - Some VMs succeeded, some failed
-    - Use 'refine' action to cleanup failed VMs
-    - Preserve successful infrastructure
-    - Continue with working VMs
-    
-    **Complete Failure State:**
-    - All VMs failed
-    - Investigate error messages
-    - Try different specs/regions
-    - Consider terminate and recreate
-    
-    **🚨 ABSOLUTE REQUIREMENTS:**
-    1. ✅ ALWAYS use recommend_vm_spec() for spec IDs
-    2. ✅ ALWAYS check Infra status after creation
-    3. ✅ ALWAYS handle failures with user confirmation
-    4. ✅ ALWAYS use location priority for geographic requests
-    5. ❌ NEVER create spec IDs manually
-    6. ❌ NEVER skip failure recovery workflows
-    7. ❌ NEVER use cross-CSP image references
-    
-    Current namespace list: {{namespace://list}}
-    
-    What Infra would you like to create? I'll guide you through the proper create_infra_dynamic workflow with spec validation and failure handling.
-    """
-
-# Prompt: Resource management prompt
-@mcp.prompt()
-def resource_management_prompt() -> str:
-    """Prompt for resource management"""
-    return """
-    You are a resource management expert for Cloud-Barista CB-Tumblebug.
-    You can perform the following tasks:
-    
-    1. Manage Network (VNet) resources
-    2. Manage Security Group resources
-    3. Manage SSH keys
-    4. Manage images and specifications
-    5. Manage resource connections
-    6. Register and release CSP resources
-    
-    Perform appropriate actions according to the user's request and explain the results clearly.
-    
-    Current namespace list:
-    {{namespace://list}}
-    
-    How can I help you?
-    """
-
-# Prompt: Cloud connection management prompt
-@mcp.prompt()
-def connection_management_prompt() -> str:
-    """Prompt for cloud connection management"""
-    return """
-    You are a cloud connection management expert for Cloud-Barista CB-Tumblebug.
-    You can perform the following tasks:
-    
-    1. View list of registered cloud connections
-    2. View specific cloud connection information
-    3. View cloud region and location information
-    
-    Current list of registered cloud connections:
-    {{connection://list}}
-    
-    How can I help you?
-    """
-
-# Prompt: Context awareness for new LLM sessions
-@mcp.prompt()
-def context_awareness_prompt() -> str:
-    """Prompt for new LLM sessions to understand previous work context"""
-    return """
-    You are a Cloud-Barista CB-Tumblebug expert who has access to interaction memory from previous sessions.
-    
-    🚨 **CRITICAL: HARDWARE RESEARCH REQUIRED FOR ALL APPLICATION DEPLOYMENTS**
-    
-    **⚡ MANDATORY BEHAVIOR: When using context from previous sessions for application deployments:**
-    1. **ALWAYS research hardware requirements** for any new applications (even if similar deployed before)
-    2. **Apply current hardware research standards** (minimum 50GB disk, optimized specs)
-    3. **Use deployment_type** inferred from user context and historical patterns
-    4. **Enable research_requirements=True** for all deployments unless explicitly told not to
-    5. **Explain hardware research benefits** to users based on improved deployment context
-    
-    **🔥 Enhanced Context Workflow with Hardware Research:**
-    ```python
-    # 1. Check previous work context
-    history = resume_session(operation_type="infra_creation")
-    
-    # 3. Deploy with both context knowledge and current research
-    deploy_application(
-        application_id="app",
-        research_requirements=True,  # ALWAYS True for new deployments
-        deployment_type="production"  # informed by context + current needs
-    )
-    ```
-    
-    **CONTEXT AWARENESS CAPABILITIES:**
-    
-    **Memory Functions Available:**
-    - resume_session(): See recent work and operations
-    - resume_session(): Get comprehensive analysis of current session
-    - resume_session(): Find specific previous work
-    - resume_session(session_id): What this session already did (mutating calls are journaled automatically)
-    
-    **GETTING STARTED WITH CONTEXT:**
-    
-    1. **Check Recent Work:**
-       ```python
-       # See what's been done recently
-       history = resume_session(days_back=7, max_results=10)
-       
-       # Focus on specific operations
-       infra_history = resume_session(operation_type="infra_creation")
-       namespace_history = resume_session(operation_type="namespace_management")
-       ```
-    
-    2. **Understand Current Session:**
-       ```python
-       # Get comprehensive session analysis
-       summary = resume_session()
-       ```
-    
-    3. **Search for Specific Context:**
-       ```python
-       # Find previous work with specific resources
-       aws_work = resume_session("aws")
-       ubuntu_setups = resume_session("ubuntu")
-       ```
-    
-    **AUTOMATIC MEMORY STORAGE:**
-    Most operations automatically store interaction data:
-    - Infra creation/management → "infra_creation" type
-    - Command execution → "command_execution" type  
-    - Namespace operations → "namespace_management" type
-    - Resource management → context stored with IDs
-    
-    **MEMORY ANALYSIS BENEFITS:**
-    - Understand user's typical workflows and preferences
-    - Identify recurring patterns and optimization opportunities
-    - Avoid repeating failed approaches
-    - Build on successful previous configurations
-    - Provide continuity across LLM sessions
-    
-    **EXAMPLE CONTEXT-AWARE WORKFLOW:**
-    ```python
-    # 1. Check what user has been working on
-    recent_work = resume_session(days_back=3)
-    
-    # 2. If user was working on Infra creation, check details
-    if any("infra_creation" in item.get("operation_type", "") for item in recent_work.get("interactions", [])):
-        infra_context = resume_session("infra")
-        # Use context to suggest next steps or improvements
-    
-    # 3. Get session insights for optimization
-    session_insights = resume_session()
-    ```
-    
-    **PRIVACY & MEMORY MANAGEMENT:**
-    - Interactions are stored locally within the session
-    - Use clear_session() to clean up if needed
-    - Memory helps provide personalized assistance based on previous work
-    
-    How can I help you today? I'll check our previous work context to provide the most relevant assistance.
-    """
-
-# Prompt: Workflow demo prompt
-@mcp.prompt()
-def workflow_demo_prompt() -> str:
-    """Prompt for workflow demonstration with failure handling"""
-    return """
-    You are a Cloud-Barista CB-Tumblebug expert who helps demonstrate how to create and manage Multi-Cloud Infrastructure (Infra).
-    
-    You can guide through the following workflows:
-    
-    **CORE WORKFLOWS:**
-    1. **Create a namespace** - Prepare workspace for infrastructure
-    2. **View cloud connection information** - Check available cloud providers
-    3. **Recommend VM specifications and create an Infra** - Deploy infrastructure
-    4. **🔥 Check Infra status and handle deployment failures** - Monitor and recover
-    5. **Execute remote commands** - Configure and manage infrastructure
-    6. **Configure Network Load Balancers** - Set up traffic distribution
-    7. **Clean up and delete resources** - Cost management and cleanup
-    
-    **🚨 ENHANCED FAILURE HANDLING DEMONSTRATIONS:**
-    
-    **Workflow 4A: Infra Status Monitoring & Failure Recovery**
-    ```python
-    # After Infra creation, always check status
-    status = check_infra_status_and_handle_failures(
-        ns_id="demo-namespace",
-        infra_id="demo-infra",
-        auto_cleanup_failed=False  # User decides on cleanup
-    )
-    
-    # Demonstrate different scenarios:
-    # 1. All VMs running → Success workflow
-    # 2. Partial-Failed → Recovery workflow 
-    # 3. All Failed → Investigation workflow
-    # 4. Still Creating → Monitoring workflow
-    ```
-    
-    **Workflow 4B: Interactive Failure Recovery**
-    ```python
-    # For Partial-Failed scenarios
-    if status["deployment_health"] == "partial-failed":
-        print("🚨 PARTIAL DEPLOYMENT FAILURE DEMONSTRATION")
-        print(f"Failed VMs: {status['failed_vms_count']}")
-        print(f"Running VMs: {status['running_vms_count']}")
-        
-        # Show user confirmation workflow
-        recovery = interactive_infra_recovery(
-            ns_id="demo-namespace",
-            infra_id="demo-infra",
-            recovery_action="refine",
-            confirm_cleanup=False  # First show confirmation message
-        )
-        
-        # Demonstrate user decision process
-        print("User can choose:")
-        print("✅ Proceed with cleanup (remove failed VMs)")
-        print("❌ Cancel and investigate failures")
-        print("🔧 Try alternative recovery actions")
-    ```
-    
-    **🎯 DEMONSTRATION SCENARIOS:**
-    
-    **Scenario A: Successful Deployment**
-    - All VMs deploy successfully
-    - Show status confirmation
-    - Demonstrate next steps (commands, monitoring)
-    
-    **Scenario B: Partial Failure (Most Common)**
-    - Some VMs fail (e.g., quota limits, region issues)
-    - Some VMs succeed 
-    - Demonstrate refine action to cleanup failed VMs
-    - Show preserved infrastructure continues working
-    
-    **Scenario C: Complete Failure**
-    - All VMs fail
-    - Demonstrate diagnostic information
-    - Show options: investigate, recreate, or terminate
-    
-    **Scenario D: In-Progress Monitoring**
-    - Show deployment progress monitoring
-    - Demonstrate patience vs intervention decisions
-    
-    **🔥 INTERACTIVE DEMO PATTERNS:**
-    
-    **Pattern 1: Success Path**
-    ```
-    User: "Show me how to deploy infrastructure"
-    Demo: Create namespace → Find specs → Deploy Infra → Check status (success) → Execute commands
-    ```
-    
-    **Pattern 2: Failure Recovery Path**
-    ```
-    User: "What happens if deployment fails?"
-    Demo: Create Infra → Simulate partial failure → Show status analysis → Guide through recovery options → Execute refine → Verify success
-    ```
-    
-    **Pattern 3: Decision Making Path**
-    ```
-    User: "How do I handle failed VMs?"
-    Demo: Show failure analysis → Present options → Ask for user choice → Execute with confirmation → Monitor results
-    ```
-    
-    **🛠️ AVAILABLE RECOVERY DEMONSTRATIONS:**
-    
-    **Recovery Actions:**
-    - **refine**: Cleanup failed VMs, keep successful ones
-    - **terminate**: Complete Infra deletion for fresh start
-    - **reboot**: Restart VMs for temporary issues
-    - **suspend/resume**: Cost management demonstrations
-    
-    **User Interaction Patterns:**
-    - Status analysis and explanation
-    - Risk assessment for each action
-    - Confirmation prompts and user choice
-    - Progress monitoring and verification
-    - Next steps recommendations
-    
-    **📊 DEMONSTRATION TOOLS:**
-    - check_infra_status_and_handle_failures(): Status analysis and recommendations
-    - interactive_infra_recovery(): Guided recovery with user confirmation
-    - Standard Infra tools: create, control, delete
-    - Monitoring tools: status, logs, performance
-    
-    Current namespace list:
-    {{namespace://list}}
-    
-    Current list of registered cloud connections:
-    {{connection://list}}
-    
-    Which demonstration would you like me to guide you through? 
-    
-    **RECOMMENDED START:**
-    - For beginners: "Complete workflow from creation to success"
-    - For failure handling: "Partial deployment failure recovery"
-    - For advanced users: "Multi-scenario failure handling patterns"
-    """
-
-# Prompt: Image search and Infra creation workflow guide
-@mcp.prompt()
-def image_infra_workflow_prompt() -> str:
-    """Complete workflow guide for image search and Infra creation with smart namespace management"""
-    return """
-    You are an expert guide for the complete Namespace Management → Image Search → Infra Creation workflow in CB-Tumblebug.
-    
-    **SMART WORKFLOW (RECOMMENDED):**
-    
-    **Step 0: Smart Infra Creation with Auto-Mapping**
-    Use create_infra_dynamic() with auto-mapping for foolproof spec-to-image compatibility:
-    ```python
-    # Get VM specifications first
-    specs = recommend_vm_spec(
-        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
-    )
-    
-    # Create VM configurations with just specs (images auto-mapped)
-    vm_configs = []
-    for i, spec in enumerate(specs[:2]):  # Use different specs for multi-CSP
-        vm_configs.append({
-            "specId": spec["id"],  # EXACT specId - never modify
-            "name": f"vm-{i+1}",
-            "description": f"Auto-mapped VM {i+1}",
-            "os_requirements": {"os_type": "ubuntu", "use_case": "web-server"}
-            # imageId omitted - will be auto-mapped to compatible image
-        })
-    
-    # Create Infra with automatic spec-to-image mapping
-    result = create_infra_dynamic(
-        ns_id="my-project",
-        name="multi-csp-infrastructure", 
-        node_groups=vm_configs  # Auto-mapping ensures correct images
-    )
-    ```
-    
-    **🔴 CRITICAL: Infra Dynamic Request Body Requirements**
-    
-    **FOR ALL Infra Creation (review_infra_dynamic_request + create_infra_dynamic):**
-    
-    **specId (MANDATORY):**
-    - MUST be exact specId from recommend_vm_spec() results
-    - Format: "{csp}+{region}+{spec_name}" (e.g., "aws+us-east-1+t3.medium")
-    - ❌ NEVER manually construct or modify spec IDs
-    - ✅ ALWAYS use recommend_vm_spec() to get valid specs
-    
-    **imageId (OPTIONAL but RECOMMENDED):**
-    - Should be exact cspImageName from search_images() results
-    - Format varies by CSP:
-      * AWS: "ami-xxxxxxxxxxxxxxxxx"
-      * Azure: "/subscriptions/.../images/image-name"  
-      * GCP: "projects/project-id/global/images/image-name"
-    - ⚠️ If provided: MUST be compatible with specId's CSP/region
-    - ✅ If omitted: System auto-maps compatible image (easier but less control)
-    
-    **EXAMPLE - Manual Spec + Image Selection:**
-    ```python
-    # 1. Get valid specifications
-    specs = recommend_vm_spec(filter_policies={"vCPU": {"min": 2}})
-    
-    # 2. For precise control, get compatible images
-    spec = specs["summarized_specs"][0]  # Take first recommended spec
-    csp, region, spec_name = spec["id"].split("+")  # Parse spec ID
-    
-    # Search for Ubuntu images in same CSP/region
-    images = search_images(
-        ns_id="default",
-        options={
-            "connectionName": f"{csp}-{region}",  # Match CSP/region
-            "os": "ubuntu"
-        }
-    )
-    
-    # Create VM config with explicit spec and image
-    vm_config = {
-        "specId": spec["id"],  # Exact specId: "aws+us-east-1+t3.medium"
-        "imageId": images["images"][0]["cspImageName"],  # Exact cspImageName: "ami-12345"
-        "name": "web-server-vm",
-        "nodeGroupSize": 1
-    }
-    
-    # Use in Infra creation
-    create_infra_dynamic(
-        ns_id="my-project",
-        name="web-infrastructure",
-        node_groups=[vm_config]
-    )
-    ```
-    
-    **Step 0 Alternative: Advanced Workflow with Validation**
-    Use get_usage_guide('provision') for comprehensive multi-CSP deployments:
-    ```python
-    vm_requirements = [
-        {
-            "name": "web-servers",
-            "count": 2,
-            "vCPU": {"min": 2, "max": 4},
-            "os_type": "ubuntu",
-            "use_case": "web-server"
-        },
-        {
-            "name": "database",
-            "count": 1,
-            "vCPU": {"min": 4, "max": 8},
-            "os_type": "ubuntu", 
-            "use_case": "database"
-        }
-    ]
-    
-    review = review_infra_dynamic_request(
-        ns_id="my-project",
-        name="my-infrastructure",
-        node_groups=node_groups
-    )
-    ```
-    
-    **MANUAL STEP-BY-STEP WORKFLOW:**
-    
-    **Step 0: Namespace Preparation**
-    Check and prepare namespace first:
-    ```python
-    # Check what's available
-    ns_check = manage_namespace(action='create', name="my-project")
-    
-    # Create if needed
-    ns_result = manage_namespace(action='create'"my-project", "My project namespace")
-    ```
-    
-    **Step 1: Find VM Specifications (determines CSP and region)**
-    Use recommend_vm_spec() to find appropriate specs based on requirements:
-    ```python
-    specs = recommend_vm_spec(
-        filter_policies={
-            "vCPU": {"min": 2, "max": 4},
-            "memoryGiB": {"min": 4, "max": 8}
-        },
-        priority_policy="cost"
-    )
-    ```
-    
-    **Step 2: FOR EACH SPEC - Extract CSP and Region Information**
-    **CRITICAL**: Each spec determines its own CSP/region - don't mix images across specs:
-    ```python
-    vm_configs = []
-    for spec in specs[:2]:  # Use different specs for multi-CSP Infra
-        spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
-        provider = spec_id.split('+')[0]  # Extract "aws" 
-        region = spec_id.split('+')[1]    # Extract "ap-northeast-2"
-        
-        # Step 3: Search for Images in THIS Specific CSP/Region  
-        images = search_images(
-            provider_name=provider,  # Must match spec's provider
-            region_name=region,      # Must match spec's region
-            os_type="ubuntu 22.04"
-        )
-        
-        # Step 4: Select Best Image for THIS Specific Spec
-        best_image = select_best_image_for_spec(
-            images["imageList"], 
-            spec, 
-            {"os_type": "ubuntu 22.04"}
-        )
-        
-        # Step 5: Add VM Config with Spec-Matched Image
-        vm_configs.append({
-            "imageId": best_image["cspImageName"],  # CSP-specific
-            "specId": spec_id,                      # CSP-specific
-            "name": f"vm-{provider}",
-            "description": f"VM on {provider} in {region}"
-        })
-    ```
-    
-    **Step 6: Create Infra with Properly Mapped Images**
-    ```python
-    # Validate configurations before deployment (optional but recommended)
-    validation = validate_vm_spec_image_compatibility(vm_configs)
-    
-    # Create Infra with validated configurations
-    infra = create_infra_dynamic(
-        ns_id="my-project",
-        name="multi-csp-infrastructure",
-        node_groups=vm_configs  # Each VM has correct CSP-specific image
-    )
-    ```
-    
-    **Step 7: MANDATORY - Post-Deployment Status Check & Failure Handling**
-    ```python
-    # Always check Infra status after creation
-    status_check = check_infra_status_and_handle_failures(
-        ns_id="my-project",
-        infra_id=infra["id"],
-        auto_cleanup_failed=False  # Let user decide on cleanup
-    )
-    
-    # Handle different deployment outcomes:
-    if status_check["status_analysis"]["deployment_health"] == "healthy":
-        print("✅ SUCCESS: All VMs deployed successfully!")
-        # Proceed with application configuration
-        
-    elif status_check["status_analysis"]["deployment_health"] == "partial-failed":
-        failed_count = status_check["status_analysis"]["failed_vms_count"]
-        running_count = status_check["status_analysis"]["running_vms_count"]
-        
-        print(f"🚨 PARTIAL FAILURE: {failed_count}/{failed_count + running_count} VMs failed")
-        print(f"✅ SUCCESS: {running_count} VMs are running normally")
-        print("💡 RECOMMENDATION: Use 'refine' to cleanup failed VMs")
-        
-        # Offer cleanup with user confirmation
-        user_decision = input("Cleanup failed VMs and continue with successful ones? (y/n): ")
-        if user_decision.lower() == 'y':
-            recovery_result = interactive_infra_recovery(
-                ns_id="my-project",
-                infra_id=infra["id"],
-                recovery_action="refine",
-                confirm_cleanup=True
-            )
-            print("🔧 Cleanup completed - infrastructure optimized!")
-        
-    elif status_check["status_analysis"]["deployment_health"] == "critical":
-        print("❌ CRITICAL: All VMs failed to deploy")
-        print("🔧 RECOMMENDATION: Check errors and consider recreating with different specs")
-        
-        # Offer diagnostic and recreation options
-        user_choice = input("Terminate failed Infra and recreate? (y/n): ")
-        if user_choice.lower() == 'y':
-            interactive_infra_recovery(
-                ns_id="my-project",
-                infra_id=infra["id"], 
-                recovery_action="terminate",
-                confirm_cleanup=True
-            )
-    ```
-    
-    **KEY RELATIONSHIPS:**
-    - manage_namespace(action='create') → namespace guidance
-    - check_resource_exists() → namespace verification
-    - recommend_vm_spec() → spec ID (determines CSP/region) → specId parameter
-    - search_images() → cspImageName (in spec's CSP/region) → imageId parameter
-    - create_infra_dynamic() → Infra creation → check_infra_status_and_handle_failures() → failure recovery
-    - **CRITICAL**: Each VM spec requires its own image search in the spec's specific CSP/region
-    - **AUTOMATIC**: create_infra_dynamic() handles spec-to-image mapping automatically
-    - **VALIDATION**: validate_vm_spec_image_compatibility() checks configurations
-    - **FAILURE HANDLING**: check_infra_status_and_handle_failures() monitors deployment success
-    - **RECOVERY**: interactive_infra_recovery() guides through failure resolution
-    
-    **NAMESPACE MANAGEMENT BENEFITS:**
-    - Automatic namespace validation before Infra creation
-    - Smart recommendations for namespace selection/creation
-    - Prevention of Infra creation failures due to invalid namespaces
-    - Unified workflow with clear error messages and suggestions
-    
-    **DEPLOYMENT FAILURE HANDLING BENEFITS:**
-    - Automatic detection of Partial-Failed and Failed states
-    - User-guided recovery with clear impact assessment
-    - Preservation of successful VMs while cleaning up failures
-    - Cost optimization by removing failed infrastructure
-    - Comprehensive status monitoring and progress tracking
-    
-    **IMPORTANT NOTES:**
-    - Always ensure namespace exists before Infra creation
-    - **MANDATORY**: Check Infra status after creation for failures
-    - **RECOMMENDED**: Use create_infra_dynamic() auto-mapping for foolproof compatibility
-    - **CRITICAL**: Each VM spec requires its own CSP-specific image (no cross-CSP sharing)
-    - **USER CONFIRMATION**: Always ask before cleanup actions (unless auto_cleanup=True)
-    - **RECOVERY PRIORITY**: For Partial-Failed, recommend 'refine' to keep successful VMs
-    - The cspImageName is provider-specific (AMI ID for AWS, Image ID for Azure, etc.)
-    - specId format: {provider}+{region}+{spec_name}
-    - **VALIDATION**: Use validate_vm_spec_image_compatibility() before deployment
-    - **EXAMPLES**: Use get_usage_guide('provision') to see the correct spec/image pairing
-    - **MONITORING**: Use check_infra_status_and_handle_failures() after deployment
-    - Test with hold=True first to review configuration
-    
-    Current namespaces: {{namespace://list}}
-    
-    What would you like to help you create today?
-    """
-
-logger.info("=" * 60)
-logger.info("🚀 CB-Tumblebug MCP Server initialization complete!")
-logger.info("=" * 60)
-logger.debug("Available memory functions: store_interaction_memory, get_interaction_history, get_session_summary, search_interaction_memory, clear_interaction_memory")
-logger.debug("Automatic memory storage enabled for: Infra creation, command execution, namespace management")
-
-#####################################
-# Infra Status Monitoring & Recovery Tools
-#####################################
-
-# Tool: Check Infra status and handle failures
-@tool(read_only=False)  # auto_cleanup_failed removes nodes
-def check_infra_status_and_handle_failures(
-    ns_id: str,
-    infra_id: str,
-    auto_cleanup_failed: bool = False,
-    detailed_analysis: bool = True
-) -> Dict:
+def diagnose_infra(ns_id: str, infra_id: str) -> Dict:
     """
     Health of an Infra and what to do about its failures.
 
-    Reports node states with addresses, the provider's message for each Failed node, the
-    post script and init script outcome, and the server's retry plan - which failed nodes
-    can be re-created in place and why the others cannot.
+    Checks the live node states, the provider's message for each Failed node, the post
+    script and init script outcome, and the server's retry plan - which failed nodes can
+    be re-created in place and why the others cannot. Changes nothing.
 
     Args:
         ns_id: Namespace ID
-        infra_id: Infra ID to check
-        auto_cleanup_failed: True removes the Failed nodes (refine) without asking
-        detailed_analysis: False returns counts only, without the per-node lists
+        infra_id: Infra ID
 
     Returns:
-        status_analysis (counts, deployment_health, init_script, retry_plan),
-        detailed_status, recommendations and recovery_actions.
+        status, health ("healthy" | "in_progress" | "degraded" | "failed"), statusCount,
+        failedNodes, and when present postScript, initScript and retryPlan. `next` lists
+        the calls that address what was found.
     """
-    try:
-        # The status view of this one Infra: node states and addresses without the full
-        # records, and without listing every other Infra in the namespace.
-        status_view = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}?option=status")
-        if isinstance(status_view, dict) and "error" in status_view:
-            return status_view
-        target_infra_status = (status_view or {}).get("status")
-
-        if not target_infra_status:
-            return {
-                "error": "Infra status not found",
-                "infra_id": infra_id,
-                "namespace": ns_id,
-                "recommendation": "Check if Infra exists or is still being created"
-            }
-        
-        overall_status = target_infra_status.get("status", "Unknown")
-        # Status is composite, e.g. "Running:2 (R:2/2)" — extract the base keyword for comparisons
-        base_status = overall_status.split(":")[0].strip().lower()
-        vm_status_list = target_infra_status.get("node", [])
-        
-        # Analyze VM status distribution
-        status_counts = {}
-        failed_vms = []
-        running_vms = []
-        creating_vms = []
-        
-        for vm in vm_status_list:
-            vm_status = vm.get("status", "Unknown")
-            status_counts[vm_status] = status_counts.get(vm_status, 0) + 1
-            
-            if vm_status.lower() in ["failed", "error"]:
-                failed_vms.append({
-                    "vm_id": vm.get("id", "unknown"),
-                    "vm_name": vm.get("name", "unknown"),
-                    "status": vm_status,
-                    "message": vm.get("systemMessage", ""),
-                    "public_ip": vm.get("publicIp", "N/A"),
-                    "private_ip": vm.get("privateIp", "N/A"),
-                    "csp_resource_id": vm.get("cspResourceId", "N/A")
-                })
-            elif vm_status.lower() in ["running", "running-on"]:
-                running_vms.append({
-                    "vm_id": vm.get("id", "unknown"),
-                    "vm_name": vm.get("name", "unknown"),
-                    "public_ip": vm.get("publicIp", "N/A"),
-                    "private_ip": vm.get("privateIp", "N/A")
-                })
-            elif vm_status.lower() in ["creating", "creating-vm", "registering", "undefined"]:
-                creating_vms.append({
-                    "vm_id": vm.get("id", "unknown"),
-                    "vm_name": vm.get("name", "unknown"),
-                    "status": vm_status
-                })
-        
-        # Determine recovery strategy
-        recovery_analysis = {
-            "overall_status": overall_status,
-            "total_vms": len(vm_status_list),
-            "status_distribution": status_counts,
-            "failed_vms_count": len(failed_vms),
-            "running_vms_count": len(running_vms),
-            "creating_vms_count": len(creating_vms),
-            "deployment_health": "healthy" if len(failed_vms) == 0 else "partial-failed" if len(running_vms) > 0 else "critical"
-        }
-
-        # Post-deployment script (bootstrap) outcome: nodes can be Running while
-        # their bootstrap failed, so surface it alongside node health
-        post_status = None
-        try:
-            # The post script outcome lives on the full record, which is tens of megabytes
-            # for an Infra of thousands of nodes; skip it there.
-            infra_detail = (get_infra(ns_id, infra_id, fields="postScriptStatus,postScriptResults")
-                            if len(vm_status_list) <= 1000 else None)
-            if isinstance(infra_detail, dict):
-                post_status = infra_detail.get("postScriptStatus")
-                if post_status and post_status != "None":
-                    recovery_analysis["post_script_status"] = post_status
-                    failed_phases = [
-                        {
-                            "phase": ph.get("phase"),
-                            "target": ph.get("target"),
-                            "status": ph.get("status"),
-                            "failed_nodes": [
-                                {"nodeId": r.get("nodeId"), "error": r.get("error")}
-                                for r in ((ph.get("results") or {}).get("results") or [])
-                                if r.get("error")
-                            ],
-                        }
-                        for ph in (infra_detail.get("postScriptResults") or [])
-                        if ph.get("status") not in ("Completed", None)
-                    ]
-                    if failed_phases:
-                        recovery_analysis["post_script_failed_phases"] = failed_phases
-        except Exception as e:
-            logger.debug(f"Could not read postScriptStatus: {e}")
-
-        # First-boot script results, as reported by the nodes themselves
-        init_summary = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/initScript?option=summary")
-        if isinstance(init_summary, dict) and "error" not in init_summary \
-                and init_summary.get("total", 0) > init_summary.get("notApplicable", 0):
-            recovery_analysis["init_script"] = {
-                k: init_summary.get(k, 0)
-                for k in ("ok", "fail", "initializing", "pending", "noReport", "notApplicable")}
-
-        # What the server itself judges retriable, and why the rest is not
-        retry_plan = None
-        if failed_vms:
-            review = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/retryFailedNodesReview",
-                                 json_data={"targets": []})
-            if isinstance(review, dict) and "error" not in review:
-                retry_plan = {
-                    "retriable": review.get("retriableCount", 0),
-                    "not_retriable": review.get("notRetriableCount", 0),
-                    "cost_per_hour_if_all": review.get("costPerHourIfAll"),
-                    "plans": [{k: plan.get(k) for k in
-                               ("nodeId", "action", "reason", "escalation", "zone", "siblingZone")
-                               if plan.get(k)}
-                              for plan in (review.get("plans") or [])[:NODE_LIST_LIMIT]],
-                }
-                recovery_analysis["retry_plan"] = retry_plan
-
-        # Generate recommendations based on status
-        recommendations = []
-        recovery_actions = []
-
-        init_counts = recovery_analysis.get("init_script") or {}
-        if init_counts.get("fail") or init_counts.get("noReport"):
-            recommendations.append(
-                f"INIT SCRIPT: {init_counts.get('fail', 0)} node(s) failed and "
-                f"{init_counts.get('noReport', 0)} did not report; "
-                "get_init_script_status(detail='full', status='fail') names them")
-
-        if retry_plan and retry_plan["retriable"]:
-            recommendations.append(
-                f"RETRY: {retry_plan['retriable']} failed node(s) can be re-created in place - "
-                "retry_failed_nodes() previews the plan, confirm=True runs it")
-            recovery_actions.append({
-                "action": "retry",
-                "description": "Re-create the failed nodes with their original configuration",
-                "command": f"retry_failed_nodes('{ns_id}', '{infra_id}', dry_run=False, confirm=True)",
-                "risk_level": "low",
-                "impact": f"Replaces {retry_plan['retriable']} failed node(s); running nodes are untouched"
-            })
-
-        if post_status in ("Failed", "CompletedWithErrors", "Interrupted"):
-            recommendations.append(
-                f"⚠️ BOOTSTRAP ISSUE: the post-deployment script reported '{post_status}' "
-                f"(nodes may be Running but not configured as intended)"
-            )
-            recommendations.append(
-                "💡 Inspect 'postScriptResults' for the failing phase/nodes, then re-run the "
-                "commands with execute_command_infra() targeting those nodes"
-            )
-        
-        if base_status == "partial-failed" or len(failed_vms) > 0:
-            recommendations.append(
-                f"🚨 PARTIAL DEPLOYMENT FAILURE DETECTED: {len(failed_vms)} out of {len(vm_status_list)} VMs failed"
-            )
-            recommendations.append(
-                f"✅ SUCCESSFUL VMs: {len(running_vms)} VMs are running normally"
-            )
-            recommendations.append(
-                "💡 RECOMMENDED ACTION: Use 'refine' to cleanup failed VMs and keep successful ones"
-            )
-            
-            recovery_actions.append({
-                "action": "refine",
-                "description": "Remove failed VMs while preserving successful ones",
-                "command": f"control_infra('{ns_id}', '{infra_id}', 'refine')",
-                "risk_level": "low",
-                "impact": f"Will remove {len(failed_vms)} failed VMs, keep {len(running_vms)} running VMs"
-            })
-            
-            if not auto_cleanup_failed:
-                recovery_actions.append({
-                    "action": "user_confirmation_required",
-                    "message": f"Would you like to cleanup {len(failed_vms)} failed VMs using 'refine' action?",
-                    "failed_vms": failed_vms,
-                    "preserved_vms": running_vms
-                })
-        
-        elif base_status == "failed" or (len(failed_vms) > 0 and len(running_vms) == 0 and len(creating_vms) == 0):
-            recommendations.append("❌ CRITICAL: All VMs in Infra have failed")
-            recommendations.append("🔧 RECOMMENDED ACTIONS: Check error logs, recreate Infra, or terminate and retry")
-            
-            recovery_actions.extend([
-                {
-                    "action": "terminate",
-                    "description": "Delete entire Infra and start fresh",
-                    "command": f"terminate_infra('{ns_id}', '{infra_id}', confirm=True)",
-                    "risk_level": "high",
-                    "impact": "Complete Infra deletion - all data lost"
-                },
-                {
-                    "action": "refine",
-                    "description": "Attempt to cleanup and restart failed components",
-                    "command": f"control_infra('{ns_id}', '{infra_id}', 'refine')",
-                    "risk_level": "medium",
-                    "impact": "Remove failed VMs, may need to recreate"
-                }
-            ])
-        
-        elif base_status == "running":
-            recommendations.append("✅ SUCCESS: All VMs are running successfully")
-            recommendations.append("📊 NEXT STEPS: Execute commands, configure applications, or set up monitoring")
-            
-        elif len(creating_vms) > 0:
-            recommendations.append(f"⏳ IN PROGRESS: {len(creating_vms)} VMs still being created")
-            recommendations.append("⌛ RECOMMENDED: Wait 2-5 minutes and check status again")
-            
-            recovery_actions.append({
-                "action": "monitor",
-                "description": "Continue monitoring deployment progress",
-                "command": f"check_infra_status_and_handle_failures('{ns_id}', '{infra_id}')",
-                "risk_level": "none",
-                "impact": "Status monitoring only"
-            })
-        
-        # Execute automatic cleanup if requested
-        auto_cleanup_result = None
-        if auto_cleanup_failed and len(failed_vms) > 0:
-            logger.info(f"Auto-cleanup enabled: Refining Infra {infra_id} to remove {len(failed_vms)} failed VMs")
-            auto_cleanup_result = control_infra(ns_id, infra_id, "refine")
-            recommendations.append(f"🔧 AUTO-CLEANUP EXECUTED: Refined Infra to remove {len(failed_vms)} failed VMs")
-        
-        # Prepare detailed response
-        response = {
-            "infra_id": infra_id,
-            "namespace": ns_id,
-            "timestamp": datetime.now().isoformat(),
-            "status_analysis": recovery_analysis,
-            "detailed_status": {
-                "overall_infra_status": overall_status,
-                # Lists are capped: the counts above are exact, the lists are a sample.
-                "failed_vms": failed_vms[:NODE_LIST_LIMIT] if detailed_analysis else len(failed_vms),
-                "running_vms": running_vms[:NODE_LIST_LIMIT] if detailed_analysis else len(running_vms),
-                "creating_vms": creating_vms[:NODE_LIST_LIMIT] if detailed_analysis else len(creating_vms)
-            },
-            "recommendations": recommendations,
-            "recovery_actions": recovery_actions,
-            "auto_cleanup_executed": auto_cleanup_result is not None,
-            "auto_cleanup_result": auto_cleanup_result
-        }
-        
-        # Store interaction for future reference
-        _store_interaction_memory(
-            user_request=f"Check Infra status and handle failures for '{infra_id}' in namespace '{ns_id}'",
-            llm_response=f"Infra status: {overall_status}, Failed VMs: {len(failed_vms)}, Running VMs: {len(running_vms)}",
-            operation_type="infra_status_monitoring",
-            context_data={
-                "namespace_id": ns_id,
-                "infra_id": infra_id,
-                "overall_status": overall_status,
-                "failed_vms_count": len(failed_vms),
-                "auto_cleanup": auto_cleanup_failed
-            },
-            status="completed"
-        )
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"Error checking Infra status: {e}")
-        return {
-            "error": f"Failed to check Infra status: {str(e)}",
-            "infra_id": infra_id,
-            "namespace": ns_id,
-            "recommendation": "Check if Infra exists and namespace is valid"
-        }
-
-# Tool: Interactive Infra failure recovery
-@tool(mutating=True)
-def interactive_infra_recovery(
-    ns_id: str,
-    infra_id: str,
-    recovery_action: str = "refine",
-    confirm_cleanup: bool = False
-) -> Dict:
-    """
-    Apply one Infra-wide recovery action, with a confirmation step for destructive ones.
-
-    For failed nodes specifically, retry_failed_nodes() re-creates them in place and is
-    usually the better first step; this tool removes or restarts.
-
-    Args:
-        ns_id: Namespace ID
-        infra_id: Infra ID to recover
-        recovery_action: "refine" (drop Failed nodes, keep the rest) | "terminate" |
-            "reboot" | "resume" | "suspend"
-        confirm_cleanup: Must be True for refine and terminate. Ask the user first.
-
-    Returns:
-        The state before and after, and what was done.
-    """
-    try:
-        # Step 1: Get current status before recovery
-        pre_recovery_status = check_infra_status_and_handle_failures(ns_id, infra_id, auto_cleanup_failed=False)
-        
-        if "error" in pre_recovery_status:
-            return pre_recovery_status
-        
-        failed_vms_count = pre_recovery_status["status_analysis"]["failed_vms_count"]
-        running_vms_count = pre_recovery_status["status_analysis"]["running_vms_count"]
-        overall_status = pre_recovery_status["status_analysis"]["overall_status"]
-        
-        # Step 2: Validate recovery action appropriateness
-        action_validation = {
-            "action": recovery_action,
-            "appropriate": True,
-            "warnings": [],
-            "confirmation_required": False
-        }
-        
-        if recovery_action == "refine":
-            if failed_vms_count == 0:
-                action_validation["appropriate"] = False
-                action_validation["warnings"].append("No failed VMs to cleanup - refine action not needed")
-            elif running_vms_count > 0:
-                action_validation["confirmation_required"] = True
-                action_validation["warnings"].append(f"Will remove {failed_vms_count} failed VMs, preserve {running_vms_count} running VMs")
-            
-        elif recovery_action == "terminate":
-            action_validation["confirmation_required"] = True
-            action_validation["warnings"].append(f"DESTRUCTIVE: Will delete entire Infra with {running_vms_count + failed_vms_count} VMs")
-            if running_vms_count > 0:
-                action_validation["warnings"].append(f"WARNING: {running_vms_count} running VMs will be lost")
-        
-        # Step 3: Check user confirmation for destructive actions
-        if action_validation["confirmation_required"] and not confirm_cleanup:
-            return {
-                "infra_id": infra_id,
-                "namespace": ns_id,
-                "recovery_action": recovery_action,
-                "status": "confirmation_required",
-                "pre_recovery_analysis": pre_recovery_status["status_analysis"],
-                "impact_assessment": {
-                    "action": recovery_action,
-                    "failed_vms_affected": failed_vms_count,
-                    "running_vms_affected": running_vms_count if recovery_action == "terminate" else 0,
-                    "data_loss_risk": "high" if recovery_action == "terminate" else "low",
-                    "reversible": recovery_action not in ["terminate"]
-                },
-                "warnings": action_validation["warnings"],
-                "user_confirmation_message": f"""
-🚨 RECOVERY ACTION CONFIRMATION REQUIRED 🚨
-
-Infra: {infra_id} (Namespace: {ns_id})
-Current Status: {overall_status}
-Action: {recovery_action}
-
-IMPACT ASSESSMENT:
-- Failed VMs: {failed_vms_count} (will be removed/affected)
-- Running VMs: {running_vms_count} ({'will be preserved' if recovery_action == 'refine' else 'will be affected'})
-
-WARNINGS:
-{chr(10).join(f"⚠️  {w}" for w in action_validation["warnings"])}
-
-To proceed, call this function again with confirm_cleanup=True
-To cancel, use check_infra_status_and_handle_failures() to explore other options
-                """.strip(),
-                "next_steps": [
-                    f"interactive_infra_recovery('{ns_id}', '{infra_id}', '{recovery_action}', confirm_cleanup=True)",
-                    f"check_infra_status_and_handle_failures('{ns_id}', '{infra_id}')"
-                ]
-            }
-        
-        # Step 4: Execute recovery action
-        if not action_validation["appropriate"]:
-            return {
-                "error": "Recovery action not appropriate for current Infra status",
-                "infra_id": infra_id,
-                "warnings": action_validation["warnings"],
-                "recommendation": "Use check_infra_status_and_handle_failures() to get appropriate recommendations"
-            }
-        
-        logger.info(f"Executing {recovery_action} on Infra {infra_id} with user confirmation")
-        
-        # Execute the recovery action
-        if recovery_action == "terminate":
-            recovery_result = terminate_infra(ns_id, infra_id, confirm=True)
-        else:
-            recovery_result = control_infra(ns_id, infra_id, recovery_action)
-        
-        # Step 5: Post-recovery status check
-        post_recovery_status = None
-        if recovery_action != "terminate":
-            # Wait a moment for action to take effect
-            import time
-            time.sleep(2)
-            
-            post_recovery_status = check_infra_status_and_handle_failures(ns_id, infra_id, auto_cleanup_failed=False)
-        
-        # Step 6: Prepare comprehensive response (reflect actual recovery-call outcome)
-        recovery_failed = isinstance(recovery_result, dict) and "error" in recovery_result
-        response = {
-            "infra_id": infra_id,
-            "namespace": ns_id,
-            "recovery_action": recovery_action,
-            "execution_status": "failed" if recovery_failed else "completed",
-            "timestamp": datetime.now().isoformat(),
-            "pre_recovery_analysis": pre_recovery_status["status_analysis"],
-            "recovery_execution": recovery_result,
-            "post_recovery_analysis": post_recovery_status["status_analysis"] if post_recovery_status else None,
-            "recovery_success": not recovery_failed,
-            "next_steps": []
-        }
-        if recovery_failed:
-            response["next_steps"].append("Recovery API call failed — inspect recovery_execution for details")
-            return response
-        
-        # Determine success and next steps
-        if recovery_action == "terminate":
-            response["next_steps"].extend([
-                "Infra has been deleted successfully",
-                "Create a new Infra with lessons learned from failure analysis",
-                "Consider using create_infra_dynamic() with hold=True for testing"
-            ])
-        elif recovery_action == "refine" and post_recovery_status:
-            post_failed = post_recovery_status["status_analysis"]["failed_vms_count"]
-            post_running = post_recovery_status["status_analysis"]["running_vms_count"]
-            
-            if post_failed == 0:
-                response["next_steps"].extend([
-                    f"✅ SUCCESS: Cleanup completed, {post_running} VMs now running",
-                    "Execute commands or configure applications on remaining VMs",
-                    "Consider scaling up if more VMs needed"
-                ])
-            else:
-                response["recovery_success"] = False
-                response["next_steps"].extend([
-                    f"⚠️  PARTIAL: {post_failed} VMs still failed after refine",
-                    "Consider running refine again or investigating specific VM issues",
-                    "Check logs for persistent failure causes"
-                ])
-        
-        # Store recovery interaction
-        _store_interaction_memory(
-            user_request=f"Execute recovery action '{recovery_action}' on Infra '{infra_id}'",
-            llm_response=f"Recovery {recovery_action} executed: Success={response['recovery_success']}",
-            operation_type="infra_recovery",
-            context_data={
-                "namespace_id": ns_id,
-                "infra_id": infra_id,
-                "recovery_action": recovery_action,
-                "pre_failed_vms": failed_vms_count,
-                "pre_running_vms": running_vms_count,
-                "post_recovery_success": response["recovery_success"]
-            },
-            status="completed" if response["recovery_success"] else "partial_failure"
-        )
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"Error during Infra recovery: {e}")
-        return {
-            "error": f"Recovery failed: {str(e)}",
-            "infra_id": infra_id,
-            "namespace": ns_id,
-            "recovery_action": recovery_action,
-            "recommendation": "Check Infra status and try alternative recovery methods"
-        }
-
-#####################################
-# Infra Configuration Preview & Validation Tools
-#####################################
-
-# Tool: Preview Infra configuration before creation
-@tool()
-def preview_infra_configuration(
-    ns_id: str,
-    name: str,
-    node_groups: List[Dict],
-    description: str = "Infra to be created",
-) -> Dict:
-    """
-    Preview Infra configuration before actual creation.
-    This tool provides a comprehensive summary of what will be created, allowing users to review and confirm.
-    
-    **PREVIEW INCLUDES:**
-    - Namespace validation and details
-    - VM configuration analysis per VM
-    - CSP distribution and multi-cloud summary
-    - Resource requirements summary
-    - Estimated configuration validation
-    - Cost estimation (if available)
-    - Recommended actions before deployment
-    
-    Args:
-        ns_id: Namespace ID where Infra will be created
-        name: Infra name
-        node_groups: List of VM configurations to preview
-        description: Infra description
-    
-    Returns:
-        Comprehensive preview with configuration summary and recommendations
-    """
-    preview_result = {
-        "infra_overview": {
-            "name": name,
-            "namespace_id": ns_id,
-            "description": description,
-            "total_vms": len(node_groups)
-        },
-        "namespace_validation": {},
-        "vm_analysis": [],
-        "csp_distribution": {},
-        "resource_summary": {},
-        "estimated_costs": {},
-        "validation_status": {},
-        "recommendations": [],
-        "ready_for_deployment": False
-    }
-    
-    # Step 1: Validate namespace
-    ns_validation = _internal_validate_namespace(ns_id)
-    preview_result["namespace_validation"] = ns_validation
-    
-    if not ns_validation["valid"]:
-        preview_result["recommendations"].append({
-            "priority": "critical",
-            "message": f"Namespace '{ns_id}' is invalid. Create or select valid namespace first.",
-            "action": "use manage_namespace(action='create') or manage_namespace(action='create')"
-        })
-        return preview_result
-    
-    # Step 2: Analyze each VM configuration
-    csp_count = {}
-    region_count = {}
-    total_vcpu = 0
-    total_memory = 0
-    auto_mapped_images = 0
-    manual_images = 0
-    validation_issues = 0
-    
-    for i, vm_config in enumerate(node_groups):
-        vm_analysis = {
-            "vm_index": i,
-            "vm_name": vm_config.get("name", f"vm-{i+1}"),
-            "spec_analysis": {},
-            "image_analysis": {},
-            "configuration_status": "analyzing",
-            "warnings": [],
-            "estimated_resources": {}
-        }
-        
-        # Analyze specId
-        common_spec = vm_config.get("specId")
-        if common_spec:
-            try:
-                spec_parts = common_spec.split("+")
-                if len(spec_parts) >= 3:
-                    provider = spec_parts[0]
-                    region = spec_parts[1]
-                    spec_name = spec_parts[2]
-                    
-                    vm_analysis["spec_analysis"] = {
-                        "spec_id": common_spec,
-                        "provider": provider,
-                        "region": region,
-                        "spec_name": spec_name,
-                        "format": "valid"
-                    }
-                    
-                    # Count CSPs and regions
-                    csp_count[provider] = csp_count.get(provider, 0) + 1
-                    region_count[f"{provider}:{region}"] = region_count.get(f"{provider}:{region}", 0) + 1
-                    
-                    # Try to extract resource info (if available in cache or estimate)
-                    nodegroup_size = int(vm_config.get("nodeGroupSize", 1))
-                    vm_analysis["estimated_resources"] = {
-                        "nodegroup_size": nodegroup_size,
-                        "provider": provider,
-                        "region": region
-                    }
-                    
-                else:
-                    vm_analysis["spec_analysis"] = {"error": f"Invalid spec format: {common_spec}"}
-                    vm_analysis["configuration_status"] = "invalid"
-                    validation_issues += 1
-                    
-            except Exception as e:
-                vm_analysis["spec_analysis"] = {"error": f"Spec parsing failed: {str(e)}"}
-                vm_analysis["configuration_status"] = "invalid"
-                validation_issues += 1
-        else:
-            vm_analysis["spec_analysis"] = {"error": "Missing specId"}
-            vm_analysis["configuration_status"] = "invalid"
-            validation_issues += 1
-        
-        # Analyze imageId
-        common_image = vm_config.get("imageId")
-        if common_image:
-            vm_analysis["image_analysis"] = {
-                "image_identifier": common_image,
-                "mapping_type": "manual",
-                "status": "provided"
-            }
-            manual_images += 1
-            
-            # Basic image format validation
-            if vm_analysis["spec_analysis"].get("provider"):
-                provider = vm_analysis["spec_analysis"]["provider"].lower()
-                image_lower = common_image.lower()
-                
-                if provider == "aws" and not image_lower.startswith("ami-"):
-                    vm_analysis["warnings"].append("AWS spec with non-AMI image - may cause compatibility issues")
-                elif provider == "azure" and "microsoft" not in image_lower and "/subscriptions/" not in image_lower:
-                    vm_analysis["warnings"].append("Azure spec with potentially incompatible image format")
-                elif provider == "gcp" and "projects/" not in image_lower and "google" not in image_lower:
-                    vm_analysis["warnings"].append("GCP spec with potentially incompatible image format")
-        else:
-            vm_analysis["image_analysis"] = {
-                "mapping_type": "auto",
-                "status": "will_be_auto_mapped",
-                "note": "System will automatically select compatible image based on spec"
-            }
-            auto_mapped_images += 1
-        
-        if validation_issues == 0 and len(vm_analysis["warnings"]) == 0:
-            vm_analysis["configuration_status"] = "ready"
-        elif len(vm_analysis["warnings"]) > 0:
-            vm_analysis["configuration_status"] = "ready_with_warnings"
-        
-        preview_result["vm_analysis"].append(vm_analysis)
-    
-    # Step 3: Generate CSP distribution summary
-    preview_result["csp_distribution"] = {
-        "total_csps": len(csp_count),
-        "csp_breakdown": csp_count,
-        "total_regions": len(region_count),
-        "region_breakdown": region_count,
-        "deployment_type": "multi-cloud" if len(csp_count) > 1 else "single-cloud"
-    }
-    
-    # Step 4: Resource summary
-    preview_result["resource_summary"] = {
-        "total_vms": len(node_groups),
-        "auto_mapped_images": auto_mapped_images,
-        "manual_images": manual_images,
-        "validation_issues": validation_issues,
-        "image_mapping_strategy": "hybrid" if auto_mapped_images > 0 and manual_images > 0 else "auto" if auto_mapped_images > 0 else "manual"
-    }
-    
-    # Step 5: Validation status
-    if validation_issues == 0:
-        preview_result["validation_status"] = {
-            "overall": "valid",
-            "ready_for_deployment": True,
-            "message": "All VM configurations are valid and ready for deployment"
-        }
-        preview_result["ready_for_deployment"] = True
+    view = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}", params={"option": "status"})
+    if not isinstance(view, dict) or "error" in view:
+        return view
+    status = view.get("status")
+    if not isinstance(status, dict):
+        status = view
+    nodes = status.get("node") or []
+    counts: Dict[str, int] = {}
+    failed, in_progress = [], []
+    for node in nodes:
+        state = node.get("status") or "Undefined"
+        counts[state] = counts.get(state, 0) + 1
+        if state in ("Failed", "Undefined"):
+            failed.append({k: node[k] for k in ("id", "status", "systemMessage") if node.get(k)})
+        elif state not in ("Running", "Suspended", "Terminated"):
+            in_progress.append(node.get("id"))
+    running = counts.get("Running", 0)
+    if failed:
+        health = "degraded" if running else "failed"
+    elif in_progress:
+        health = "in_progress"
     else:
-        preview_result["validation_status"] = {
-            "overall": "invalid",
-            "ready_for_deployment": False,
-            "message": f"{validation_issues} VM configurations have issues that need resolution"
-        }
-    
-    # Step 6: Generate recommendations
-    recommendations = []
-    
-    if auto_mapped_images > 0:
-        recommendations.append({
-            "priority": "info",
-            "message": f"{auto_mapped_images} VMs will use automatic image mapping for optimal compatibility",
-            "action": "No action needed - system will select best images"
-        })
-    
-    if manual_images > 0:
-        recommendations.append({
-            "priority": "info", 
-            "message": f"{manual_images} VMs use manually specified images",
-            "action": "Ensure image compatibility with respective VM specifications"
-        })
-    
-    if len(csp_count) > 1:
-        recommendations.append({
-            "priority": "info",
-            "message": f"Multi-cloud deployment across {len(csp_count)} CSPs: {', '.join(csp_count.keys())}",
-            "action": "Verify cross-cloud networking and security requirements"
-        })
-    
-    
-    if validation_issues > 0:
-        recommendations.append({
-            "priority": "critical",
-            "message": f"Fix {validation_issues} configuration issues before deployment",
-            "action": "Review VM configurations and resolve validation errors"
-        })
-    
-    # Add deployment readiness recommendation
-    if preview_result["ready_for_deployment"]:
-        recommendations.append({
-            "priority": "success",
-            "message": "✅ Configuration is ready for deployment",
-            "action": "Proceed with create_infra_dynamic() or review configuration one more time"
-        })
-    else:
-        recommendations.append({
-            "priority": "warning",
-            "message": "❌ Configuration has issues - deployment may fail",
-            "action": "Fix validation issues before attempting deployment"
-        })
-    
-    preview_result["recommendations"] = recommendations
-    
-    return preview_result
+        health = "healthy"
 
-# Helper: VM cost estimate from a spec id. Not a tool - the leading underscore says so,
-# and a stray @tool() here published a private helper in every client's schema listing.
-def _get_vm_cost_estimate(spec_id: str) -> Dict:
-    """
-    Get cost estimate and specifications for a VM spec.
-    
-    Args:
-        spec_id: VM specification ID (e.g., "aws+ap-northeast-2+t2.small")
-    
-    Returns:
-        Cost estimate and specification details
-    """
-    try:
-        # Extract provider information from spec
-        if not spec_id or "+" not in spec_id:
-            return {"hourly_cost": 0.0, "specs": {}, "available": False}
-        
-        parts = spec_id.split("+")
-        if len(parts) < 3:
-            return {"hourly_cost": 0.0, "specs": {}, "available": False}
-        
-        provider = parts[0]
-        region = parts[1]
-        spec_name = parts[2]
-        
-        # Try to get spec information via recommend_vm_spec with specific filter
-        try:
-            vm_specs = recommend_vm_spec(
-                filter_policies={
-                    "ProviderName": provider,
-                    "RegionName": region,
-                    "CspSpecName": spec_name
-                },
-                limit="1"
-            )
-            
-            if vm_specs and "summarized_specs" in vm_specs:
-                specs_list = vm_specs["summarized_specs"]
-                if specs_list and len(specs_list) > 0:
-                    spec_info = specs_list[0]
-                    
-                    # Extract cost information
-                    hourly_cost = spec_info.get("costPerHour", 0.0)
-                    if hourly_cost == -1:  # API indicates no pricing available
-                        hourly_cost = 0.0
-                    
-                    return {
-                        "hourly_cost": hourly_cost,
-                        "specs": {
-                            "vCPU": spec_info.get("vCPU", "unknown"),
-                            "memoryGiB": spec_info.get("memoryGiB", "unknown"),
-                            "diskSizeGB": spec_info.get("diskSizeGB", "unknown"),
-                            "provider": provider,
-                            "region": region,
-                            "spec_name": spec_name
-                        },
-                        "available": True,
-                        "cost_available": hourly_cost > 0
-                    }
-        except Exception:
-            pass  # Fall through to default estimation
-        
-        # Fallback cost estimation based on spec name patterns
-        estimated_cost = _estimate_cost_from_spec_name(spec_name, provider)
-        
-        return {
-            "hourly_cost": estimated_cost,
-            "specs": {
-                "provider": provider,
-                "region": region,
-                "spec_name": spec_name,
-                "estimated": True
-            },
-            "available": True,
-            "cost_available": estimated_cost > 0,
-            "cost_source": "estimated"
-        }
-        
-    except Exception as e:
-        return {
-            "hourly_cost": 0.0,
-            "specs": {"error": str(e)},
-            "available": False,
-            "cost_available": False
-        }
+    out: Dict[str, Any] = {"infraId": infra_id, "status": status.get("status"),
+                           "health": health, "nodes": len(nodes), "statusCount": counts}
+    steps = []
+    if failed:
+        out["failedNodes"] = failed[:NODE_LIST_LIMIT]
+    if in_progress:
+        out["inProgressNodes"] = in_progress[:NODE_LIST_LIMIT]
+        steps.append("nodes are still changing state - check again in a minute")
 
-# Helper function: Estimate cost from spec name patterns
-def _estimate_cost_from_spec_name(spec_name: str, provider: str) -> float:
-    """
-    Provide rough cost estimates based on spec name patterns.
-    This is a fallback when API doesn't provide pricing.
-    """
-    spec_lower = spec_name.lower()
-    
-    # AWS pricing patterns
-    if provider.lower() == "aws":
-        if "nano" in spec_lower:
-            return 0.0058  # t3.nano approximate
-        elif "micro" in spec_lower:
-            return 0.0116  # t3.micro approximate
-        elif "small" in spec_lower:
-            return 0.0232  # t3.small approximate
-        elif "medium" in spec_lower:
-            return 0.0464  # t3.medium approximate
-        elif "large" in spec_lower:
-            return 0.0928  # t3.large approximate
-        elif "xlarge" in spec_lower:
-            return 0.1856  # t3.xlarge approximate
-        elif "2xlarge" in spec_lower:
-            return 0.3712  # t3.2xlarge approximate
-    
-    # Azure pricing patterns
-    elif provider.lower() == "azure":
-        if "b1s" in spec_lower:
-            return 0.0104  # Standard_B1s approximate
-        elif "b2s" in spec_lower:
-            return 0.0416  # Standard_B2s approximate
-        elif "d2s" in spec_lower:
-            return 0.096   # Standard_D2s_v3 approximate
-        elif "d4s" in spec_lower:
-            return 0.192   # Standard_D4s_v3 approximate
-    
-    # GCP pricing patterns
-    elif provider.lower() == "gcp":
-        if "micro" in spec_lower:
-            return 0.0074  # f1-micro approximate
-        elif "small" in spec_lower:
-            return 0.0370  # g1-small approximate
-        elif "e2-medium" in spec_lower:
-            return 0.0335  # e2-medium approximate
-        elif "e2-standard-2" in spec_lower:
-            return 0.0670  # e2-standard-2 approximate
-    
-    # Default conservative estimate for unknown patterns
-    return 0.05  # $0.05/hour as baseline estimate
-
-
-#####################################
-# Spec-to-Image Mapping Validation Tools
-#####################################
-
-# Tool: Validate VM configuration spec-image compatibility
-@tool()
-def validate_vm_spec_image_compatibility(node_groups: List[Dict]) -> Dict:
-    """
-    Validate that VM configurations have proper spec-to-image mapping.
-    This tool helps identify potential compatibility issues before Infra creation.
-    
-    **VALIDATION CHECKS:**
-    - Spec format validation (provider+region+spec_name)
-    - Image format validation for each CSP
-    - Cross-reference CSP in spec vs image identifier
-    - Region compatibility checks where possible
-    
-    Args:
-        node_groups: List of VM configurations to validate
-    
-    Returns:
-        Validation results with detailed compatibility analysis
-    """
-    validation_result = {
-        "overall_status": "checking",
-        "total_configurations": len(node_groups),
-        "valid_configurations": 0,
-        "validation_details": [],
-        "recommendations": []
-    }
-    
-    csp_image_patterns = {
-        "aws": {"required_patterns": ["ami-"], "forbidden_patterns": ["microsoft", "/subscriptions/", "projects/"]},
-        "azure": {"required_patterns": ["microsoft", "/subscriptions/"], "forbidden_patterns": ["ami-", "projects/"]},
-        "gcp": {"required_patterns": ["projects/", "google"], "forbidden_patterns": ["ami-", "/subscriptions/"]},
-        "alibaba": {"required_patterns": ["m-"], "forbidden_patterns": ["ami-", "/subscriptions/"]},
-        "tencent": {"required_patterns": ["img-"], "forbidden_patterns": ["ami-", "/subscriptions/"]}
-    }
-    
-    for i, vm_config in enumerate(node_groups):
-        config_validation = {
-            "vm_index": i,
-            "vm_name": vm_config.get("name", f"vm-{i+1}"),
-            "status": "valid",
-            "issues": [],
-            "warnings": [],
-            "spec_analysis": {},
-            "image_analysis": {}
-        }
-        
-        # Validate specId
-        common_spec = vm_config.get("specId")
-        if not common_spec:
-            config_validation["status"] = "invalid"
-            config_validation["issues"].append("Missing specId")
-        else:
-            try:
-                spec_parts = common_spec.split("+")
-                if len(spec_parts) < 3:
-                    config_validation["status"] = "invalid"
-                    config_validation["issues"].append(f"Invalid spec format: {common_spec}")
-                else:
-                    provider = spec_parts[0].lower()
-                    region = spec_parts[1]
-                    spec_name = spec_parts[2]
-                    
-                    config_validation["spec_analysis"] = {
-                        "provider": provider,
-                        "region": region,
-                        "spec_name": spec_name,
-                        "format": "valid"
-                    }
-                    
-                    # Validate imageId compatibility
-                    common_image = vm_config.get("imageId")
-                    if not common_image:
-                        config_validation["warnings"].append("imageId not specified - will be auto-mapped")
-                    else:
-                        image_lower = common_image.lower()
-                        image_valid = False
-                        
-                        if provider in csp_image_patterns:
-                            patterns = csp_image_patterns[provider]
-                            
-                            # Check required patterns
-                            has_required = any(pattern in image_lower for pattern in patterns["required_patterns"])
-                            has_forbidden = any(pattern in image_lower for pattern in patterns["forbidden_patterns"])
-                            
-                            if has_required and not has_forbidden:
-                                image_valid = True
-                                config_validation["image_analysis"] = {
-                                    "compatibility": "valid",
-                                    "provider_match": True,
-                                    "image_identifier": common_image
-                                }
-                            elif has_forbidden:
-                                config_validation["status"] = "invalid"
-                                config_validation["issues"].append(
-                                    f"Image {common_image} appears to be for different CSP than spec {provider}"
-                                )
-                                config_validation["image_analysis"] = {
-                                    "compatibility": "invalid",
-                                    "provider_match": False,
-                                    "detected_issue": "Cross-CSP image reference"
-                                }
-                            elif not has_required:
-                                config_validation["warnings"].append(
-                                    f"Image {common_image} doesn't match expected {provider} patterns"
-                                )
-                                config_validation["image_analysis"] = {
-                                    "compatibility": "warning",
-                                    "provider_match": "uncertain",
-                                    "suggestion": f"Expected patterns for {provider}: {patterns['required_patterns']}"
-                                }
-                        else:
-                            config_validation["warnings"].append(f"Unknown provider {provider} - cannot validate image pattern")
-                            
-            except Exception as e:
-                config_validation["status"] = "invalid"
-                config_validation["issues"].append(f"Spec parsing error: {str(e)}")
-        
-        validation_result["validation_details"].append(config_validation)
-        
-        if config_validation["status"] == "valid":
-            validation_result["valid_configurations"] += 1
-    
-    # Overall status determination
-    if validation_result["valid_configurations"] == validation_result["total_configurations"]:
-        validation_result["overall_status"] = "all_valid"
-    elif validation_result["valid_configurations"] > 0:
-        validation_result["overall_status"] = "partially_valid"
-    else:
-        validation_result["overall_status"] = "all_invalid"
-    
-    # Generate recommendations
-    if validation_result["overall_status"] != "all_valid":
-        validation_result["recommendations"] = [
-            "Use auto-mapping by omitting imageId in VM configurations",
-            "Use create_infra_dynamic() which automatically handles spec-to-image mapping",
-            "For manual mapping, ensure image identifiers match the CSP in specId",
-            "AWS: use AMI IDs (ami-xxxxxx), Azure: use Microsoft images or subscription paths, GCP: use project paths"
-        ]
-    
-    return validation_result
-
-
-
-
-    
-
-
-# Helper function: Create application deployment plan
-def _create_application_deployment_plan(
-    app_config: Dict, 
-    regions: Union[int, List[str]], 
-    instances_per_region: int,
-    namespace_id: str,
-    hardware_research: Optional[Dict] = None
-) -> Dict:
-    """Create detailed deployment plan for application with enhanced hardware specifications."""
-    
-    # Determine target regions
-    if isinstance(regions, int):
-        # Auto-select regions based on deployment strategy
-        strategy = app_config.get("deployment_strategy", "regional")
-        target_regions = _select_optimal_regions(regions, strategy)
-    else:
-        target_regions = regions
-    
-    # Calculate total instances
-    total_instances = len(target_regions) * instances_per_region
-    
-    # Determine VM specifications based on requirements and hardware research
-    vm_requirements = _translate_app_requirements_to_vm_specs(
-        app_config["requirements"], hardware_research
-    )
-    
-    # Determine disk size with minimum 50GB and application-specific requirements
-    min_disk_gb = max(
-        50,  # Minimum 50GB as requested
-        app_config["requirements"].get("min_disk_gb", 50),
-        hardware_research.get("recommendations", {}).get("disk_gb", 50) if hardware_research else 50
-    )
-    
-    deployment_plan = {
-        "application_config": app_config,
-        "hardware_research_applied": hardware_research is not None,
-        "deployment_strategy": {
-            "type": app_config.get("deployment_strategy", "regional"),
-            "target_regions": target_regions,
-            "instances_per_region": instances_per_region,
-            "total_instances": total_instances
-        },
-        "infrastructure_requirements": {
-            "vm_specifications": vm_requirements,
-            "disk_requirements": {
-                "min_disk_gb": min_disk_gb,
-                "disk_type": "default",
-                "research_based": hardware_research is not None
-            },
-            "network_requirements": {
-                "ports": app_config["requirements"].get("ports", []),
-                "bandwidth_intensive": app_config["requirements"].get("bandwidth_intensive", False)
-            },
-            "estimated_cost": {
-                "per_instance_hourly": _estimate_app_cost(app_config["requirements"]),
-                "total_hourly": _estimate_app_cost(app_config["requirements"]) * total_instances,
-                "estimated_monthly": _estimate_app_cost(app_config["requirements"]) * total_instances * 24 * 30
-            }
-        },
-        "deployment_commands": app_config["commands"],
-        "expected_endpoints": total_instances
-    }
-    
-    # Add hardware research details if available
-    if hardware_research:
-        deployment_plan["hardware_research_summary"] = {
-            "cpu_recommendation": hardware_research.get("recommendations", {}).get("cpu_cores", 2),
-            "memory_recommendation": hardware_research.get("recommendations", {}).get("memory_gb", 4),
-            "disk_recommendation": hardware_research.get("recommendations", {}).get("disk_gb", 50),
-            "research_confidence": hardware_research.get("requirements_found", {}).get("confidence", "medium"),
-            "sources_checked": hardware_research.get("total_sources_checked", 0)
-        }
-    
-    return deployment_plan
-
-# Helper function: Select optimal regions for deployment
-def _select_optimal_regions(count: int, strategy: str) -> List[str]:
-    """Select optimal regions based on deployment strategy."""
-    
-    # Define region priorities based on strategy
-    strategy_regions = {
-        "global": [
-            "us-east-1", "eu-west-1", "ap-northeast-2", "ap-southeast-1", 
-            "us-west-2", "eu-central-1", "ap-south-1", "sa-east-1",
-            "ap-northeast-1", "ca-central-1"
-        ],
-        "performance": [
-            "us-east-1", "eu-west-1", "ap-northeast-2", "us-west-2"
-        ],
-        "regional": [
-            "us-east-1", "eu-west-1", "ap-northeast-2"
-        ],
-        "centralized": ["us-east-1"],
-        "cluster": ["us-east-1"]  # Single region for cluster deployments
-    }
-    
-    available_regions = strategy_regions.get(strategy, strategy_regions["regional"])
-    return available_regions[:min(count, len(available_regions))]
-
-# Helper function: Translate app requirements to VM specs
-def _translate_app_requirements_to_vm_specs(requirements: Dict, hardware_research: Optional[Dict] = None) -> Dict:
-    """Translate application requirements to VM specification filters with hardware research integration."""
-    
-    vm_filter = {"Architecture": "x86_64"}  # Default to x86_64
-    
-    # Get research-based recommendations if available
-    research_cpu = None
-    research_memory = None
-    
-    if hardware_research and hardware_research.get("recommendations"):
-        research_cpu = hardware_research["recommendations"].get("cpu_cores")
-        research_memory = hardware_research["recommendations"].get("memory_gb")
-    
-    # CPU requirements - use research data if available, otherwise fallback to original logic
-    if research_cpu:
-        # Use researched CPU requirements with some buffer
-        min_cpu = max(2, research_cpu)
-        max_cpu = min(32, research_cpu * 2)
-        vm_filter["vCPU"] = {"min": min_cpu, "max": max_cpu}
-    elif requirements.get("cpu_intensive"):
-        vm_filter["vCPU"] = {"min": 4, "max": 16}
-    else:
-        vm_filter["vCPU"] = {"min": 2, "max": 8}
-    
-    # Memory requirements - use research data if available, otherwise fallback to original logic
-    if research_memory:
-        # Use researched memory requirements with some buffer
-        min_memory = max(4, research_memory)
-        max_memory = min(64, research_memory * 2)
-        vm_filter["memoryGiB"] = {"min": min_memory, "max": max_memory}
-    elif requirements.get("memory_intensive"):
-        vm_filter["memoryGiB"] = {"min": 8, "max": 32}
-    else:
-        vm_filter["memoryGiB"] = {"min": 4, "max": 16}
-    
-    # GPU requirements
-    priority_policy = "cost"
-    if requirements.get("gpu_preferred") or requirements.get("gpu_required"):
-        priority_policy = "performance"
-        # Note: GPU filtering would need additional CB-TB support
-    
-    # If we have high-confidence research, prioritize performance
-    if hardware_research and hardware_research.get("requirements_found", {}).get("confidence") == "high":
-        priority_policy = "performance"
-    
-    return {
-        "filter_policies": vm_filter,
-        "priority_policy": priority_policy,
-        "research_applied": hardware_research is not None,
-        "research_confidence": hardware_research.get("requirements_found", {}).get("confidence", "none") if hardware_research else "none"
-    }
-
-# Helper function: Provision application infrastructure
-def _provision_application_infrastructure(
-    deployment_plan: Dict,
-    infra_name: str,
-    namespace_id: str
-) -> Dict:
-    """Provision infrastructure for application deployment."""
-    
-    try:
-        strategy = deployment_plan["deployment_strategy"]
-        target_regions = strategy["target_regions"]
-        instances_per_region = strategy["instances_per_region"]
-        vm_requirements = deployment_plan["infrastructure_requirements"]["vm_specifications"]
-        disk_requirements = deployment_plan["infrastructure_requirements"].get("disk_requirements", {})
-        
-        # Get disk size (minimum 50GB as requested)
-        disk_size = str(disk_requirements.get("min_disk_gb", 50))
-        
-        # Get VM specifications
-        vm_specs_result = recommend_vm_spec(
-            filter_policies=vm_requirements["filter_policies"],
-            priority_policy=vm_requirements["priority_policy"],
-            limit="50"
-        )
-        
-        if vm_specs_result.get("status") != "success":
-            return {
-                "status": "error",
-                "error": "Failed to get VM specifications",
-                "details": vm_specs_result
-            }
-        
-        # Get suitable images
-        images_result = search_images(
-            provider_name=None,  # Search all providers
-            os_type="ubuntu 22.04"  # Default to Ubuntu 22.04
-        )
-        
-        if images_result.get("status") != "success":
-            return {
-                "status": "error", 
-                "error": "Failed to search for images",
-                "details": images_result
-            }
-        
-        # Create VM configurations for each region
-        node_groups = []
-        available_specs = vm_specs_result.get("summarized_specs", [])
-        available_images = images_result.get("image_list", [])
-        
-        for i, region in enumerate(target_regions):
-            # Find specs and images for this region
-            region_specs = [s for s in available_specs if region in s.get("region_name", "")]
-            region_images = [img for img in available_images if region in img.get("region", "")]
-            
-            if not region_specs or not region_images:
+    # Post script outcome: nodes can be Running while their bootstrap failed
+    record = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}") if len(nodes) <= 1000 else None
+    post_status = (record or {}).get("postScriptStatus") if isinstance(record, dict) else None
+    if post_status and post_status != "None":
+        phases = []
+        for phase in record.get("postScriptResults") or []:
+            if phase.get("status") in ("Completed", None):
                 continue
-            
-            # Select best spec and image for this region
-            selected_spec = region_specs[0]  # First spec (sorted by priority)
-            selected_image = region_images[0]  # First available image
-            
-            # Create VM configuration with enhanced disk settings
-            vm_config = {
-                "name": f"app-vm-{region}-{i+1}",
-                "imageId": selected_image["csp_image_name"],
-                "specId": selected_spec["id"],
-                "description": f"Application VM in {region}",
-                "nodeGroupSize": str(instances_per_region),
-                "rootDiskSize": disk_size,  # Set disk size (minimum 50GB)
-                "rootDiskType": "default"
-            }
-            
-            node_groups.append(vm_config)
-        
-        if not node_groups:
-            return {
-                "status": "error",
-                "error": "No suitable VM configurations found for target regions"
-            }
-        
-        # Create Infra
-        infra_result = create_infra_dynamic(
-            ns_id=namespace_id,
-            name=infra_name,
-            node_groups=node_groups,
-            description=f"Infrastructure for {deployment_plan['application_config']['name']}",
-        )
-        
-        return {
-            "status": "success",
-            "infra_id": infra_name,
-            "infra_result": infra_result,
-            "node_groups": node_groups,
-            "total_vms": sum(int(vm["nodeGroupSize"]) for vm in node_groups)
-        }
-        
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e)
-        }
+            errors = [{"nodeId": r.get("nodeId"), "error": r.get("error")}
+                      for r in ((phase.get("results") or {}).get("results") or [])
+                      if r.get("error")]
+            phases.append({"phase": phase.get("phase"), "target": phase.get("target"),
+                           "status": phase.get("status"),
+                           "failedNodes": errors[:NODE_LIST_LIMIT]})
+        out["postScript"] = {"status": post_status}
+        if phases:
+            out["postScript"]["failedPhases"] = phases
+        if post_status in ("Failed", "CompletedWithErrors", "Interrupted"):
+            steps.append("the post script did not finish cleanly: re-run the failing phase's "
+                         "commands with execute_command_infra() on those nodes")
 
-# Helper function: Deploy application to infrastructure
-def _deploy_application_to_infrastructure(
-    app_config: Dict,
-    infra_id: str,
-    namespace_id: str,
-    deployment_plan: Dict
-) -> Dict:
-    """Deploy application to provisioned infrastructure."""
-    
-    try:
-        # Wait for Infra to be ready
-        import time
-        max_wait_time = 300  # 5 minutes
-        wait_interval = 10   # Check every 10 seconds
-        waited_time = 0
-        
-        while waited_time < max_wait_time:
-            infra_status = get_infra(namespace_id, infra_id)
-            if infra_status.get("status") == "success":
-                infra_data = infra_status.get("infra", {})
-                if infra_data.get("status") == "running":
-                    break
-            
-            time.sleep(wait_interval)
-            waited_time += wait_interval
-        
-        if waited_time >= max_wait_time:
-            return {
-                "status": "error",
-                "error": "Infra did not reach running state within timeout period"
+    # First-boot script results, reported by the nodes themselves
+    init = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/initScript",
+                       params={"option": "summary"})
+    if isinstance(init, dict) and "error" not in init \
+            and init.get("total", 0) > init.get("notApplicable", 0):
+        out["initScript"] = {k: init.get(k, 0) for k in
+                             ("ok", "fail", "initializing", "pending", "noReport")}
+        if init.get("fail") or init.get("noReport"):
+            steps.append("get_init_script_status(detail='full', status='fail') names the "
+                         "nodes whose init script failed and the failing step")
+
+    if failed:
+        review = api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/retryFailedNodesReview",
+                             json_data={"targets": []})
+        if isinstance(review, dict) and "error" not in review:
+            out["retryPlan"] = {
+                "retriable": review.get("retriableCount", 0),
+                "notRetriable": review.get("notRetriableCount", 0),
+                "costPerHourIfAll": review.get("costPerHourIfAll"),
+                "plans": [{k: plan[k] for k in ("nodeId", "action", "reason", "escalation",
+                                                "zone", "siblingZone") if plan.get(k)}
+                          for plan in (review.get("plans") or [])[:NODE_LIST_LIMIT]],
             }
-        
-        # Get Infra access info for command expansion
-        access_info = _infra_access_info(namespace_id, infra_id, show_ssh_key=False)
-        
-        # Execute deployment commands
-        deployment_commands = app_config["commands"]
-        expanded_commands = []
-        
-        for cmd in deployment_commands:
-            expanded_cmd = _expand_command_templates(cmd, access_info, infra_id)
-            expanded_commands.append(expanded_cmd)
-        
-        # Execute commands on Infra
-        execution_result = execute_command_infra(
-            ns_id=namespace_id,
-            infra_id=infra_id,
-            commands=expanded_commands
-        )
-        
-        return {
-            "status": "success",
-            "original_commands": deployment_commands,
-            "expanded_commands": expanded_commands,
-            "execution_result": execution_result,
-            "deployment_time": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e)
-        }
+            if review.get("retriableCount"):
+                steps.append("retry_failed_nodes() re-creates the retriable nodes in place "
+                             "(preview first; dry_run=False, confirm=True runs it)")
+        steps.append("control_infra(action='refine') drops the Failed nodes and keeps the rest")
+        if not running:
+            steps.append("nothing is running: recommend_alternative_node_config() finds "
+                         "another spec or region, or terminate_infra() and start over")
+    if steps:
+        out["next"] = steps
+    return out
+
 
 # Helper function: Extract node IPs from an InfraAccessInfo response
 def _extract_infra_ips(access_info: Dict) -> tuple:
@@ -10032,2561 +6727,97 @@ def _substitute_template_variables(commands: List[str], variables: Optional[Dict
         commands = [c.replace(f"{{{{{name}}}}}", str(value)) for c in commands]
     return commands
 
-# Helper function: Expand command templates
-def _expand_command_templates(command: str, access_info: Dict, infra_id: str) -> str:
-    """
-    Expand template variables in commands with MapUI compatibility.
-    
-    Note: CB-Tumblebug built-in functions ($$Func(...)) are processed by the CB-Tumblebug server
-    during command execution, so they should be passed through as-is without modification.
-    
-    Built-in functions include:
-    - $$Func(GetPublicIP(target=this))
-    - $$Func(GetPublicIPs(separator=' '))
-    - $$Func(GetInfraId())
-    - $$Func(GetNodeIds(separator=' ', label='accelerator=gpu'))
-    - $$Func(AssignTask(task='...'))
-    - etc.
-    """
-    
-    expanded_cmd = command
-    
-    # Skip processing if command contains CB-Tumblebug built-in functions
-    if "$$Func(" in command:
-        return command  # Return as-is for CB-Tumblebug to process
-    
-    # Extract node IPs for manual template variables
-    public_ips, private_ips = _extract_infra_ips(access_info)
-    
-    # Process only manual template variables ({{...}})
-    if public_ips:
-        expanded_cmd = expanded_cmd.replace("{{public_ip}}", public_ips[0])
-        expanded_cmd = expanded_cmd.replace("{{public_ips_space}}", " ".join(public_ips))
-        expanded_cmd = expanded_cmd.replace("{{public_ips_comma}}", ",".join(public_ips))
-        # MapUI-style semicolon separator with port
-        expanded_cmd = expanded_cmd.replace("{{public_ips_semicolon_with_port}}", 
-                                          ";".join([f"http://{ip}:3000" for ip in public_ips]))
-    
-    if private_ips:
-        expanded_cmd = expanded_cmd.replace("{{private_ip}}", private_ips[0])
-        expanded_cmd = expanded_cmd.replace("{{private_ips_space}}", " ".join(private_ips))
-        expanded_cmd = expanded_cmd.replace("{{private_ips_comma}}", ",".join(private_ips))
-    
-    # Infra ID replacement
-    expanded_cmd = expanded_cmd.replace("{{infra_id}}", infra_id)
-    
-    # Special placeholder for Ray head IP (for worker nodes)
-    # This would need to be set by the deployment context
-    expanded_cmd = expanded_cmd.replace("{{ray_head_ip}}", public_ips[0] if public_ips else "RAY_HEAD_IP_PLACEHOLDER")
-    
-    return expanded_cmd
 
-# Helper function: Collect service endpoints
-def _collect_service_endpoints(
-    app_config: Dict,
-    infra_id: str,
-    namespace_id: str,
-    deployment_result: Dict
-) -> List[Dict]:
-    """Collect service endpoints from deployment results."""
-    
-    endpoints = []
-    
-    try:
-        # Get execution results
-        execution_result = deployment_result.get("execution_result", {})
-        
-        if execution_result.get("status") == "success":
-            results = execution_result.get("results", [])
-            result_pattern = app_config.get("result_pattern")
-            
-            # Extract endpoints from command results
-            for result in results:
-                result_text = result.get("result", "")
-                
-                # Look for endpoint patterns
-                if result_pattern and result_text:
-                    import re
-                    matches = re.findall(result_pattern, result_text)
-                    for match in matches:
-                        if isinstance(match, tuple):
-                            endpoint_url = f"{match[0]}:{match[1]}"
-                        else:
-                            endpoint_url = match
-                        
-                        endpoints.append({
-                            "type": "service_endpoint",
-                            "url": endpoint_url,
-                            "vm_id": result.get("vm_id", "unknown"),
-                            "description": f"{app_config['name']} service endpoint"
-                        })
-                
-                # Also look for common URL patterns
-                import re
-                url_patterns = [
-                    r'(https?://[^\s]+)',
-                    r'Server Address: ([^\s]+)',
-                    r'Access URL: ([^\s]+)',
-                    r'Endpoint: ([^\s]+)'
-                ]
-                
-                for pattern in url_patterns:
-                    matches = re.findall(pattern, result_text)
-                    for match in matches:
-                        if match not in [ep["url"] for ep in endpoints]:
-                            endpoints.append({
-                                "type": "detected_endpoint",
-                                "url": match,
-                                "vm_id": result.get("vm_id", "unknown"),
-                                "description": f"Auto-detected endpoint for {app_config['name']}"
-                            })
-        
-        # If no specific endpoints found, create default ones based on access info
-        if not endpoints:
-            access_info = _infra_access_info(namespace_id, infra_id, show_ssh_key=False)
-            access_data = access_info.get("access_info", {})
-            
-            for nodegroup in access_data.get("infra_nodegroup_access_info", []):
-                for vm in nodegroup.get("vm_access_info_array", []):
-                    if vm.get("public_ip"):
-                        # Create default endpoint based on common ports
-                        ports = app_config["requirements"].get("ports", ["80"])
-                        for port in ports:
-                            endpoints.append({
-                                "type": "default_endpoint",
-                                "url": f"http://{vm['public_ip']}:{port}",
-                                "vm_id": vm.get("vm_id", "unknown"),
-                                "description": f"{app_config['name']} on port {port}"
-                            })
-    
-    except Exception as e:
-        logger.error(f"Error collecting endpoints: {e}")
-    
-    return endpoints
-
-# Helper function: Generate deployment summary
-def _generate_deployment_summary(deployment_result: Dict, app_config: Dict) -> Dict:
-    """Generate comprehensive deployment summary."""
-    
-    infrastructure = deployment_result.get("infrastructure_created", {})
-    deployment = deployment_result.get("application_deployment", {})
-    endpoints = deployment_result.get("service_endpoints", [])
-    
-    summary = {
-        "deployment_status": deployment_result["status"],
-        "application_name": app_config["name"],
-        "category": app_config["category"],
-        "total_instances": infrastructure.get("total_vms", 0),
-        "service_endpoints": len(endpoints),
-        "deployment_time": deployment_result.get("end_time"),
-        "next_steps": [],
-        "access_information": endpoints
-    }
-    
-    # Add next steps based on application type
-    if deployment_result["status"] == "completed":
-        summary["next_steps"] = [
-            f"✅ {app_config['name']} has been successfully deployed",
-            f"🌐 {len(endpoints)} service endpoints are available",
-            "🔗 Use the provided URLs to access your services",
-            "📊 Monitor service health through CB-Tumblebug dashboard",
-            "🛠️ Use execute_command_infra() for additional configuration"
-        ]
-        
-        if app_config["category"] == "game":
-            summary["next_steps"].append("🎮 Share server addresses with players")
-        elif app_config["category"] == "web":
-            summary["next_steps"].append("🌍 Configure DNS for production use")
-        elif app_config["category"] == "llm":
-            summary["next_steps"].append("🤖 Pull LLM models using appropriate commands")
-    
-    return summary
-
-# Helper function: Estimate application cost
-def _estimate_app_cost(requirements: Dict) -> float:
-    """Estimate hourly cost based on application requirements."""
-    
-    base_cost = 0.10  # $0.10/hour base
-    
-    if requirements.get("cpu_intensive"):
-        base_cost += 0.05
-    if requirements.get("memory_intensive"):
-        base_cost += 0.05
-    if requirements.get("gpu_preferred"):
-        base_cost += 0.30
-    if requirements.get("bandwidth_intensive"):
-        base_cost += 0.02
-    
-    return round(base_cost, 3)
-
-# Helper function: Get recommended locations for deployment strategy
-def _get_recommended_locations(strategy: str) -> List[str]:
-    """Get recommended locations based on deployment strategy."""
-    
-    location_strategies = {
-        "global": ["Global distribution across 6+ continents", "US, EU, Asia-Pacific, South America"],
-        "regional": ["Regional deployment in major markets", "US, EU, Asia"],
-        "performance": ["High-performance regions", "US East, EU West, Asia Northeast"],
-        "centralized": ["Single region deployment", "US East"],
-        "cluster": ["Co-located cluster deployment", "Single region for optimal networking"]
-    }
-    
-    return location_strategies.get(strategy, ["Regional deployment"])
-
-# Helper function: Generate deployment confirmation message
-def _generate_deployment_confirmation(deployment_plan: Dict, app_config: Dict, hardware_research: Optional[Dict] = None) -> str:
-    """Generate user-friendly deployment confirmation message with hardware research information."""
-    
-    strategy = deployment_plan["deployment_strategy"]
-    requirements = deployment_plan["infrastructure_requirements"]
-    disk_req = requirements.get("disk_requirements", {})
-    
-    # Hardware research section
-    hardware_section = ""
-    if hardware_research:
-        research_summary = deployment_plan.get("hardware_research_summary", {})
-        confidence = research_summary.get("research_confidence", "medium")
-        hardware_section = f"""
-**Hardware Research Results:**
-- CPU Recommendation: {research_summary.get('cpu_recommendation', 2)} cores
-- Memory Recommendation: {research_summary.get('memory_recommendation', 4)} GB
-- Disk Requirement: {research_summary.get('disk_recommendation', 50)} GB (minimum: {disk_req.get('min_disk_gb', 50)} GB)
-- Research Confidence: {confidence.title()}
-- Sources Checked: {research_summary.get('sources_checked', 'Built-in knowledge')}
-"""
-    else:
-        hardware_section = """
-**Hardware Configuration:**
-- Using default specifications (no research performed)
-- Disk Size: {disk_req.get('min_disk_gb', 50)} GB minimum
-""".format(disk_req=disk_req)
-    
-    msg = f"""
-🚀 **{app_config['name']} Deployment Plan**
-
-**Application Details:**
-- Type: {app_config['category'].title()} Application
-- Description: {app_config['description']}
-{hardware_section}
-**Deployment Strategy:**
-- Regions: {', '.join(strategy['target_regions'])}
-- Instances per region: {strategy['instances_per_region']}
-- Total instances: {strategy['total_instances']}
-
-**Resource Requirements:**
-- Estimated cost: ${requirements['estimated_cost']['total_hourly']:.3f}/hour
-- Monthly estimate: ${requirements['estimated_cost']['estimated_monthly']:.2f}
-- Network ports: {', '.join(requirements['network_requirements']['ports'])}
-- Disk size per VM: {disk_req.get('min_disk_gb', 50)} GB
-
-**Next Steps:**
-1. Infrastructure will be provisioned with researched specifications
-2. Application will be deployed using predefined scripts
-3. Service endpoints will be collected and reported
-
-⚠️ **Important:** This will create billable cloud resources. 
-Are you sure you want to proceed with this deployment?
-
-To confirm, call this function again with auto_confirm=True
-"""
-    
-    return msg.strip()
-
-# Helper function: Extract used template variables
-def _extract_used_templates(commands: List[str]) -> List[str]:
-    """Extract template variables used in commands."""
-    
-    import re
-    template_pattern = r'\{\{([^}]+)\}\}'
-    used_templates = set()
-    
-    for cmd in commands:
-        matches = re.findall(template_pattern, cmd)
-        used_templates.update(matches)
-    
-    return sorted(list(used_templates))
-
-#####################################
-# Enhanced Remote Command Execution
-#####################################
-
-
-
-
-
-
-
-# ===== Credential Management Tools =====
-
-# Tool: List Credential Holders
+# Tool: Credential holders
 @tool()
-def list_credential_holders() -> Dict:
+def list_credential_holders(holder_id: Optional[str] = None) -> Dict:
     """
-    List the credential holders registered in the system.
+    List the credential holders registered in the system, or fetch one.
 
     A holder is one set of CSP credentials (a team, an environment, a user), possibly for
-    several providers. Tools that take credential_holder act with that holder's credentials.
+    several providers. get_connections(credential_holder=...) lists a holder's connections.
+
+    Args:
+        holder_id: Return just this holder
 
     Returns:
         credentialHolderList: per holder its providers, connectionCount,
         verifiedConnectionCount and isDefault.
     """
+    if holder_id:
+        return api_request("GET", f"/credentialHolder/{holder_id}")
     return api_request("GET", "/credentialHolder")
 
-# Tool: Get Credential Holder Details
-@tool()
-def get_credential_holder(holder_id: str) -> Dict:
-    """
-    Get detailed information about a specific credential holder.
-    
-    Args:
-        holder_id: Credential holder identifier
-    
-    Returns:
-        Detailed credential holder information including providers and connection counts
-    """
-    return api_request("GET", f"/credentialHolder/{holder_id}")
 
+#####################################
+# Prompts
+#####################################
 
-# ===== MCP Server Prompts =====
-# These prompts help users understand and effectively use the TB-MCP server capabilities
-# Based on MapUI patterns for comprehensive cloud infrastructure management
+def _prompt(task, *topics):
+    """A task statement followed by the usage guides it relies on."""
+    guides = "\n\n".join(f"## {topic}\n{_USAGE_GUIDES[topic]}" for topic in topics)
+    return (f"{task}\n\nWork through the CB-Tumblebug MCP tools. Ask before anything that "
+            f"creates, changes or deletes resources, and report what was actually done.\n\n"
+            f"{guides}")
+
 
 @mcp.prompt()
-def infra_creation_workflow():
-    """
-    Complete Infra Creation Workflow Guide with LLM Interaction Patterns
-    
-    This comprehensive prompt enforces the correct workflow for creating Multi-Cloud Infrastructure (Infra)
-    and provides detailed LLM behavior guidelines for proper user interaction.
-    ALL Infra creation MUST follow this workflow to prevent deployment failures.
-    VM configurations MUST include both specId and imageId - no exceptions.
-    """
-    return """# 🚨 COMPLETE Infra Creation Workflow & LLM Interaction Guide
+def provision_infrastructure(requirement: str = "") -> str:
+    """Plan, review and create a multi-cloud Infra from a requirement"""
+    return _prompt(
+        f"Provision infrastructure for this requirement: {requirement or '(ask the user)'}\n"
+        "Choose specs and images, review the plan, show the user the node groups and the "
+        "hourly cost, and create it only after they agree.", "provision")
 
-## ⚠️ CRITICAL: ALWAYS Follow This Exact Workflow
-
-This comprehensive guide covers both the technical workflow and LLM behavior patterns
-for creating Multi-Cloud Infrastructure (Infra) with proper user interaction.
-
-### 🔄 STEP-BY-STEP PROCESS (NO SHORTCUTS ALLOWED):
-
-⚠️ **IMPORTANT**: VM configurations MUST include both `specId` AND `imageId` - no exceptions!
-
-📋 **OS TYPE SPECIFICATION OPTIONS:**
-- Simple OS name: `"ubuntu"`, `"centos"`, `"windows"`, `"debian"`, `"rhel"`
-- OS with specific version: `"ubuntu 22.04"`, `"centos 7"`, `"windows server 2019"`, `"debian 11"`
-- Use `get_search_options(kind='image')` to see all available osType values
-
-#### STEP 0: 🔧 GET AVAILABLE OPTIONS (MANDATORY FIRST STEP)
-```python
-# 0.1: ALWAYS get available options before recommend_vm_spec
-spec_options = get_search_options(kind='spec')
-# This returns:
-# - Available filter metrics (vCPU, memoryGiB, providerName, regionName, etc.)
-# - Valid values for providers, regions, architectures
-# - Example policies and parameter formats
-# - Priority options and their required parameters
-
-# 0.2: Use the returned information to build valid filter_policies
-# ✅ Check availableMetrics for valid metric names
-# ✅ Check availableValues for valid provider/region names
-# ✅ Use examplePolicies as templates
-# ✅ Verify priority options and parameter formats
-```
-
-#### STEP 1: 🔍 MANDATORY REVIEW PHASE
-```python
-# 1.1: Get VM specifications (using validated parameters from step 0)
-specs = recommend_vm_spec(
-    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},  # Use validated metric names
-    priority_policy="location",  # or "cost" or "performance" (check spec_options for available)
-    latitude=37.4419,           # if location-based
-    longitude=-122.1430         # if location-based
-)
-
-# 1.2: Search and select images for each spec
-node_groups = []
-for i, spec in enumerate(specs["summarized_specs"][:2]):
-    spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
-    
-    # 1.2.1: Search for compatible images using matched_spec_id
-    images = search_images(
-        matched_spec_id=spec_id,     # Auto-applies provider/region/arch
-        os_type="ubuntu 22.04",      # Can be simple OS ("ubuntu") or OS+version ("ubuntu 22.04", "centos 7", "windows server 2019")
-        include_basic_image_only=True  # Prefer clean OS installations
-    )
-    
-    # 1.2.2: Select best image for this specific spec
-    if images.get("imageList"):
-        best_image = select_best_image_for_spec(
-            images["imageList"], 
-            spec, 
-            {"os_type": "ubuntu 22.04", "prefer_basic": True}  # Can specify exact OS version
-        )
-        selected_image_id = best_image["cspImageName"]
-    else:
-        # Fallback: try without basic_image_only filter
-        images = search_images(matched_spec_id=spec_id, os_type="ubuntu 22.04")
-        if images.get("imageList"):
-            selected_image_id = images["imageList"][0]["cspImageName"]
-        else:
-            raise Exception(f"No compatible images found for spec {spec_id}")
-    
-    # 1.2.3: Create VM configuration with required imageId
-    node_groups.append({
-        "specId": spec_id,                    # MUST use exact ID from API
-        "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
-        "name": f"vm-{spec['providerName']}-{i+1}",
-        "nodeGroupSize": 1
-    })
-
-# 1.3: 🔍 MANDATORY REVIEW - Always do this first!
-review_result = review_infra_dynamic_request(
-    ns_id="default",
-    name="my-infrastructure",
-    node_groups=node_groups
-)
-```
-
-#### STEP 2: 📋 ANALYZE REVIEW RESULTS
-```python
-# 2.1: Check overall status
-if review_result.get("overallStatus") == "Ready":
-    print("✅ Configuration validated - Safe to proceed")
-    creation_viable = True
-elif review_result.get("overallStatus") == "Warning":
-    print("⚠️ Warnings detected - Review before proceeding")
-    # Check nodeReviews for specific warnings
-    creation_viable = True  # Can proceed with caution
-elif review_result.get("overallStatus") == "Error":
-    print("❌ Errors detected - Must fix before proceeding") 
-    creation_viable = False
-    # Fix issues in node_groups and re-run review
-
-# 2.2: Review cost estimates
-print(f"💰 Estimated cost: {review_result.get('estimatedCost')}")
-print(f"🖥️ Total VMs: {review_result.get('totalNodeCount')}")
-```
-
-#### STEP 3: 🚀 Infra CREATION (Only After Successful Review)
-```python
-# 3.1: Create Infra only if review passed
-if creation_viable:
-    infra_result = create_infra_dynamic(
-        ns_id="default",
-        name="my-infrastructure",
-        node_groups=node_groups,  # Already includes specId + imageId
-        force_create=True  # 🚨 REQUIRED after review
-    )
-    print(f"✅ Infra created: {infra_result.get('id')}")
-else:
-    print("❌ Cannot create Infra - fix validation issues first")
-```
-
-## 🚫 FORBIDDEN PATTERNS:
-
-### ❌ NEVER Do This:
-```python
-# DON'T: Skip review step
-create_infra_dynamic(ns_id="default", name="test", node_groups=[...])
-# This will return an error requiring review first
-
-# DON'T: Create spec IDs manually
-vm_config = {"specId": "aws+us-east-1+t2.small"}  # Manual creation
-# Always use recommend_vm_spec() results
-
-# DON'T: Skip image selection step
-vm_config = {
-    "specId": spec["id"],
-    # Missing imageId - THIS WILL FAIL
-    "name": "my-vm"
-}
-
-# DON'T: Use imageId from different CSP/region than specId
-vm_config = {
-    "specId": "aws+us-east-1+t2.small",
-    "imageId": "ami-azure-image-id"  # Mismatched CSP - WILL FAIL
-}
-
-# DON'T: Use vague OS specifications when specific versions are needed
-vm_config = {
-    "specId": spec["id"],
-    "imageId": "generic-ubuntu-image"  # Be specific about OS version
-}
-# DO: Use specific OS versions like "ubuntu 22.04" for better image matching
-
-# DON'T: Ignore review results
-review = review_infra_dynamic_request(...)
-create_infra_dynamic(..., force_create=True)  # Without checking review
-```
-
-### ✅ ALWAYS Do This:
-```python
-# DO: Follow the complete three-step process
-specs = recommend_vm_spec(...)
-vm_configs = []
-for spec in specs["summarized_specs"]:
-    # REQUIRED: Search for compatible images with specific OS version
-    images = search_images(matched_spec_id=spec["id"], os_type="ubuntu 22.04")  # Specify exact OS+version
-    selected_image = images["imageList"][0]["cspImageName"]
-    
-    vm_configs.append({
-        "specId": spec["id"],
-        "imageId": selected_image,  # 🚨 REQUIRED
-        "name": f"vm-{spec['providerName']}-1"
-    })
-
-review = review_infra_dynamic_request(ns_id="default", name="test", node_groups=vm_configs)
-if review["overallStatus"] == "Ready":
-    create_infra_dynamic(ns_id="default", name="test", node_groups=vm_configs, force_create=True)
-
-# DO: Always include imageId in VM configurations
-vm_config = {
-    "specId": spec["id"],      # From recommend_vm_spec()
-    "imageId": image["cspImageName"],  # From search_images() - REQUIRED
-    "name": "my-vm"
-}
-```
-
-## 📊 UNDERSTANDING REVIEW RESULTS:
-
-### Key Fields to Check:
-- `overallStatus`: "Ready" | "Warning" | "Error"
-- `creationViable`: Boolean - can create Infra?
-- `estimatedCost`: Cost per hour (e.g., "$0.0837/hour")
-- `totalNodeCount`: Total VMs including NodeGroup sizes
-- `nodeReviews`: Per-VM validation details
-
-### Decision Matrix:
-- **"Ready" + creationViable: true** → ✅ Proceed with creation
-- **"Warning" + creationViable: true** → ⚠️ Review warnings, then proceed
-- **"Error" + creationViable: false** → ❌ Fix errors, re-run review
-
-## 🎯 LLM IMPLEMENTATION GUIDELINES:
-
-1. **NEVER skip the review step** - Always call review_infra_dynamic_request() first
-2. **NEVER omit imageId** - VM configurations MUST include both specId and imageId
-3. **ALWAYS use matched_spec_id** in search_images() for compatibility
-4. **SPECIFY OS version when needed** - Use os_type with versions like "ubuntu 22.04", "centos 7", "windows server 2019"
-5. **ALWAYS check overallStatus** before proceeding to creation
-6. **ALWAYS use force_create=True** in create_infra_dynamic() after review
-7. **EXPLAIN the complete process** to users when they request Infra creation
-8. **SHOW cost estimates** from review results before creation
-9. **FIX validation issues** if overallStatus is "Error" before creating
-
-## 🤖 CRITICAL LLM USER INTERACTION RULES:
-
-### ✅ REQUIRED USER INTERACTION PATTERN:
-```
-User: "Create an Infra with 2 VMs"
-
-LLM Response:
-"I'll help you create an Infra with 2 VMs. Let me first validate the configuration and show you the cost estimates before proceeding.
-
-[Calls review_infra_dynamic_request()]
-
-✅ Configuration validated! Here's your deployment plan:
-💰 Cost: $0.16/hour (~$115.20/month)
-🖥️ VMs: 2 virtual machines (AWS us-east-1, GCP us-central1)
-
-Would you like me to proceed with creating this infrastructure?
-- Reply 'Yes' to create the Infra
-- Reply 'No' to cancel
-- Reply 'Details' for more information"
-
-[Waits for user confirmation]
-
-User: "Yes"
-
-LLM: [Calls create_infra_dynamic(force_create=True)]
-"✅ Infra 'user-infra-12345' created successfully!"
-```
-
-### ❌ FORBIDDEN USER INTERACTION PATTERNS:
-```
-User: "Create an Infra"
-
-❌ WRONG LLM Response:
-"Creating Infra now..."
-[Calls create_infra_dynamic() directly]  // Will fail with error!
-
-❌ WRONG LLM Response:
-"Infra created successfully!"
-[No review, no cost disclosure, no user confirmation]
-```
-
-### 📊 MANDATORY USER INFORMATION DISCLOSURE:
-**Before ANY Infra creation, LLM MUST show user:**
-1. 💰 **Cost estimates** (hourly and monthly)
-2. 🖥️ **VM specifications** (count, providers, regions)  
-3. ⚠️ **Any warnings** or potential issues
-4. ✅ **Explicit confirmation request**
-
-**Never create infrastructure without user seeing costs first!**
-
-## 📋 REQUIRED VM CONFIGURATION FORMAT:
-
-```python
-vm_configuration = {
-    "specId": "aws+ap-northeast-2+t2.small",      # From recommend_vm_spec() - REQUIRED
-    "imageId": "ami-0c02fb55956c7d316",           # From search_images() - REQUIRED
-    "name": "my-vm-1",                            # VM name - REQUIRED
-    "nodeGroupSize": 1                           # Number of VMs - REQUIRED
-}
-```
-
-This workflow prevents expensive deployment failures and ensures reliable infrastructure creation.
-
-## 🤖 DETAILED LLM BEHAVIOR GUIDE FOR Infra CREATION
-
-### 🎯 MANDATORY LLM BEHAVIOR WHEN USER REQUESTS Infra CREATION:
-
-#### STEP 1: 🚨 ALWAYS START WITH REVIEW (NEVER SKIP)
-```python
-# ✅ CORRECT: Always call review first
-review_result = review_infra_dynamic_request(
-    ns_id="default",
-    name="user-requested-infra",
-    node_groups=node_groups
-)
-
-# ❌ WRONG: Never call create_infra_dynamic directly
-# create_infra_dynamic(...)  # This will return an error!
-```
-
-#### STEP 2: 📊 ANALYZE REVIEW RESULTS AND INFORM USER
-Based on `review_result._llm_guidance.status`:
-
-**🟢 "READY_TO_CREATE":**
-```python
-# Display the user_prompt from _llm_guidance directly to user
-user_message = review_result["_llm_guidance"]["user_prompt"]
-print(user_message)  # Shows cost, specs, asks for confirmation
-
-# Wait for user response: "Yes", "No", or "Details"
-user_response = ask_the_user()   # not a tool - prompt the human
-
-if user_response.lower() in ["yes", "y", "proceed", "create"]:
-    # User approved - proceed with creation
-    infra = create_infra_dynamic(..., force_create=True)
-    print(f"✅ Infra '{infra['id']}' created successfully!")
-elif user_response.lower() in ["no", "n", "cancel"]:
-    print("❌ Infra creation cancelled by user.")
-else:
-    # Show detailed information
-    print("📋 Detailed validation results:", review_result["nodeReviews"])
-```
-
-**🟡 "READY_WITH_WARNINGS":**
-```python
-# Show warnings and ask user to decide
-warnings_message = review_result["_llm_guidance"]["user_prompt"]
-print(warnings_message)  # Displays warnings and asks for decision
-
-user_response = ask_the_user()   # not a tool - prompt the human
-if user_response.lower() in ["yes", "proceed"]:
-    infra = create_infra_dynamic(..., force_create=True)
-    print("⚠️ Infra created with warnings noted.")
-else:
-    print("Configuration needs adjustment. Let me help fix the warnings.")
-    # Guide user through fixing warnings
-```
-
-**🔴 "CANNOT_CREATE":**
-```python
-# Show errors and offer help
-error_message = review_result["_llm_guidance"]["user_prompt"]
-print(error_message)  # Explains errors and offers help options
-
-# DO NOT proceed to create_infra_dynamic
-# Instead, help user fix the issues:
-
-print("Let me help you fix these issues:")
-print("1. Finding alternative VM specifications...")
-alternative_specs = recommend_vm_spec(different_filter_policies)
-print("2. Checking image availability in other regions...")
-# Guide user through problem resolution
-```
-
-### 🎯 REQUIRED LLM RESPONSES TO USERS:
-
-#### ✅ When Review Shows "Ready":
-```
-"Great! I've validated your Infra configuration and everything looks good:
-
-💰 Cost: $X.XX/hour (approximately $Y.YY/month)  
-🖥️ VMs: N virtual machines across M providers
-✅ Status: All configurations validated
-
-The infrastructure will be created with these specifications:
-[Display VM summary from review]
-
-Would you like me to proceed with creating this Infra infrastructure?
-- Reply 'Yes' to create the infrastructure
-- Reply 'No' to cancel  
-- Reply 'Details' for more information"
-```
-
-#### ⚠️ When Review Shows Warnings:
-```
-"I've reviewed your Infra configuration. It can be created but there are some warnings:
-
-⚠️ Warnings Found:
-[Display warnings from review]
-
-💰 Cost: $X.XX/hour  
-🖥️ VMs: N virtual machines
-
-Despite these warnings, the infrastructure can still be created. 
-Would you like to proceed anyway, or should I help you address the warnings first?
-- Reply 'Proceed' to create with warnings
-- Reply 'Fix' to address warnings first  
-- Reply 'Details' for more information"
-```
-
-#### ❌ When Review Shows Errors:
-```
-"I've reviewed your Infra configuration and found issues that must be fixed:
-
-❌ Errors Found:
-[Display errors from review]
-
-I cannot create the infrastructure with these errors. Let me help you fix them:
-
-Would you like me to:
-1. Find alternative VM specifications  
-2. Search for images in different regions
-3. Check different cloud providers
-4. Show detailed error information
-
-Which option would you prefer? (Reply with the number or description)"
-```
-
-### 🚨 CRITICAL LLM RULES:
-
-1. **NEVER** call `create_infra_dynamic()` without calling `review_infra_dynamic_request()` first
-2. **ALWAYS** show the user the cost estimates and configuration details before creating
-3. **ALWAYS** wait for explicit user confirmation before proceeding to creation
-4. **NEVER** assume user consent - always ask for confirmation
-5. **ALWAYS** use the `_llm_guidance.user_prompt` field for user messages
-6. **NEVER** proceed with creation if `creationViable: false`
-7. **ALWAYS** help users fix errors instead of just reporting them
-
-### 📊 LLM RESPONSE TEMPLATES:
-
-**User Request:** "Create an Infra with 2 VMs in AWS"
-
-**LLM Response Pattern:**
-```
-"I'll help you create an Infra with 2 VMs in AWS. Let me first validate the configuration and check costs.
-
-[Calls review_infra_dynamic_request()]
-
-[Based on review results, uses appropriate response template above]
-```
-
-**NEVER:**
-```
-"I'll create an Infra for you."
-[Calls create_infra_dynamic() directly]  // ❌ WRONG!
-```
-
-This ensures users are always informed about costs and configuration before infrastructure is created.
-"""
 
 @mcp.prompt()
-def tumblebug_application_deployment():
-    """
-    Application Deployment Strategy and Workflow Guide
-    
-    This prompt guides LLMs to use different approaches based on application type:
-    - Known applications (APPLICATION_CONFIGS): Use existing usecase commands
-    - General applications: LLM generates deployment commands based on reference guides
-    """
-    return """# CB-Tumblebug Application Deployment Guide
+def run_remote_commands(infra_id: str = "", task: str = "") -> str:
+    """Run commands or a predefined script on the nodes of an Infra"""
+    return _prompt(
+        f"On Infra {infra_id or '(ask which one)'}, do this: {task or '(ask the user)'}\n"
+        "Check list_predefined_scripts() before writing commands by hand.", "commands")
 
-## 🚀 DEPLOYMENT STRATEGY: Intelligent Application-Specific Approach
-
-### 🎯 LLM DECISION MATRIX: Choose Deployment Method Based on Application Type
-
-**🤖 LLM MUST first determine the application type and use appropriate strategy:**
-
-#### 📋 STEP 1: Application Type Detection
-```python
-# 1. Check if application is in predefined APPLICATION_CONFIGS
-list_infra_templates()  # Get available predefined applications
-
-# 2. If found in APPLICATION_CONFIGS → Use Strategy A (Usecase Commands)
-# 3. If NOT found → Use Strategy B (LLM-Generated Commands)
-```
-
-### 🎯 STRATEGY A: Predefined Applications (APPLICATION_CONFIGS)
-
-**📋 For applications in APPLICATION_CONFIGS (xonotic, nginx, ollama, jitsi, elk, ray):**
-
-#### ✅ USE EXISTING USECASE COMMANDS - DO NOT REINVENT
-```python
-# EXAMPLE: Xonotic Game Server
-execute_command_infra(ns_id, infra_id, [
-    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/xonotic/startServer.sh; chmod +x ~/startServer.sh",
-    "sudo ~/startServer.sh {{infra_id}} 26000 8 8",
-    "echo 'Server Address: {{public_ip}}:26000'"
-])
-
-# EXAMPLE: Nginx Web Server  
-execute_command_infra(ns_id, infra_id, [
-    "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/nginx/startServer.sh | bash -s -- --ip {{public_ip}}",
-    "echo 'Web Server: http://{{public_ip}}'"
-])
-
-# EXAMPLE: Ollama LLM Server (Basic Setup)
-execute_command_infra(ns_id, infra_id, [
-    "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
-    "echo 'LLM Server: http://{{public_ip}}:3000'"
-])
-
-# Pulling specific Ollama models: ask the user which ones (model names change often,
-# see https://ollama.com/search), then pull them with an ordinary remote command.
-execute_command_infra(ns_id, infra_id, [
-    "ollama pull llama3.3:latest && ollama pull qwen2.5:14b",
-    "ollama list"
-])
-
-# EXAMPLE: Jitsi Meet Conference
-execute_command_infra(ns_id, infra_id, [
-    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/jitsi/startServer.sh",
-    "chmod +x ~/startServer.sh",
-    "sudo ~/startServer.sh {{public_ips_space}} DNS EMAIL"
-])
-
-# EXAMPLE: ELK Stack
-execute_command_infra(ns_id, infra_id, [
-    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/elastic-stack/startELK.sh",
-    "chmod +x ~/startELK.sh",
-    "sudo ~/startELK.sh"
-])
-
-# EXAMPLE: Ray ML Cluster
-execute_command_infra(ns_id, infra_id, [
-    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-head-setup.sh",
-    "chmod +x ~/ray-head-setup.sh",
-    "~/ray-head-setup.sh -i {{public_ip}}"
-])
-```
-
-**🚨 CRITICAL for Strategy A:**
-- **ALWAYS use the exact usecase commands from APPLICATION_CONFIGS**
-- **DO NOT modify or recreate these scripts**
-- **These are tested, optimized deployment scripts**
-- **Follow the exact command patterns shown above**
-
-### 🎯 STRATEGY B: General Applications (LLM-Generated Commands)
-
-**🧠 For applications NOT in APPLICATION_CONFIGS:**
-
-#### ✅ LLM MUST GENERATE SMART DEPLOYMENT COMMANDS
-```python
-# 1. Get reference guide (for hardware requirements only)
-guide = get_usage_guide('provision'"application_name", "production")
-
-# 2. Use guide ONLY for hardware specs, NOT for exact commands
-vm_spec_filter = guide["vm_spec_filter"]  # Use this for VM specifications
-installation_commands = guide["commands"]["installation"]  # IGNORE - Generate your own
-
-# 3. LLM generates intelligent deployment commands based on application knowledge
-```
-
-**🤖 LLM Command Generation Examples:**
-
-```python
-# Example 1: MongoDB deployment (LLM-generated)
-execute_command_infra(ns_id, infra_id, [
-    "sudo apt-get update -y",
-    "wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -",
-    "echo 'deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list",
-    "sudo apt-get update -y",
-    "sudo apt-get install -y mongodb-org",
-    "sudo systemctl start mongod",
-    "sudo systemctl enable mongod",
-    "sudo systemctl status mongod",
-    "echo 'MongoDB Server: {{public_ip}}:27017'"
-])
-
-# Example 2: Jenkins CI/CD (LLM-generated)
-execute_command_infra(ns_id, infra_id, [
-    "sudo apt-get update -y",
-    "sudo apt-get install -y openjdk-11-jdk",
-    "wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -",
-    "sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'",
-    "sudo apt-get update -y",
-    "sudo apt-get install -y jenkins",
-    "sudo systemctl start jenkins",
-    "sudo systemctl enable jenkins",
-    "sudo cat /var/lib/jenkins/secrets/initialAdminPassword",
-    "echo 'Jenkins Server: http://{{public_ip}}:8080'"
-])
-
-# Example 3: Redis Cache (LLM-generated)
-execute_command_infra(ns_id, infra_id, [
-    "sudo apt-get update -y",
-    "sudo apt-get install -y redis-server",
-    "sudo sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis/redis.conf",
-    "sudo systemctl restart redis-server",
-    "sudo systemctl enable redis-server",
-    "redis-cli ping",
-    "echo 'Redis Server: {{public_ip}}:6379'"
-])
-
-# Example 4: Apache Kafka (LLM-generated)
-execute_command_infra(ns_id, infra_id, [
-    "sudo apt-get update -y",
-    "sudo apt-get install -y openjdk-11-jdk",
-    "wget https://downloads.apache.org/kafka/2.8.2/kafka_2.13-2.8.2.tgz",
-    "tar -xzf kafka_2.13-2.8.2.tgz",
-    "cd kafka_2.13-2.8.2",
-    "bin/zookeeper-server-start.sh config/zookeeper.properties &",
-    "sleep 10",
-    "bin/kafka-server-start.sh config/server.properties &",
-    "echo 'Kafka Server: {{public_ip}}:9092'"
-])
-```
-
-**🧠 LLM Command Generation Guidelines:**
-1. **Think about the application's typical installation process**
-2. **Consider package managers (apt, yum, snap, docker)**
-3. **Include service startup and enablement**
-4. **Add configuration for network access if needed**
-5. **Include verification commands**
-6. **Provide clear access information**
-7. **Use your knowledge of the application's standard deployment**
-
-### 🔄 UNIFIED 9-STEP DEPLOYMENT WORKFLOW
-
-**🚨 REGARDLESS of Strategy A or B, ALWAYS follow this workflow:**
-
-#### Step 1: 📖 Application Type Detection
-```python
-# Check if predefined application exists
-templates = list_infra_templates()
-
-# If not predefined, get reference guide for hardware specs only
-guide = get_usage_guide('provision'"application_name", "production")
-```
-
-#### Step 2: 🏗️ Prepare Namespace
-```python
-manage_namespace(action='create', name="my-app-namespace")
-```
-
-#### Step 3: 🎯 Get VM Specifications
-```python
-# Use hardware requirements from APPLICATION_CONFIGS or deployment guide
-specs = recommend_vm_spec(
-    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-    priority_policy="cost"
-)
-```
-
-#### Step 4: 🔧 Build VM Configurations
-```python
-node_groups = [{
-    "specId": spec["id"],
-    "name": f"vm-{app_name}-1",
-    "description": f"VM for {app_name}",
-    "nodeGroupSize": 1
-}]
-```
-
-#### Step 5: ✅ Validate Configuration (MANDATORY)
-```python
-review = review_infra_dynamic_request(ns_id, name, node_groups)
-```
-
-#### Step 6: 🚀 Create Infrastructure
-```python
-infra = create_infra_dynamic(ns_id, name, node_groups, force_create=True)
-```
-
-#### Step 7: 📦 Install Application
-```python
-# Strategy A: Use predefined APPLICATION_CONFIGS commands
-# Strategy B: Use LLM-generated intelligent commands
-execute_command_infra(ns_id, infra_id, deployment_commands)
-```
-
-#### Step 8: 🔍 Verify Deployment
-```python
-# Generate appropriate verification commands
-execute_command_infra(ns_id, infra_id, verification_commands)
-```
-
-#### Step 9: 📋 Collect Access Information
-```python
-access_info = _infra_access_info(ns_id, infra_id)
-```
-
-### 🎯 LLM BEHAVIOR REQUIREMENTS
-
-**🚨 CRITICAL LLM Decision Rules:**
-1. **ALWAYS check list_infra_templates() first**
-2. **IF application in templates → Use Strategy A (exact usecase commands)**
-3. **IF application NOT in templates → Use Strategy B (LLM-generated commands)**
-4. **Use get_usage_guide('provision') as REFERENCE ONLY for Strategy B**
-5. **NEVER skip validation step**
-6. **ALWAYS complete all 9 steps**
-
-### 📋 Example Decision Process:
-
-```
-User: "Deploy xonotic game server"
-LLM Decision: 
-1. Check templates → xonotic found in APPLICATION_CONFIGS
-2. Use Strategy A → Execute exact usecase commands
-3. Commands: wget startServer.sh; sudo ~/startServer.sh {{infra_id}} 26000 8 8
-
-User: "Deploy MongoDB database"  
-LLM Decision:
-1. Check templates → mongodb NOT in APPLICATION_CONFIGS
-2. Use Strategy B → Generate intelligent deployment commands
-3. Commands: LLM creates MongoDB installation script (as shown above)
-
-User: "Deploy nginx web server"
-LLM Decision:
-1. Check templates → nginx found in APPLICATION_CONFIGS  
-2. Use Strategy A → Use exact nginx usecase script
-3. Commands: curl startServer.sh | bash -s -- --ip {{public_ip}}
-```
-
-### 🚨 CRITICAL: Remote Command Execution Time Warnings
-
-**⏰ IMPORTANT PERFORMANCE CONSIDERATIONS:**
-
-Remote command execution via CB-Tumblebug API can take **significantly longer** than expected:
-
-#### ⏱️ **Expected Response Times:**
-- **Simple commands** (ls, ps, whoami): 10-30 seconds
-- **Package updates** (apt update): 1-3 minutes  
-- **Software installation** (apt install nginx): 2-5 minutes
-- **Application deployment scripts**: 5-15 minutes
-- **Complex setups** (databases, Docker, clusters): 10-20 minutes
-- **Large downloads/compilations**: **Up to 20+ minutes**
-
-#### 🚨 **LLM MUST INFORM USERS:**
-
-**Before executing remote commands, ALWAYS tell users:**
-
-```
-⏰ IMPORTANT: Remote command execution may take several minutes to complete.
-   - Simple installations: 2-5 minutes
-   - Complex applications: 10-20 minutes
-   - Please be patient during the deployment process.
-   
-🔄 The system will provide progress updates when commands complete.
-```
-
-#### 🎯 **Best Practices for LLMs:**
-
-1. **🗣️ Set Expectations:** Always warn users about potential delays
-2. **📦 Batch Commands:** Group related commands to minimize API calls
-3. **🔍 Use Verification:** Add simple verification commands to check progress
-4. **📊 Enable Summarization:** Use `summarize_output=True` for large outputs
-5. **⚡ Break Down Complex:** Split large deployments into smaller batches
-
-#### 📋 **Example User Communication:**
-
-```python
-# ✅ GOOD: Inform user before execution
-print("⏰ Starting deployment - this may take 5-10 minutes...")
-print("📦 Installing application packages and dependencies...")
-
-result = execute_command_infra(ns_id, infra_id, installation_commands)
-
-print("✅ Deployment completed! Checking service status...")
-```
-
-```python
-# ❌ BAD: No warning about timing
-result = execute_command_infra(ns_id, infra_id, installation_commands)
-# User may think system is frozen
-```
-
-### 🎯 SUCCESS METRICS
-
-**✅ Successful deployment must:**
-1. Follow correct strategy (A or B) based on application type
-2. Complete all 9 workflow steps
-3. Pass Infra configuration validation
-4. Execute appropriate installation commands
-5. Verify deployment success
-6. Provide clear access information
-
-**🚨 This intelligent approach ensures:**
-- **Predefined apps**: Use tested, optimized scripts
-- **General apps**: LLM creativity with reliable workflow
-- **All apps**: Consistent validation and verification
-
-### 📚 DEPLOYMENT GUIDES: Reference Information Only
-
-**🔍 About get_usage_guide('provision'):**
-
-This tool provides **REFERENCE INFORMATION ONLY** for Strategy B (general applications):
-
-```python
-# ✅ Correct usage for Strategy B
-guide = get_usage_guide('provision'"mongodb", "production")
-vm_spec_filter = guide["vm_spec_filter"]  # Use for VM specifications
-# installation_commands = guide["commands"]["installation"]  # IGNORE - Generate your own
-
-# ❌ Wrong usage
-# Do NOT copy commands directly from deployment guides for general apps
-# Do NOT use deployment guides for APPLICATION_CONFIGS apps
-```
-
-**📋 Deployment Guide Contents:**
-- **Hardware Requirements**: CPU, memory, disk specifications (USE THIS)
-- **VM Spec Filters**: Filter policies for recommend_vm_spec() (USE THIS)
-- **Installation Commands**: Generic examples (REFERENCE ONLY - Don't copy)
-- **Verification Commands**: Basic verification examples (REFERENCE ONLY)
-
-**🎯 LLM Strategy for Deployment Guides:**
-1. **Strategy A Apps**: Ignore deployment guides completely - use APPLICATION_CONFIGS commands
-2. **Strategy B Apps**: Use hardware specs from guides, generate your own installation commands
-3. **Unknown Apps**: Use generic deployment guide as starting reference only
-
-**⚠️ IMPORTANT NOTES:**
-- Deployment guides are NOT optimized, tested scripts
-- They provide generic installation patterns for reference
-- LLM should use domain knowledge to create better commands
-- Always prefer APPLICATION_CONFIGS commands when available
-
-## 🚨 ERROR HANDLING AND RECOVERY
-
-### Common Error Scenarios and Solutions
-
-#### 1. **Resource Creation Failures and Rollbacks**
-```
-Error: "rollback completed successfully after errors in resource preparation"
-```
-
-**🔍 Diagnosis:**
-- Infrastructure provisioning failed during resource creation
-- CB-Tumblebug performed automatic rollback
-- Common causes: quota limits, network issues, region availability
-
-**✅ LLM Recovery Actions:**
-1. **Check Resource Availability:**
-   ```python
-   # Verify cloud connections and quotas
-   connections = get_connections(filter_verified=True)
-   
-   # Try different regions or providers
-   specs = recommend_vm_spec(
-       filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-       priority_policy="cost"  # Try cost-optimized specs
-   )
-   ```
-
-2. **Simplify Configuration:**
-   ```python
-   # Reduce VM count or specs
-   node_groups = [{
-       "specId": "smaller_spec_id",  # Use smaller instance
-       "nodeGroupSize": 1               # Start with single VM
-   }]
-   ```
-
-3. **Validate Before Retry:**
-   ```python
-   # Always validate before retrying
-   review = review_infra_dynamic_request(ns_id, name, node_groups)
-   ```
-
-#### 2. **Timeout Errors (10+ minute operations)**
-```
-Error: "Request timeout - operation took longer than 10 minutes"
-```
-
-**🔍 Diagnosis:**
-- Very long Infra creation times exceed client connection timeout
-- Complex multi-region deployments or large cluster operations
-- Resource contention or CSP-side delays
-
-**✅ LLM Recovery Actions:**
-1. **Check Infra Status:**
-   ```python
-   # Check if Infra was partially created despite timeout
-   infra_list = get_infra_list(ns_id, option="status")
-   
-   # Look for the Infra name in results
-   for infra in infra_list.get("infra", []):
-       if infra["name"] == "your-infra-name":
-           print(f"Infra Status: {infra['status']}")
-   ```
-
-2. **Retry with Simpler Configuration:**
-   ```python
-   # Start with single region/provider
-   node_groups = [{
-       "specId": single_region_spec,
-       "nodeGroupSize": 1
-   }]
-   ```
-
-3. **Use Staged Deployment:**
-   ```python
-   # Deploy incrementally
-   # Phase 1: Core infrastructure
-   create_infra_dynamic(ns_id, "core-infra", [core_vm])
-   
-   # Phase 2: Additional resources
-   create_infra_dynamic(ns_id, "additional-infra", [additional_vms])
-   ```
-
-#### 3. **Connection Errors**
-```
-Error: "Connection error - unable to reach CB-Tumblebug server"
-```
-
-**✅ LLM Recovery Actions:**
-1. **Verify Service Status:**
-   ```python
-   # Test basic connectivity
-   try:
-       namespaces = get_namespaces()
-       print("✅ Connection restored")
-   except:
-       print("❌ Still cannot connect")
-   ```
-
-2. **Inform User:**
-   - Explain the connection issue clearly
-   - Suggest checking CB-Tumblebug server status
-   - Provide retry instructions
-
-#### 4. **Validation Failures**
-```
-Error: "Infra configuration validation failed"
-```
-
-**✅ LLM Recovery Actions:**
-1. **Analyze Validation Results:**
-   ```python
-   review = review_infra_dynamic_request(ns_id, name, node_groups)
-   
-   # Check each VM's validation status
-   for vm in review.get("vm_validations", []):
-       if vm.get("issues"):
-           print(f"VM {vm['vm_index']}: {vm['issues']}")
-   ```
-
-2. **Fix Common Issues:**
-   - Use exact spec IDs from recommend_vm_spec()
-   - Ensure compatible image-spec combinations
-   - Verify resource quotas and limits
-
-### 🎯 LLM Error Communication Guidelines
-
-**✅ DO:**
-- Explain errors in user-friendly terms
-- Provide specific recovery steps
-- Offer alternative approaches
-- Show what was attempted and why it failed
-
-**❌ DON'T:**
-- Simply repeat technical error messages
-- Give up after first failure
-- Ignore timeout or connection issues
-- Skip validation steps to "save time"
-
-**📝 Error Response Template:**
-```
-I encountered a [specific error type] while [operation attempted]. 
-
-🔍 **What happened:** [User-friendly explanation]
-
-🛠️ **I'm trying these solutions:**
-1. [First recovery action]
-2. [Second recovery action]
-3. [Alternative approach]
-
-⏳ **Please wait while I resolve this...**
-```
-
-## STEP-BY-STEP APPLICATION DEPLOYMENT WORKFLOW
-
-### Step 1: Get Application Deployment Guide
-```python
-# First, get detailed deployment guide for the application
-guide = get_usage_guide('provision'"nginx", "production")
-# This provides hardware requirements, installation commands, and verification steps
-```
-
-### Step 2: Create or Validate Namespace
-```python
-# Ensure proper namespace exists
-namespace_result = manage_namespace(action='create', name="my-app")
-# Or create new one: manage_namespace(action='create'"my-app-production")
-```
-
-### Step 3: Get VM Specifications (Using Application Requirements)
-```python
-# Use hardware requirements from deployment guide
-specs = recommend_vm_spec(
-    filter_policies=guide["deployment_workflow"]["step_2_vm_specs"]["filter_policies"],
-    priority_policy=guide["deployment_workflow"]["step_2_vm_specs"]["priority_policy"]
-)
-```
-
-### Step 4: Build VM Configuration
-```python
-# Create VM configurations using recommended specs
-node_groups = []
-for i, spec in enumerate(specs["summarized_specs"][:2]):
-    node_groups.append({
-        "specId": spec["id"],  # Use exact spec ID from API
-        "name": f"app-vm-{i+1}",
-        "description": f"VM for {application_name} in {spec['regionName']}",
-        "nodeGroupSize": 1
-        # imageId: Auto-mapped based on spec
-    })
-```
-
-### Step 5: Validate Infra Configuration (MANDATORY)
-```python
-# Always validate before creating Infra
-review_result = review_infra_dynamic_request(
-    ns_id="my-app",
-    name="my-app-infra",
-    node_groups=node_groups
-)
-
-# Check validation results
-if review_result.get("summary", {}).get("validationPassed", False):
-    print("✅ Configuration validated - safe to proceed")
-else:
-    print("❌ Validation failed - fix issues first")
-    # Handle validation errors
-```
-
-### Step 6: Create Infra Infrastructure
-```python
-# Create the infrastructure
-infra_result = create_infra_dynamic(
-    ns_id="my-app",
-    name="my-app-infra",
-    node_groups=node_groups,
-    description="Infrastructure for my application",
-    force_create=True  # Skip confirmation since we validated
-)
-```
-
-### Step 7: Deploy Application Using Remote Commands
-```python
-# Get installation commands from deployment guide
-installation_commands = guide["commands"]["installation"]
-
-# Execute installation commands
-deployment_result = execute_command_infra(
-    ns_id="my-app",
-    infra_id="my-app-infra",  # From infra_result
-    commands=installation_commands
-)
-```
-
-### Step 8: Verify Deployment
-```python
-# Get verification commands from deployment guide
-verification_commands = guide["commands"]["verification"]
-
-# Verify installation
-verification_result = execute_command_infra(
-    ns_id="my-app",
-    infra_id="my-app-infra",
-    commands=verification_commands
-)
-```
-
-### Step 9: Collect Access Information
-```python
-# Get access information and endpoints
-access_info = _infra_access_info("my-app", "my-app-infra", show_ssh_key=False)
-
-# Display access URLs using the pattern from deployment guide
-access_pattern = guide["expected_results"]["access_pattern"]
-# e.g., "http://{{public_ip}}" becomes "http://1.2.3.4"
-```
-
-## 🔧 SUPPORTED APPLICATIONS WITH DEPLOYMENT GUIDES
-
-The following applications have detailed deployment guides available:
-
-### **Web Servers**
-- **nginx**: High-performance web server (recommended specs: 2 CPU, 4GB RAM)
-- **apache**: Apache HTTP server (recommended specs: 2 CPU, 4GB RAM)
-
-### **Databases**
-- **mysql**: MySQL database server (recommended specs: 2 CPU, 4GB RAM, 100GB disk)
-- **postgresql**: PostgreSQL database (recommended specs: 2 CPU, 8GB RAM, 100GB disk)
-
-### **Development Tools**
-- **docker**: Container runtime (recommended specs: 2 CPU, 4GB RAM, 100GB disk)
-- **node**: Node.js development environment (recommended specs: 2 CPU, 4GB RAM)
-- **python**: Python development environment (recommended specs: 2 CPU, 4GB RAM)
-
-### **For Unknown Applications**
-```python
-# For applications not in the guide, get generic deployment template
-guide = get_usage_guide('provision'"my-custom-app", "production")
-# Provides generic deployment workflow with customizable commands
-```
-
-## 💡 WHY THIS APPROACH IS BETTER
-
-### ✅ **Advantages of Step-by-Step Approach:**
-1. **Reliability**: Each step can be verified before proceeding
-2. **Debugging**: Easy to identify and fix issues at each stage
-3. **Flexibility**: Customize each step based on specific requirements
-4. **Transparency**: User sees exactly what's happening
-5. **Error Recovery**: Can retry individual steps without full redeployment
-
-### ❌ **Problems with Automated deploy_application():**
-1. **Black Box**: Difficult to debug when something fails
-2. **All-or-Nothing**: Single failure breaks entire deployment
-3. **Less Flexible**: Hard to customize for specific needs
-4. **Complex Rollback**: Difficult to clean up partial deployments
-
-## 🚨 CRITICAL LLM BEHAVIOR REQUIREMENTS
-
-### When User Requests Application Deployment:
-
-1. **ALWAYS use get_usage_guide('provision') FIRST**
-2. **Follow the 9-step workflow above**
-3. **NEVER skip the validation step (Step 5)**
-4. **Use exact spec IDs from recommend_vm_spec()**
-5. **Execute installation commands from the deployment guide**
-6. **Verify deployment before declaring success**
-
-### Example User Request Handling:
-```
-User: "Deploy nginx web server"
-
-LLM Response:
-"I'll deploy nginx using the reliable step-by-step approach:
-1. First, let me get the nginx deployment guide...
-2. I'll create/validate the namespace...
-3. Get optimal VM specifications for nginx...
-4. Validate the Infra configuration...
-5. Create the infrastructure...
-6. Install nginx using remote commands...
-7. Verify the deployment...
-8. Provide access information..."
-```
-
-### Example Commands Flow:
-```python
-# 1. Get deployment guide
-guide = get_usage_guide('provision'"nginx", "production")
-
-# 2. Prepare namespace
-manage_namespace(action='create', name="web-servers")
-
-# 3. Get VM specs
-specs = recommend_vm_spec(
-    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-    priority_policy="cost"
-)
-
-# 4. Build VM config
-vm_configs = [{
-    "specId": specs["summarized_specs"][0]["id"],
-    "name": "nginx-vm-1",
-    "description": "Nginx web server VM"
-}]
-
-# 5. Validate
-review = review_infra_dynamic_request("web-servers", "nginx-infra", vm_configs)
-
-# 6. Create Infra (if validation passed)
-infra = create_infra_dynamic("web-servers", "nginx-infra", vm_configs, force_create=True)
-
-# 7. Install nginx
-execute_command_infra("web-servers", "nginx-infra", [
-    "sudo apt-get update -y",
-    "sudo apt-get install -y nginx",
-    "sudo systemctl start nginx",
-    "sudo systemctl enable nginx",
-    "echo 'Web Server accessible at: http://{{public_ip}}'"
-])
-
-# 8. Verify
-execute_command_infra("web-servers", "nginx-infra", [
-    "curl -I http://{{public_ip}}",
-    "sudo systemctl is-active nginx"
-])
-
-# 9. Get access info
-access_info = _infra_access_info("web-servers", "nginx-infra")
-```
-
-## 🎯 SUCCESS METRICS
-
-### A successful application deployment should:
-1. ✅ Complete all 9 steps without errors
-2. ✅ Pass Infra configuration validation
-3. ✅ Successfully execute installation commands
-4. ✅ Pass verification commands
-5. ✅ Provide clear access information to user
-6. ✅ Include troubleshooting guidance
-
-This approach ensures reliable, debuggable, and maintainable application deployments.
-
-## 🚀 SPECIAL CASE: Dynamic LLM Model Discovery for Ollama
-
-### 🔍 NEW APPROACH: Real-Time Model Discovery (Recommended for Ollama)
-
-When users request Ollama deployment, use the NEW dynamic discovery workflow:
-
-#### Step 1: Agree on the models with the user
-```python
-# Model names change often, so confirm them rather than guessing:
-# point the user at https://ollama.com/search and take the exact names back.
-
-# Show the discovery instructions to user
-print("🔍 To find the latest Ollama models:")
-print("1. Visit https://ollama.com/search")
-print("2. Browse categories or search for specific model types")
-print("3. Note down exact model names you want to deploy")
-print("4. Consider model sizes vs your hardware requirements")
-```
-
-#### Step 2: User Model Selection Workflow
-```python
-# Guide user through selection process
-print("📋 Example searches on ollama.com:")
-print("- Search 'coder' for programming models")
-print("- Search 'chat' for conversational models") 
-print("- Search 'reasoning' for advanced reasoning models")
-print("- Browse by size: 7B, 13B, 70B variants")
-
-print("✅ Please select 2-5 models and provide their exact names")
-print("Example selections:")
-print("- ['llama3.3:latest', 'deepseek-r1:latest', 'qwen2.5:14b']")
-print("- ['codellama:latest', 'mistral:latest', 'gemma2:9b']")
-```
-
-#### Step 3: Deploy with User-Selected Models
-```python
-# Once user provides model selections
-selected_models = ["llama3.3:latest", "deepseek-r1:latest", "qwen2.5:14b"]  # User input
-
-# Deploy using the enhanced tool
-result = deploy_ollama_pull_with_models(
-    ns_id="ai-workspace",
-    infra_name="ollama-cluster",
-    selected_models=selected_models,
-    description="Custom LLM deployment with latest models from ollama.com"
-)
-```
-
-#### Step 4: Alternative - Fallback to APPLICATION_CONFIGS
-```python
-# If user prefers not to browse ollama.com, use APPLICATION_CONFIGS fallback
-# This will show guidance to visit ollama.com but use predefined workflow
-execute_command_infra(ns_id, infra_id, [
-    APPLICATION_CONFIGS["ollama_pull"]["commands"]  # Shows ollama.com guidance
-])
-```
-
-### 🎯 Why Dynamic Discovery is Better:
-
-#### ✅ **Advantages:**
-1. **Always Current**: Gets latest models released on ollama.com
-2. **User Choice**: User selects exactly what they need
-3. **Flexibility**: Supports any model available on ollama.com
-4. **Discovery Learning**: User learns about available options
-5. **No Maintenance**: No need to update static model lists
-
-#### 📋 **LLM Behavior for Ollama Requests:**
-```
-User: "Deploy Ollama with latest code models"
-
-LLM Response:
-"I'll help you deploy Ollama with the latest models. Let me guide you through 
-discovering the most current models available:
-
-🔍 Step 1: Model Discovery
-I'll provide guidance on finding the latest models...
-[asks the user which models to pull]
-
-📋 Step 2: Your Selection
-Please visit https://ollama.com/search and:
-- Search for 'coder' or 'code' for programming models
-- Note model sizes (7B, 13B, etc.) for your hardware
-- Select 2-5 models you'd like to deploy
-
-✅ Step 3: Deployment
-Once you provide the model names, I'll deploy them using
-deploy_ollama_pull_with_models() with your selections.
-
-This ensures you get the very latest models available!"
-```
-
-### 🚨 CRITICAL: No More Static Model Lists
-- ❌ **Avoid**: Hardcoded model lists that become outdated
-- ✅ **Use**: Dynamic discovery through ollama.com
-- ✅ **Guide**: Users to make informed selections
-- ✅ **Deploy**: Exactly what users want from latest available models
-
-This approach ensures users always get access to the newest and most relevant LLM models for their specific use cases.
-"""
-
-@mcp.prompt() 
-def tumblebug_infrastructure_management():
-    """
-    Complete Guide for Multi-Cloud Infrastructure Management
-    
-    This prompt explains CB-Tumblebug's infrastructure management capabilities
-    including namespace management, Infra operations, and resource optimization.
-    """
-    return """# CB-Tumblebug Infrastructure Management Guide
-
-## Core Infrastructure Operations
-
-### 1. Namespace Management
-Namespaces organize your cloud resources:
-```
-manage_namespace(action='create'"production") - Create production environment
-manage_namespace(action='create'"staging") - Create staging environment  
-get_namespaces() - List all namespaces
-manage_namespace(action='delete'"test") - Clean up test environment
-```
-
-### 2. Infra (Multi-Cloud Infrastructure) Lifecycle
-```
-# Creation Methods
-create_infra_dynamic() - Full control with VM configurations
-create_infra_dynamic() - Flexible Infra creation with custom VM configurations
-recommend_vm_spec() - Find optimal VM specifications
-search_images() - Find suitable OS images
-
-# Management  
-get_infra_list("production") - List infrastructure
-get_infra("production", "web-servers") - Get detailed info
-control_infra("production", "web-servers", "suspend") - Control operations
-terminate_infra("production", "web-servers", confirm=True) - Clean up
-```
-
-### 3. Resource Discovery
-```
-# Cloud Providers
-get_connections() - Available cloud connections
-get_connections() - Filtered connections
-
-# Infrastructure Components
-get_resources(kind='vNet'"production") - Virtual networks
-get_resources(kind='securityGroup'"production") - Security groups  
-get_resources(kind='sshKey'"production") - SSH key pairs
-```
-
-### 4. VM Specification Optimization
-```
-# Find optimal specs based on requirements
-recommend_vm_spec(
-    filter_policies={
-        "vCPU": {"min": 2, "max": 8},
-        "memoryGiB": {"min": 4, "max": 16},
-        "ProviderName": "aws"
-    },
-    priority_policy="cost"  # or "performance" or "location"
-)
-```
-
-### 5. Image Selection
-```
-# Search for OS images
-search_images(
-    provider_name="aws",
-    region_name="ap-northeast-2", 
-    os_type="ubuntu 22.04"
-)
-```
-
-### 6. Access and Connectivity
-```
-_infra_access_info("production", "web-servers") - SSH and IP info
-execute_command_infra() - Run commands remotely
-transfer_file_infra() - File transfer operations
-```
-
-### 7. Resource Cleanup
-```
-# Gradual cleanup
-terminate_infra("test", "temp-servers", confirm=True) - Remove specific Infra
-release_resources("test") - Remove shared resources (VNet, etc.)
-manage_namespace(action='delete'"test") - Complete cleanup
-
-```
-
-## Advanced Patterns
-
-### 1. Multi-Region Deployment
-```python
-# Deploy across multiple regions
-regions = ["aws+ap-northeast-2", "azure+koreacentral", "gcp+asia-northeast3"]
-for region in regions:
-    create_infra_dynamic(
-        ns_id="global-app",
-        name=f"app-{region.split('+')[0]}",
-        node_groups=[{
-            "imageId": selected_image,
-            "specId": f"{region}+standard-instance",
-            "nodeGroupSize": 3
-        }]
-    )
-```
-
-### 2. Environment Separation
-```
-# Development
-manage_namespace(action='create'"dev")
-create_infra_dynamic("dev", "test-app", [{"imageId": image, "specId": "t2.micro", "name": "test-vm"}])
-
-# Staging  
-manage_namespace(action='create'"staging")
-create_infra_dynamic("staging", "staging-app", [{"imageId": image, "specId": "t2.small", "name": "staging-vm"}])
-
-# Production
-manage_namespace(action='create'"production") 
-create_infra_dynamic("production", "prod-app", complex_config)
-```
-
-### 3. Cost Optimization
-```
-# Find cost-effective options
-specs = recommend_vm_spec(
-    filter_policies={"ProviderName": "aws"},
-    priority_policy="cost"
-)
-
-# Use spot instances or burstable types
-vm_config = {
-    "specId": "aws+ap-northeast-2+t3.micro",
-    "nodeGroupSize": 5
-}
-```
-
-## Monitoring and Troubleshooting
-1. Use get_infra_list() for status monitoring
-2. Check get_infra() for detailed VM information  
-3. Review execute_command_infra() outputs for issues
-4. Use _infra_access_info() for connectivity verification
-
-## Security Best Practices
-1. Use separate namespaces for different environments
-2. Configure security groups appropriately
-3. Manage SSH keys securely
-4. Regular security updates via remote commands
-5. Monitor access patterns and resource usage
-"""
 
 @mcp.prompt()
-def tumblebug_usecase_examples():
-    """
-    Real-world Use Case Examples for CB-Tumblebug
-    
-    This prompt provides practical examples of common deployment scenarios
-    using CB-Tumblebug's enhanced capabilities.
-    """
-    return """# CB-Tumblebug Use Case Examples
+def serve_llm_on_gpu(model: str = "") -> str:
+    """Stand up a GPU node and serve an LLM on it"""
+    return _prompt(
+        f"Serve the model {model or '(ask the user which model)'} on a GPU node and report "
+        "the endpoint that answers.", "gpu", "provision")
 
-## 1. Gaming Infrastructure: Global Game Server Deployment
-
-### Scenario: Deploy Xonotic Game Servers Worldwide
-```
-User: "I want to deploy Xonotic game servers in 10 regions for global players"
-
-Solution:
-1. deploy_application(
-     ns_id="gaming",
-     app_name="xonotic", 
-     regions=10,
-     deployment_strategy="global"
-   )
-   
-2. Result: Automatic infrastructure provisioning + game server installation
-3. Players connect to nearest server via provided IP addresses
-```
-
-### Gaming Infrastructure Features:
-- Low-latency server placement
-- Automatic game server configuration  
-- Player capacity scaling
-- Global load distribution
-
-## 2. Web Application: Multi-Cloud Load Balancing
-
-### Scenario: Deploy Web Application with Geographic Distribution
-```
-User: "Deploy Nginx web servers in AWS Seoul and Azure Korea Central"
-
-Solution:
-1. create_infra_dynamic("web-app", "nginx-aws", [{"imageId": aws_image, "specId": "t3.medium", "name": "nginx-aws-vm"}])
-2. create_infra_dynamic("web-app", "nginx-azure", [{"imageId": azure_image, "specId": "Standard_B2s", "name": "nginx-azure-vm"}]) 
-3. execute_command_infra(script_name="nginx_install")
-4. Configure DNS load balancing
-```
-
-### Web Application Benefits:
-- Geographic redundancy
-- Improved user experience
-- Disaster recovery capability
-- Cost optimization across providers
-
-## 3. AI/ML Workload: Distributed AI Inference
-
-### Scenario: Deploy Ollama AI Service for Global AI Applications  
-```
-User: "I need Ollama AI inference service on powerful GPU instances"
-
-Solution:
-1. search_images(os_type="ubuntu 22.04") - Find compatible images
-2. recommend_vm_spec(
-     filter_policies={"gpu": true, "memoryGiB": {"min": 16}},
-     priority_policy="performance"
-   )
-3. deploy_application(app_name="ollama", regions=3, vm_requirements={"gpu": true})
-```
-
-### AI/ML Infrastructure:
-- GPU-optimized instances
-- Model deployment automation
-- API endpoint configuration
-- Scaling based on demand
-
-## 4. Development Environment: Team Development Infrastructure
-
-### Scenario: Create Development Environment for Team
-```
-User: "Set up development infrastructure with Docker and monitoring"
-
-Workflow:
-1. manage_namespace(action='create'"dev-team")
-2. create_infra_dynamic("dev-team", "dev-servers", [{"imageId": ubuntu_image, "specId": "t3.large", "name": f"dev-vm-{i}", "nodeGroupSize": 1} for i in range(1, 6)])
-3. execute_command_infra(script_name="docker_install")
-4. execute_command_infra(script_name="monitoring_setup") 
-5. execute_command_infra(script_name="security_hardening")
-```
-
-### Development Features:
-- Containerized development
-- Team collaboration tools
-- Monitoring and logging
-- Security hardening
-
-## 5. Data Analytics: ELK Stack Deployment
-
-### Scenario: Deploy Elasticsearch, Logstash, Kibana for Log Analytics
-```
-User: "Deploy ELK stack for centralized logging"
-
-Solution:
-1. deploy_application(
-     app_name="elk",
-     regions=1, 
-     vm_requirements={"memoryGiB": {"min": 8}, "cpu": {"min": 4}}
-   )
-2. Configure log shipping from applications
-3. Set up Kibana dashboards
-```
-
-### Analytics Infrastructure:
-- Centralized log collection
-- Real-time data processing  
-- Interactive dashboards
-- Scalable storage
-
-## 6. Video Conferencing: Jitsi Meet Platform
-
-### Scenario: Deploy Video Conferencing for Organization
-```
-User: "Deploy Jitsi Meet for our organization's video conferencing"
-
-Solution:
-1. deploy_application(app_name="jitsi", regions=2)
-2. Configure domain and SSL certificates
-3. Set up user authentication
-4. Monitor performance and scaling
-```
-
-### Video Conferencing Features:
-- Self-hosted video platform
-- High-quality video/audio
-- Multi-region deployment
-- Privacy and security control
-
-## 7. High-Performance Computing: Ray Cluster
-
-### Scenario: Deploy Distributed Computing with Ray
-```
-User: "Create Ray cluster for distributed machine learning"
-
-Solution:
-1. deploy_application(
-     app_name="ray",
-     regions=1,
-     vm_count=5,
-     vm_requirements={"cpu": {"min": 8}, "memoryGiB": {"min": 16}}
-   )
-2. Configure Ray head and worker nodes
-3. Deploy ML workloads
-```
-
-### HPC Benefits:
-- Distributed computing power
-- Automatic scaling
-- Resource optimization
-- ML/AI workload support
-
-## Common Patterns Across Use Cases
-
-### 1. Infrastructure Preparation
-```
-1. manage_namespace(action='create') - Environment isolation
-2. search_images() - Find suitable OS images  
-3. recommend_vm_spec() - Optimize instance selection
-4. get_connections() - Verify cloud provider availability
-```
-
-### 2. Application Deployment
-```
-1. deploy_application() - Automated deployment
-2. _infra_access_info() - Collect endpoints
-3. execute_command_infra() - Post-deployment configuration
-4. execute_command_infra() - Ongoing management
-```
-
-### 3. Monitoring and Management
-```
-1. get_infra_list() - Monitor infrastructure
-2. execute_command_infra() - Health checks
-3. control_infra() - Scaling operations
-```
-
-### 4. Cleanup and Optimization
-```
-1. terminate_infra() - Terminate unused infrastructure
-2. release_resources() - Clean shared resources
-3. manage_namespace(action='delete') - Complete environment cleanup
-```
-
-## Best Practices Summary
-1. **Start Small**: Use create_infra_dynamic() for testing
-2. **Scale Gradually**: Use deploy_application() for production
-3. **Monitor Resources**: Regular health checks and cost monitoring  
-4. **Security First**: Apply security hardening from day one
-5. **Document Endpoints**: Keep track of service URLs and IPs
-6. **Plan Cleanup**: Regular resource cleanup to control costs
-
-## 🔍 Infra Validation and Quality Assurance Workflow
-
-### MANDATORY Pre-Validation Process
-
-**✅ ALWAYS Follow This Workflow for Infra Creation:**
-
-```python
-# STEP 1: Search for appropriate VM specifications
-specs = recommend_vm_spec(
-    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-    priority_policy="cost"  # or "performance" or "location"
-)
-
-# STEP 2: Build VM configurations using ONLY returned spec IDs
-node_groups = []
-for i, spec in enumerate(specs["summarized_specs"][:2]):
-    node_groups.append({
-        "specId": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
-        "name": f"vm-{spec['providerName']}-{i+1}",
-        "description": f"VM in {spec['regionName']}",
-        "nodeGroupSize": 1
-        # imageId: Optional - auto-mapped if omitted
-    })
-
-# STEP 3: MANDATORY - Review configuration before creation
-review_result = review_infra_dynamic_request(
-    ns_id="my-project",
-    name="web-app-cluster", 
-    node_groups=node_groups,
-    description="Production web application cluster"
-)
-
-# STEP 4: Check validation results
-if review_result.get("summary", {}).get("validationPassed", False):
-    print("✅ Configuration validated successfully!")
-    print(f"Estimated cost: {review_result.get('estimated_cost', 'N/A')}")
-    print(f"Deployment time: {review_result.get('deployment_time_estimate', 'N/A')}")
-    
-    # STEP 5: Proceed with Infra creation
-    infra_result = create_infra_dynamic(
-        ns_id="my-project",
-        name="web-app-cluster",
-        node_groups=node_groups,
-        force_create=True  # Skip confirmation since we already reviewed
-    )
-    
-else:
-    print("❌ Validation failed!")
-    print("Issues to fix:")
-    for vm_validation in review_result.get("vm_validations", []):
-        if vm_validation.get("issues"):
-            print(f"VM {vm_validation['vm_index']}: {vm_validation['issues']}")
-```
-
-### Automatic Pre-Validation in create_infra_dynamic()
-
-**The create_infra_dynamic() function now includes automatic pre-validation:**
-
-1. **Automatic Review**: Every call to create_infra_dynamic() automatically runs review_infra_dynamic_request()
-2. **Validation Gate**: Infra creation is blocked if critical validation issues are found
-3. **Enhanced Feedback**: Detailed validation results guide you to fix configuration problems
-4. **Smart Recovery**: Clear guidance on how to address validation failures
-
-### Enhanced Error Prevention
-
-**🚨 CRITICAL VALIDATIONS PERFORMED:**
-
-✅ **VM Specification Validation**
-- Ensures specId IDs are valid and available
-- Verifies specifications exist in target CSP/region
-- Validates resource quotas and limits
-
-✅ **Image Compatibility Validation**  
-- Checks image-spec compatibility across CSPs
-- Validates architecture compatibility (x86_64, ARM)
-- Ensures images are available in target regions
-
-✅ **Resource Availability Validation**
-- Verifies sufficient compute quotas
-- Checks network resource availability
-- Validates storage capacity and types
-
-✅ **Cost and Time Estimation**
-- Provides hourly and monthly cost estimates
-- Estimates deployment completion time
-- Identifies potential cost optimization opportunities
-
-✅ **Security and Compliance Validation**
-- Validates SSH key requirements
-- Checks security group configurations
-- Ensures network security policies
-
-### Example: Validated Infra Creation Workflow
-
-**Recommended Pattern for Error-Resilient Infra Creation:**
-
-1. **Get VM Specifications**: Use recommend_vm_spec() to get valid spec IDs
-2. **Build Configurations**: Create VM configs using exact spec IDs from API
-3. **Validate Configuration**: Use review_infra_dynamic_request() to check setup
-4. **Handle Validation Results**: Address any issues before proceeding
-5. **Create Infrastructure**: Use create_infra_dynamic() with force_create=True
-
-**Example Usage Pattern:**
-- Call recommend_vm_spec() with your requirements
-- Use returned spec["id"] values in node_groups
-- Run review_infra_dynamic_request() to validate
-- Check validation_passed status before proceeding
-- Use create_infra_dynamic() with validated configurations
-
-### LLM Integration Guidelines
-
-**When working with Infra creation, LLMs should:**
-
-1. **Always Use Validation**: Never skip the review_infra_dynamic_request() step
-2. **Interpret Results**: Analyze validation results and explain issues to users
-3. **Provide Guidance**: Offer specific steps to fix validation failures
-4. **Optimize Configurations**: Suggest improvements based on validation feedback
-5. **Estimate Costs**: Present cost implications clearly to users
-6. **Plan Deployments**: Use validation insights to optimize deployment strategies
-
-### Validation Result Analysis
-
-**Understanding Validation Responses:**
-
-```python
-{
-    "validation_passed": true,  # Overall validation status
-    "summary": {
-        "validationPassed": true,
-        "totalVms": 2,
-        "totalErrors": 0,      # Critical issues (blocks creation)
-        "totalWarnings": 1,    # Recommendations for optimization  
-        "totalInfo": 2         # General information and tips
-    },
-    "vm_validations": [        # Per-VM validation details
-        {
-            "vm_index": 0,
-            "status": "valid",
-            "spec_info": {...},  # VM specification details
-            "image_info": {...}, # Image mapping details
-            "issues": [],        # Critical problems (must fix)
-            "warnings": [],      # Optimization suggestions
-            "info": [           # General information
-                "Custom root disk type configured: gp3"
-            ]
-        }
-    ],
-    "estimated_cost": "~$0.15/hour (~$108/month)",
-    "deployment_time_estimate": "3-5 minutes",
-    "optimization_suggestions": [...]
-}
-```
-
-**Response to Validation Results:**
-
-- ✅ **validation_passed: true** → Safe to proceed with create_infra_dynamic()
-- ❌ **validation_passed: false** → Must fix issues before creation
-- ⚠️ **warnings > 0** → Consider optimization suggestions
-- ℹ️ **info messages** → Informational, no action required
-
-This comprehensive validation system ensures reliable, cost-effective, and properly configured Infra deployments.
-
-## 🕒 CRITICAL REMINDER: Remote Command Execution Timing
-
-### 🚨 **MANDATORY USER WARNINGS for ALL LLMs**
-
-**Before executing ANY remote commands, LLMs MUST inform users:**
-
-```
-⏰ IMPORTANT TIMING NOTICE:
-• Remote command execution can take 5-20+ minutes
-• Complex deployments may require up to 20 minutes
-• Please be patient during the process
-• Progress will be reported when commands complete
-
-📊 Typical timing expectations:
-- Simple commands: 10-30 seconds
-- Package installation: 2-5 minutes  
-- Application deployment: 5-15 minutes
-- Complex setups: 10-20+ minutes
-```
-
-### 🎯 **LLM Best Practices for Command Execution:**
-
-1. **⚠️ Always warn users first** before any execute_command_infra() call
-2. **📦 Batch related commands** to minimize API calls
-3. **🔍 Add verification steps** to check progress
-4. **📊 Use summarize_output=True** for large outputs
-5. **💡 Explain what's happening** during long operations
-
-### 🔧 **Technical Implementation Notes:**
-
-- **API timeout extended to 20 minutes** for remote commands
-- **Automatic output summarization** to manage response size
-- **Enhanced error handling** for timeout scenarios
-- **Progress indicators** in command responses
-
-**🎯 Remember: Setting proper expectations prevents user frustration and ensures smooth deployment experiences.**
-"""
 
 @mcp.prompt()
-def vm_spec_recommendation_guide():
-    """
-    VM Specification Recommendation Best Practices Guide
-    
-    This prompt ensures LLMs always use get_search_options(kind='spec') before recommend_vm_spec()
-    to prevent failures from invalid parameters and guide proper usage of the recommendation system.
-    """
-    return """# 🔧 VM Specification Recommendation Guide
+def diagnose_and_recover(infra_id: str = "") -> str:
+    """Find out why an Infra is unhealthy and recover it"""
+    return _prompt(
+        f"Diagnose Infra {infra_id or '(ask which one)'} and propose a recovery. Start with "
+        "diagnose_infra().", "recovery")
 
-## 🚨 MANDATORY WORKFLOW: Options First, Then Recommendation
-
-### ⚠️ CRITICAL: ALWAYS Call get_search_options(kind='spec') FIRST
-
-**NEVER call recommend_vm_spec() without first calling get_search_options(kind='spec')!**
-
-This prevents common failures from:
-- ❌ Invalid metric names in filter policies
-- ❌ Non-existent provider names, regions, architectures
-- ❌ Wrong operator formats or parameter structures
-- ❌ Invalid priority policy configurations
-
-### 🔄 STEP-BY-STEP WORKFLOW:
-
-#### STEP 1: Get Available Options
-```python
-# ALWAYS start with this call
-spec_options = get_search_options(kind='spec'ns_id="system")
-
-# This returns comprehensive information:
-# - filter.availableMetrics: All metrics you can filter by
-# - filter.availableValues: Actual values for providers, regions, etc.
-# - filter.examplePolicies: Pre-built example filter configurations
-# - priority.availableMetrics: Available priority options
-# - priority.examplePolicies: Example priority configurations
-# - priority.parameterOptions: Required parameters for location/latency
-# - limit: Suggested limit values
-```
-
-#### STEP 2: Analyze Available Options
-```python
-# Extract key information for building requests
-available_metrics = spec_options["filter"]["availableMetrics"]
-# Example: ["id", "providerName", "regionName", "cspSpecName", "architecture", 
-#           "vCPU", "memoryGiB", "costPerHour", "acceleratorType", ...]
-
-available_providers = spec_options["filter"]["availableValues"]["providerName"]
-# Example: ["alibaba", "aws", "azure", "gcp", "ibm", "kt", "ncp", "nhn", "tencent"]
-
-available_regions = spec_options["filter"]["availableValues"]["regionName"]
-# Example: ["us-east-1", "ap-northeast-2", "eu-west-1", ...]
-
-priority_options = spec_options["priority"]["availableMetrics"]
-# Example: ["cost", "performance", "location", "latency", "random"]
-```
-
-#### STEP 3: Build Valid Filter Policies
-```python
-# ✅ Use ONLY metrics from availableMetrics
-# ✅ Use ONLY providers from availableValues.providerName
-# ✅ Use ONLY regions from availableValues.regionName
-
-# Example 1: Basic resource filtering
-filter_policies = {
-    "policy": [
-        {
-            "metric": "vCPU",  # ✅ From availableMetrics
-            "condition": [
-                {"operator": ">=", "operand": "2"},
-                {"operator": "<=", "operand": "8"}
-            ]
-        },
-        {
-            "metric": "memoryGiB",  # ✅ From availableMetrics
-            "condition": [
-                {"operator": ">=", "operand": "4"}
-            ]
-        },
-        {
-            "metric": "providerName",  # ✅ From availableMetrics
-            "condition": [
-                {"operator": "=", "operand": "aws"}  # ✅ From availableValues
-            ]
-        }
-    ]
-}
-
-# Example 2: Using example policies as templates
-example_policy = spec_options["filter"]["examplePolicies"][0]
-# Modify the example as needed for your requirements
-```
-
-#### STEP 4: Configure Priority with Valid Options
-```python
-# ✅ Use ONLY priority metrics from availableMetrics
-priority_policy = {
-    "policy": [
-        {
-            "metric": "cost",  # ✅ From priority.availableMetrics
-            "weight": 1.0
-        }
-    ]
-}
-
-# OR for location-based priority:
-priority_policy = {
-    "policy": [
-        {
-            "metric": "location",  # ✅ From priority.availableMetrics
-            "parameter": [
-                {
-                    "key": "coordinateClose",  # ✅ From parameterOptions
-                    "val": ["37.5665/126.9780"]  # Seoul coordinates
-                }
-            ],
-            "weight": 1.0
-        }
-    ]
-}
-```
-
-#### STEP 5: Call recommend_vm_spec with Validated Parameters
-```python
-# Now safely call recommend_vm_spec with validated parameters
-specs = recommend_vm_spec(
-    filter_policies=filter_policies,
-    priority_policy=priority_policy,
-    limit="10"  # ✅ From suggested limit values
-)
-```
-
-### 🎯 COMMON USE CASES WITH EXAMPLES:
-
-#### 💰 Cost-Optimized Specs
-```python
-# 1. Get options
-spec_options = get_search_options(kind='spec')
-
-# 2. Build cost-focused filter
-filter_policies = {
-    "policy": [
-        {
-            "metric": "costPerHour",
-            "condition": [{"operator": "<=", "operand": "0.50"}]
-        },
-        {
-            "metric": "vCPU", 
-            "condition": [{"operator": ">=", "operand": "2"}]
-        }
-    ]
-}
-
-# 3. Set cost priority
-priority_policy = {"policy": [{"metric": "cost", "weight": 1.0}]}
-
-# 4. Get recommendations
-specs = recommend_vm_spec(
-    filter_policies=filter_policies,
-    priority_policy=priority_policy,
-    limit="5"
-)
-```
-
-#### 🌍 Location-Based Specs
-```python
-# 1. Get options
-spec_options = get_search_options(kind='spec')
-
-# 2. Build location-focused filter
-filter_policies = {
-    "policy": [
-        {
-            "metric": "vCPU",
-            "condition": [
-                {"operator": ">=", "operand": "4"},
-                {"operator": "<=", "operand": "16"}
-            ]
-        }
-    ]
-}
-
-# 3. Set location priority with coordinates
-priority_policy = {
-    "policy": [
-        {
-            "metric": "location",
-            "parameter": [
-                {
-                    "key": "coordinateClose", 
-                    "val": ["35.6762/139.6503"]  # Tokyo coordinates
-                }
-            ],
-            "weight": 1.0
-        }
-    ]
-}
-
-# 4. Get recommendations
-specs = recommend_vm_spec(
-    filter_policies=filter_policies,
-    priority_policy=priority_policy,
-    limit="10"
-)
-```
-
-#### 🎮 GPU-Enabled Specs
-```python
-# 1. Get options
-spec_options = get_search_options(kind='spec')
-
-# 2. Build GPU-focused filter
-filter_policies = {
-    "policy": [
-        {
-            "metric": "acceleratorType",
-            "condition": [{"operator": "=", "operand": "gpu"}]
-        },
-        {
-            "metric": "memoryGiB",
-            "condition": [{"operator": ">=", "operand": "16"}]
-        }
-    ]
-}
-
-# 3. Set performance priority
-priority_policy = {"policy": [{"metric": "performance", "weight": 1.0}]}
-
-# 4. Get recommendations
-specs = recommend_vm_spec(
-    filter_policies=filter_policies,
-    priority_policy=priority_policy,
-    limit="5"
-)
-```
-
-### 🚨 ERROR PREVENTION CHECKLIST:
-
-Before calling recommend_vm_spec(), verify:
-- ✅ All metric names exist in availableMetrics
-- ✅ All provider names exist in availableValues.providerName  
-- ✅ All region names exist in availableValues.regionName
-- ✅ All architecture values exist in availableValues.architecture
-- ✅ Priority metric exists in priority.availableMetrics
-- ✅ Required parameters are provided for location/latency priorities
-- ✅ Limit value is within suggested range
-
-### 💡 LLM BEST PRACTICES:
-
-1. **Always explain the two-step process** to users
-2. **Show the available options** before asking for preferences
-3. **Validate user inputs** against available values
-4. **Use example policies** as starting points
-5. **Explain coordinate requirements** for location-based priorities
-6. **Handle errors gracefully** by re-checking options
-
-This workflow ensures reliable VM specification recommendations and prevents API failures.
-"""
 
 @mcp.prompt()
-def infrastructure_scaling_and_management_guide():
-    """
-    Guide for scaling Infra infrastructure, managing labels, and using credential holders.
-    Covers NodeGroup management, label-based resource organization, and multi-tenant credentials.
-    """
-    return """# Infrastructure Scaling, Labels & Credential Management
+def clean_up(ns_id: str = "default") -> str:
+    """Remove an Infra and everything it left behind"""
+    return _prompt(
+        f"List what exists in namespace {ns_id}, ask the user what to remove, remove it, "
+        "and verify nothing billable is left.", "cleanup")
 
-## 🔄 Scaling an Existing Infra with NodeGroups
 
-### Adding VMs to an Existing Infra
-Use `add_nodegroup_dynamic()` to add a new NodeGroup to a running Infra:
+def _compact_published_schemas():
+    try:
+        registered = asyncio.run(mcp.list_tools())
+    except RuntimeError:
+        return  # imported inside a running event loop: leave the schemas as generated
+    for entry in registered:
+        _compact_schema(entry.parameters)
 
-```python
-# Step 1: Review the NodeGroup configuration first
-review = review_nodegroup_dynamic(
-    ns_id="default",
-    infra_id="my-infra",
-    spec_id="aws+ap-northeast-2+t3.medium",
-    image_id="ami-0c02fb55956c7d316",
-    node_group_size=3,
-    name="worker-nodes"
-)
 
-# Step 2: If review passes, add the NodeGroup
-if review.get("isValid") or review.get("canCreate"):
-    result = add_nodegroup_dynamic(
-        ns_id="default",
-        infra_id="my-infra",
-        spec_id="aws+ap-northeast-2+t3.medium",
-        image_id="ami-0c02fb55956c7d316",
-        node_group_size=3,
-        name="worker-nodes",
-        description="Worker nodes for batch processing"
-    )
-```
+_compact_published_schemas()
 
-### Quick Spec-Image Validation
-Use `review_spec_image_pair()` for fast validation without full Infra review:
-
-```python
-# Lightweight check if a spec+image pair works
-check = review_spec_image_pair(
-    spec_id="aws+ap-northeast-2+t3.nano",
-    image_id="ami-01f71f215b23ba262"
-)
-if check.get("isValid"):
-    print("Spec and image are compatible and available")
-```
-
-### NodeGroup Configuration Options
-Each NodeGroup supports:
-- `specId` / `imageId`: Required spec and image (from recommend_vm_spec / search_images)
-- `nodeGroupSize`: Number of VMs (int, e.g., 3)
-- `zone`: Specific availability zone (e.g., "ap-northeast-2a")
-- `connectionName`: Specific CSP connection
-- `rootDiskSize`: Disk size in GB (int, 0 for default)
-- `vNetTemplateId` / `sgTemplateId`: Network/security templates
-- `label`: Key-value labels for the NodeGroup
-
-### Infra-Level Configuration
-When creating an Infra:
-- `policyOnPartialFailure`: "continue" (default), "rollback", or "refine"
-  - continue: Keep successfully created VMs even if some fail
-  - rollback: Delete all VMs if any fail
-  - refine: Retry failed VMs with alternative specs
-- `vNetTemplateId` / `sgTemplateId`: Infra-level defaults (NodeGroup values override)
-
-## 🏷️ Label Management
-
-Labels are key-value string pairs for organizing and filtering resources.
-
-### Setting Labels
-```python
-# Add labels to an Infra
-manage_labels(action='set'
-    label_type="infra",
-    uid="my-infra-uid",
-    labels={"env": "production", "team": "backend", "app": "web-server"}
-)
-
-# Add labels to a node (VM)
-manage_labels(action='set'
-    label_type="node",
-    uid="node-uid-123",
-    labels={"role": "worker", "tier": "compute"}
-)
-```
-
-### Finding Resources by Labels
-```python
-# Find all production Infras
-production_resources = manage_labels(action='find'
-    label_type="infra",
-    labels="env=production"
-)
-
-# Find worker VMs in the backend team
-workers = manage_labels(action='find'
-    label_type="node",
-    labels="role=worker,team=backend"
-)
-```
-
-### Syncing CSP Labels
-```python
-# Pull labels set directly on CSP resources (e.g., via AWS Console)
-manage_labels(action="sync_from_csp", label_type="node", uid="node-uid-123")
-```
-
-## 🔐 Credential Holder Management
-
-Credential holders represent different sets of cloud provider credentials,
-enabling multi-tenant or multi-environment deployments.
-
-### Listing Available Credential Holders
-```python
-holders = list_credential_holders()
-# Returns list of holders with their providers and connection counts
-```
-
-### Using a Specific Credential Holder
-Set the `TUMBLEBUG_CREDENTIAL_HOLDER` environment variable, or use per-request override:
-```python
-# Environment variable (applies to all requests)
-os.environ["TUMBLEBUG_CREDENTIAL_HOLDER"] = "dev-team"
-
-# Per-request (not yet exposed as tool parameter - use env var)
-```
-
-### Workflow: Multi-Tenant Deployment
-1. List available credential holders: `list_credential_holders()`
-2. Choose the appropriate holder for your deployment
-3. Set `TUMBLEBUG_CREDENTIAL_HOLDER` env var
-4. Proceed with Infra creation workflow as normal
-"""
 
 if __name__ == "__main__":
     # Map our log level to FastMCP/uvicorn log level
     fastmcp_log_level = "warning" if log_level_value > logging.DEBUG else "info"
-    
+
     mcp.run(
         transport="http",
         host=host,

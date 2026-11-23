@@ -1,0 +1,1010 @@
+{
+ "add_nodegroup_dynamic": {
+  "description_bytes": 264,
+  "properties": [
+   "budget_ack",
+   "confirm",
+   "connection_name",
+   "description",
+   "distribute_subnets",
+   "idempotency_key",
+   "image_id",
+   "infra_id",
+   "init_script",
+   "label",
+   "name",
+   "node_group_size",
+   "ns_id",
+   "post_script",
+   "post_script_async",
+   "root_disk_size",
+   "root_disk_type",
+   "session_id",
+   "sg_template_id",
+   "spec_id",
+   "vnet_template_id",
+   "zone"
+  ],
+  "required": [
+   "image_id",
+   "infra_id",
+   "ns_id",
+   "spec_id"
+  ]
+ },
+ "add_security_group_rules": {
+  "description_bytes": 187,
+  "properties": [
+   "idempotency_key",
+   "ns_id",
+   "rules",
+   "session_id",
+   "sg_id"
+  ],
+  "required": [
+   "ns_id",
+   "rules",
+   "sg_id"
+  ]
+ },
+ "clear_all_node_command_status": {
+  "description_bytes": 79,
+  "properties": [
+   "confirm",
+   "idempotency_key",
+   "infra_id",
+   "node_id",
+   "ns_id",
+   "session_id"
+  ],
+  "required": [
+   "infra_id",
+   "node_id",
+   "ns_id"
+  ]
+ },
+ "clear_session": {
+  "description_bytes": 28,
+  "properties": [
+   "confirm",
+   "idempotency_key",
+   "session_id"
+  ],
+  "required": [
+   "session_id"
+  ]
+ },
+ "control_infra": {
+  "description_bytes": 51,
+  "properties": [
+   "action",
+   "confirm",
+   "force",
+   "idempotency_key",
+   "infra_id",
+   "ns_id",
+   "session_id"
+  ],
+  "required": [
+   "action",
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "control_node": {
+  "description_bytes": 397,
+  "properties": [
+   "action",
+   "confirm",
+   "force",
+   "idempotency_key",
+   "infra_id",
+   "node_id",
+   "ns_id",
+   "session_id"
+  ],
+  "required": [
+   "action",
+   "infra_id",
+   "node_id",
+   "ns_id"
+  ]
+ },
+ "create_custom_image": {
+  "description_bytes": 334,
+  "properties": [
+   "description",
+   "idempotency_key",
+   "infra_id",
+   "name",
+   "node_id",
+   "ns_id",
+   "session_id"
+  ],
+  "required": [
+   "infra_id",
+   "name",
+   "ns_id"
+  ]
+ },
+ "create_infra_dynamic": {
+  "description_bytes": 362,
+  "properties": [
+   "budget_ack",
+   "confirm",
+   "description",
+   "force_create",
+   "hold",
+   "idempotency_key",
+   "init_script",
+   "label",
+   "name",
+   "node_groups",
+   "ns_id",
+   "policy_on_partial_failure",
+   "post_script",
+   "post_script_async",
+   "session_id",
+   "sg_template_id",
+   "system_label",
+   "vnet_template_id"
+  ],
+  "required": [
+   "name",
+   "node_groups",
+   "ns_id"
+  ]
+ },
+ "diagnose_infra": {
+  "description_bytes": 289,
+  "properties": [
+   "infra_id",
+   "ns_id"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "discover_service_endpoints": {
+  "description_bytes": 557,
+  "properties": [
+   "api_path",
+   "name_filter",
+   "ns_id",
+   "port",
+   "probe",
+   "probe_path"
+  ],
+  "required": []
+ },
+ "download_file_from_node": {
+  "description_bytes": 455,
+  "properties": [
+   "infra_id",
+   "max_bytes",
+   "node_id",
+   "ns_id",
+   "source_path"
+  ],
+  "required": [
+   "infra_id",
+   "node_id",
+   "ns_id",
+   "source_path"
+  ]
+ },
+ "execute_command_infra": {
+  "description_bytes": 273,
+  "properties": [
+   "commands",
+   "contains",
+   "env",
+   "idempotency_key",
+   "infra_id",
+   "label_selector",
+   "node_id",
+   "nodegroup_id",
+   "ns_id",
+   "run_async",
+   "script_name",
+   "session_id",
+   "tail_lines",
+   "template_id",
+   "template_variables",
+   "timeout_minutes"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "fetch_assets_for_provider": {
+  "description_bytes": 473,
+  "properties": [
+   "idempotency_key",
+   "provider_names",
+   "session_id"
+  ],
+  "required": [
+   "provider_names"
+  ]
+ },
+ "get_budget_status": {
+  "description_bytes": 240,
+  "properties": [],
+  "required": []
+ },
+ "get_command_result": {
+  "description_bytes": 263,
+  "properties": [
+   "contains",
+   "context_lines",
+   "infra_id",
+   "ns_id",
+   "request_id",
+   "tail_lines"
+  ],
+  "required": [
+   "request_id"
+  ]
+ },
+ "get_connections": {
+  "description_bytes": 175,
+  "properties": [
+   "credential_holder",
+   "detail",
+   "fields",
+   "filter_region_representative",
+   "filter_verified",
+   "name",
+   "provider"
+  ],
+  "required": []
+ },
+ "get_dns_hosted_zones": {
+  "description_bytes": 320,
+  "properties": [
+   "check_delegation"
+  ],
+  "required": []
+ },
+ "get_infra": {
+  "description_bytes": 31,
+  "properties": [
+   "detail",
+   "fields",
+   "infra_id",
+   "ns_id"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "get_infra_associated_resources": {
+  "description_bytes": 146,
+  "properties": [
+   "infra_id",
+   "ns_id"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "get_infra_list": {
+  "description_bytes": 31,
+  "properties": [
+   "detail",
+   "fields",
+   "ns_id",
+   "option"
+  ],
+  "required": []
+ },
+ "get_init_script_status": {
+  "description_bytes": 440,
+  "properties": [
+   "detail",
+   "infra_id",
+   "ns_id",
+   "status"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "get_namespaces": {
+  "description_bytes": 36,
+  "properties": [
+   "ns_id"
+  ],
+  "required": []
+ },
+ "get_nodegroups": {
+  "description_bytes": 166,
+  "properties": [
+   "infra_id",
+   "nodegroup_id",
+   "ns_id"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "get_platform_services": {
+  "description_bytes": 360,
+  "properties": [
+   "messages"
+  ],
+  "required": []
+ },
+ "get_provisioning_risk": {
+  "description_bytes": 160,
+  "properties": [
+   "csp_image_name",
+   "kind",
+   "spec_id"
+  ],
+  "required": [
+   "spec_id"
+  ]
+ },
+ "get_resources": {
+  "description_bytes": 219,
+  "properties": [
+   "detail",
+   "fields",
+   "kind",
+   "ns_id",
+   "resource_id"
+  ],
+  "required": [
+   "kind"
+  ]
+ },
+ "get_search_options": {
+  "description_bytes": 80,
+  "properties": [
+   "kind"
+  ],
+  "required": [
+   "kind"
+  ]
+ },
+ "get_spec_options": {
+  "description_bytes": 220,
+  "properties": [
+   "image_id",
+   "refresh",
+   "spec_id"
+  ],
+  "required": [
+   "spec_id"
+  ]
+ },
+ "get_ssh_private_key": {
+  "description_bytes": 441,
+  "properties": [
+   "key_id",
+   "ns_id",
+   "reason"
+  ],
+  "required": [
+   "key_id",
+   "ns_id",
+   "reason"
+  ]
+ },
+ "get_usage_guide": {
+  "description_bytes": 200,
+  "properties": [
+   "topic"
+  ],
+  "required": [
+   "topic"
+  ]
+ },
+ "inspect_csp_resources": {
+  "description_bytes": 260,
+  "properties": [
+   "connection_name",
+   "resource_type"
+  ],
+  "required": [
+   "connection_name"
+  ]
+ },
+ "list_credential_holders": {
+  "description_bytes": 242,
+  "properties": [
+   "holder_id"
+  ],
+  "required": []
+ },
+ "list_infra_templates": {
+  "description_bytes": 200,
+  "properties": [
+   "detail",
+   "ns_id",
+   "template_id"
+  ],
+  "required": []
+ },
+ "list_init_script_templates": {
+  "description_bytes": 270,
+  "properties": [
+   "keyword",
+   "ns_id",
+   "template_id"
+  ],
+  "required": []
+ },
+ "list_node_command_status": {
+  "description_bytes": 59,
+  "properties": [
+   "detail",
+   "index",
+   "infra_id",
+   "node_id",
+   "ns_id",
+   "page",
+   "request_id",
+   "size",
+   "status",
+   "tail_lines"
+  ],
+  "required": [
+   "infra_id",
+   "node_id",
+   "ns_id"
+  ]
+ },
+ "list_predefined_scripts": {
+  "description_bytes": 246,
+  "properties": [
+   "name"
+  ],
+  "required": []
+ },
+ "manage_bastion": {
+  "description_bytes": 405,
+  "properties": [
+   "action",
+   "bastion_infra_id",
+   "bastion_node_id",
+   "bastion_ns_id",
+   "confirm",
+   "idempotency_key",
+   "infra_id",
+   "ns_id",
+   "session_id",
+   "target_node_id"
+  ],
+  "required": [
+   "action",
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "manage_command_task": {
+  "description_bytes": 203,
+  "properties": [
+   "action",
+   "detail",
+   "infra_id",
+   "ns_id",
+   "task_id"
+  ],
+  "required": [
+   "action",
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "manage_dns_record": {
+  "description_bytes": 542,
+  "properties": [
+   "action",
+   "confirm",
+   "domain_name",
+   "idempotency_key",
+   "infra_id",
+   "ips",
+   "label_selector",
+   "ns_id",
+   "record_name",
+   "record_type",
+   "routing_policy",
+   "session_id",
+   "set_identifier",
+   "ttl"
+  ],
+  "required": [
+   "action",
+   "domain_name"
+  ]
+ },
+ "manage_infra_template": {
+  "description_bytes": 75,
+  "properties": [
+   "action",
+   "confirm",
+   "idempotency_key",
+   "infra_id",
+   "ns_id",
+   "session_id",
+   "template",
+   "template_id"
+  ],
+  "required": [
+   "action"
+  ]
+ },
+ "manage_init_script_template": {
+  "description_bytes": 49,
+  "properties": [
+   "action",
+   "confirm",
+   "idempotency_key",
+   "ns_id",
+   "session_id",
+   "template",
+   "template_id"
+  ],
+  "required": [
+   "action"
+  ]
+ },
+ "manage_k8s_cluster": {
+  "description_bytes": 492,
+  "properties": [
+   "action",
+   "budget_ack",
+   "cluster_id",
+   "confirm",
+   "desired_node_size",
+   "detail",
+   "idempotency_key",
+   "image_id",
+   "max_node_size",
+   "min_node_size",
+   "nodegroup_name",
+   "ns_id",
+   "root_disk_size",
+   "root_disk_type",
+   "session_id",
+   "spec_id",
+   "version"
+  ],
+  "required": [
+   "action"
+  ]
+ },
+ "manage_labels": {
+  "description_bytes": 234,
+  "properties": [
+   "action",
+   "detail",
+   "idempotency_key",
+   "key",
+   "label_type",
+   "labels",
+   "session_id",
+   "uid"
+  ],
+  "required": [
+   "action",
+   "label_type"
+  ]
+ },
+ "manage_namespace": {
+  "description_bytes": 198,
+  "properties": [
+   "action",
+   "confirm",
+   "description",
+   "idempotency_key",
+   "name",
+   "session_id"
+  ],
+  "required": [
+   "action"
+  ]
+ },
+ "manage_nlb": {
+  "description_bytes": 408,
+  "properties": [
+   "action",
+   "confirm",
+   "idempotency_key",
+   "infra_id",
+   "nlb_id",
+   "nodegroup_id",
+   "ns_id",
+   "port",
+   "protocol",
+   "scope",
+   "session_id",
+   "target_port"
+  ],
+  "required": [
+   "action",
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "manage_object_storage": {
+  "description_bytes": 331,
+  "properties": [
+   "action",
+   "bucket_id",
+   "confirm",
+   "connection_name",
+   "cors_rules",
+   "description",
+   "expires_seconds",
+   "force",
+   "idempotency_key",
+   "ns_id",
+   "object_key",
+   "operation",
+   "session_id",
+   "versioning"
+  ],
+  "required": [
+   "action"
+  ]
+ },
+ "manage_rdbms": {
+  "description_bytes": 385,
+  "properties": [
+   "action",
+   "admin_user_name",
+   "admin_user_password",
+   "confirm",
+   "connection_name",
+   "database_name",
+   "db_engine",
+   "detail",
+   "force",
+   "idempotency_key",
+   "ns_id",
+   "options",
+   "public_access",
+   "rdbms_id",
+   "security_group_ids",
+   "session_id",
+   "subnet_ids",
+   "vnet_id"
+  ],
+  "required": [
+   "action"
+  ]
+ },
+ "manage_resource": {
+  "description_bytes": 362,
+  "properties": [
+   "action",
+   "confirm",
+   "idempotency_key",
+   "kind",
+   "ns_id",
+   "resource_id",
+   "session_id"
+  ],
+  "required": [
+   "action",
+   "kind",
+   "resource_id"
+  ]
+ },
+ "provision_infra_from_template": {
+  "description_bytes": 213,
+  "properties": [
+   "budget_ack",
+   "confirm",
+   "description",
+   "idempotency_key",
+   "name",
+   "ns_id",
+   "session_id",
+   "template_id"
+  ],
+  "required": [
+   "name",
+   "ns_id",
+   "template_id"
+  ]
+ },
+ "recommend_alternative_node_config": {
+  "description_bytes": 308,
+  "properties": [
+   "limit",
+   "os_type",
+   "source_image_id",
+   "source_spec_id",
+   "target_provider",
+   "target_region"
+  ],
+  "required": [
+   "source_spec_id",
+   "target_provider"
+  ]
+ },
+ "recommend_vm_spec": {
+  "description_bytes": 235,
+  "properties": [
+   "detail",
+   "filter_policies",
+   "latitude",
+   "limit",
+   "longitude",
+   "priority_policy"
+  ],
+  "required": []
+ },
+ "register_csp_credential": {
+  "description_bytes": 244,
+  "properties": [
+   "credential",
+   "credential_holder",
+   "idempotency_key",
+   "provider_name",
+   "session_id"
+  ],
+  "required": [
+   "credential",
+   "provider_name"
+  ]
+ },
+ "register_csp_definition": {
+  "description_bytes": 369,
+  "properties": [
+   "cloud_platform",
+   "description",
+   "driver",
+   "idempotency_key",
+   "provider_name",
+   "regions",
+   "session_id"
+  ],
+  "required": [
+   "driver",
+   "provider_name",
+   "regions"
+  ]
+ },
+ "register_csp_resources": {
+  "description_bytes": 373,
+  "properties": [
+   "confirm",
+   "connection_name",
+   "idempotency_key",
+   "infra_name_prefix",
+   "ns_id",
+   "one_infra",
+   "resource_type",
+   "session_id"
+  ],
+  "required": [
+   "connection_name",
+   "ns_id"
+  ]
+ },
+ "release_resources": {
+  "description_bytes": 324,
+  "properties": [
+   "confirm",
+   "dry_run",
+   "idempotency_key",
+   "ns_id",
+   "session_id"
+  ],
+  "required": [
+   "ns_id"
+  ]
+ },
+ "remove_security_group_rules": {
+  "description_bytes": 76,
+  "properties": [
+   "confirm",
+   "idempotency_key",
+   "ns_id",
+   "rules",
+   "session_id",
+   "sg_id"
+  ],
+  "required": [
+   "ns_id",
+   "rules",
+   "sg_id"
+  ]
+ },
+ "request_budget_increase": {
+  "description_bytes": 236,
+  "properties": [
+   "reason",
+   "request_id"
+  ],
+  "required": [
+   "reason",
+   "request_id"
+  ]
+ },
+ "resume_session": {
+  "description_bytes": 239,
+  "properties": [
+   "session_id"
+  ],
+  "required": [
+   "session_id"
+  ]
+ },
+ "retry_failed_nodes": {
+  "description_bytes": 379,
+  "properties": [
+   "assume_resolved",
+   "attempts_per_node",
+   "confirm",
+   "dry_run",
+   "idempotency_key",
+   "infra_id",
+   "interval_seconds",
+   "keep_failed_nodes",
+   "node_ids",
+   "ns_id",
+   "session_id",
+   "zone"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "review_infra_dynamic_request": {
+  "description_bytes": 342,
+  "properties": [
+   "description",
+   "detail",
+   "hold",
+   "init_script",
+   "label",
+   "name",
+   "node_groups",
+   "ns_id",
+   "policy_on_partial_failure",
+   "post_script",
+   "sg_template_id",
+   "system_label",
+   "vnet_template_id"
+  ],
+  "required": [
+   "name",
+   "node_groups",
+   "ns_id"
+  ]
+ },
+ "review_nodegroup_dynamic": {
+  "description_bytes": 173,
+  "properties": [
+   "connection_name",
+   "description",
+   "image_id",
+   "infra_id",
+   "init_script",
+   "name",
+   "node_group_size",
+   "ns_id",
+   "post_script",
+   "root_disk_size",
+   "root_disk_type",
+   "spec_id",
+   "zone"
+  ],
+  "required": [
+   "image_id",
+   "infra_id",
+   "ns_id",
+   "spec_id"
+  ]
+ },
+ "review_spec_image_pair": {
+  "description_bytes": 184,
+  "properties": [
+   "image_id",
+   "root_disk_type",
+   "spec_id",
+   "zone"
+  ],
+  "required": [
+   "image_id",
+   "spec_id"
+  ]
+ },
+ "scale_out_nodegroup": {
+  "description_bytes": 169,
+  "properties": [
+   "add_count",
+   "budget_ack",
+   "confirm",
+   "idempotency_key",
+   "infra_id",
+   "nodegroup_id",
+   "ns_id",
+   "session_id"
+  ],
+  "required": [
+   "infra_id",
+   "nodegroup_id",
+   "ns_id"
+  ]
+ },
+ "search_images": {
+  "description_bytes": 334,
+  "properties": [
+   "custom_images_of",
+   "detail",
+   "detail_search_keys",
+   "include_basic_image_only",
+   "is_gpu_image",
+   "is_kubernetes_image",
+   "matched_spec_id",
+   "max_results",
+   "os_architecture",
+   "os_type",
+   "provider_name",
+   "region_name"
+  ],
+  "required": []
+ },
+ "terminate_infra": {
+  "description_bytes": 296,
+  "properties": [
+   "confirm",
+   "idempotency_key",
+   "infra_id",
+   "ns_id",
+   "session_id"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id"
+  ]
+ },
+ "transfer_file_infra": {
+  "description_bytes": 245,
+  "properties": [
+   "content",
+   "file_name",
+   "file_path",
+   "idempotency_key",
+   "infra_id",
+   "node_id",
+   "nodegroup_id",
+   "ns_id",
+   "session_id",
+   "target_path"
+  ],
+  "required": [
+   "infra_id",
+   "ns_id",
+   "target_path"
+  ]
+ },
+ "unregister_csp_definition": {
+  "description_bytes": 196,
+  "properties": [
+   "confirm",
+   "idempotency_key",
+   "provider_name",
+   "session_id"
+  ],
+  "required": [
+   "provider_name"
+  ]
+ }
+}

@@ -58,6 +58,7 @@ func classifyDnsError(err error) int {
 // @Tags [Utility] Global DNS Management
 // @Accept  json
 // @Produce  json
+// @Param recordReq body model.GlobalDnsRecordReq true "Record to upsert and its IP source"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Success 200 {object} model.SimpleMsg
