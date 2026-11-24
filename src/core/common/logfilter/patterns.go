@@ -121,6 +121,11 @@ var RequestSkipPatterns = []SkipRule{
 	{Method: "GET", Patterns: []string{"/infraAutopilot", "/status"}},
 	{Method: "GET", Patterns: []string{"/registerCspResources/schedule"}},
 	{Method: "GET", Patterns: []string{"/connConfig"}},
+
+	// Platform service lookups the UI makes on its own; with showSecrets=true the answer
+	// carries tokens, which must not be kept in the request history
+	{Method: "GET", Patterns: []string{"/tumblebug/observability"}},
+	{Method: "GET", Patterns: []string{"/tumblebug/notifier"}},
 }
 
 // ==============================================================================

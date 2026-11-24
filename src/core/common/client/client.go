@@ -1147,6 +1147,31 @@ func EndRequestWithLogAndStatus(c echo.Context, err error, responseData any, sta
 	return c.JSON(statusCode, body)
 }
 
+// FinishRequestIfHandling closes a request record that the response path left open.
+// Records with a JSON body are closed where the body is captured; a response without one
+// (204, a file, plain text, an aborted handler) is judged here by its status code.
+func FinishRequestIfHandling(reqID string, statusCode int, handlerErr error) {
+	v, ok := RequestMap.Load(reqID)
+	if !ok {
+		return
+	}
+	details, ok := v.(RequestDetails)
+	if !ok || details.Status != "Handling" {
+		return
+	}
+	details.EndTime = time.Now()
+	details.Status = "Success"
+	if handlerErr != nil || statusCode >= http.StatusBadRequest {
+		details.Status = "Error"
+		if handlerErr != nil {
+			details.ErrorResponse = handlerErr.Error()
+		} else {
+			details.ErrorResponse = http.StatusText(statusCode)
+		}
+	}
+	RequestMap.Store(reqID, details)
+}
+
 // UpdateRequestProgress updates the handling status of the request.
 func UpdateRequestProgress(reqID string, progressData any) {
 	if v, ok := RequestMap.Load(reqID); ok {
