@@ -115,9 +115,44 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      # Vite dev bundles (OpenLayers/Cytoscape, multi-MB uncompressed) and WebSocket/HMR
+      # streams can exceed Envoy's 15s default over SSH tunnels + port-forward, causing
+      # mid-stream RST_STREAM (net::ERR_HTTP2_PROTOCOL_ERROR) — disable the request timeout
+      timeouts:
+        request: 0s
       backendRefs:
         - name: cb-mapui
           port: 1324
+{{- if .Capabilities.APIVersions.Has "gateway.envoyproxy.io/v1alpha1/BackendTrafficPolicy" }}
+---
+# Prevent Node.js/Vite 5s keepAliveTimeout vs Envoy 1h idleTimeout race (503 UC),
+# auto-retry transient resets, and gzip-compress multi-MB Vite dev bundles.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: cb-mapui-policy
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: cb-mapui
+  timeout:
+    http:
+      connectionIdleTimeout: 3s
+  retry:
+    numRetries: 2
+    retryOn:
+      triggers:
+        - reset
+        - connect-failure
+        - refused-stream
+  compressor:
+    - type: Gzip
+      gzip: {}
+      minContentLength: 1024
+{{- end }}
 {{- end }}
 {{- if .Values.mcp.enabled }}
 ---
