@@ -115,6 +115,11 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      # Vite dev bundles (OpenLayers/Cytoscape, multi-MB uncompressed) and WebSocket/HMR
+      # streams can exceed Envoy's 15s default over SSH tunnels + port-forward, causing
+      # mid-stream RST_STREAM (net::ERR_HTTP2_PROTOCOL_ERROR) — disable the request timeout
+      timeouts:
+        request: 0s
       backendRefs:
         - name: cb-mapui
           port: 1324
