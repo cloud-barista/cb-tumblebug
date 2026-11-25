@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -48,6 +49,16 @@ func RequestIdAndDetailsIssuer(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// log.Debug().Msg("End - Request ID middleware")
 
-		return next(c)
+		// Only a JSON body closes the record downstream; close whatever is still open here
+		finished := false
+		defer func() {
+			if !finished {
+				clientManager.FinishRequestIfHandling(reqID, http.StatusInternalServerError, fmt.Errorf("request aborted"))
+			}
+		}()
+		err := next(c)
+		finished = true
+		clientManager.FinishRequestIfHandling(reqID, c.Response().Status, err)
+		return err
 	}
 }
